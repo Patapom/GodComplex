@@ -104,6 +104,7 @@ namespace Brain2 {
 		/// <summary>
 		/// Contains a JPEG-compressed thumbnail of the web page snapshot
 		/// </summary>
+		[System.Diagnostics.DebuggerDisplay( "{m_thumbnail.Width}x{m_thumbnail.Height}" )]
 		public class ChunkThumbnail : ChunkBase {
 
 			public const uint	THUMBNAIL_WIDTH = 128;	// 1/10th of the webpage size
@@ -118,7 +119,7 @@ namespace Brain2 {
 					if ( m_thumbnail == null ) {
 						// Launch load process & create a placeholder for now...
 						m_owner.m_database.AsyncLoadChunk( this );
-						m_thumbnail = new ImageFile( THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, PIXEL_FORMAT.BGRA8, DEFAULT_PROFILE );
+						m_thumbnail = new ImageFile( THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );	// Note that it's important to create a 24-bits format here to be able to save as JPEG!
 					}
 
 					return m_thumbnail;
@@ -140,18 +141,18 @@ namespace Brain2 {
 
 				// Create a tiny thumbnail from the image
 				uint	thumbnailHeight = Mathf.Min( _imageWebPage.Height * THUMBNAIL_WIDTH / _imageWebPage.Width, THUMBNAIL_HEIGHT );	// At most our preferred ratio => we must crop the full page!
-				float	imageRatio = (float) _imageWebPage.Width / THUMBNAIL_WIDTH;
+				float	imageScale = (float) _imageWebPage.Width / THUMBNAIL_WIDTH;
 
-				m_thumbnail = new ImageFile( THUMBNAIL_WIDTH, thumbnailHeight, PIXEL_FORMAT.BGRA8, DEFAULT_PROFILE );
+				m_thumbnail = new ImageFile( THUMBNAIL_WIDTH, thumbnailHeight, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );	// Note that it's important to create a 24-bits format here to be able to save as JPEG!
 
 				// Read "height" scanlines
 				float4[]	sourceScanline = new float4[_imageWebPage.Width];
 				float4[]	targetScanline = new float4[THUMBNAIL_WIDTH];
 				for ( uint Y=0; Y < thumbnailHeight; Y++ ) {
-					uint	sourceY = (uint) (imageRatio * Y);
+					uint	sourceY = (uint) (imageScale * Y);
 					_imageWebPage.ReadScanline( sourceY, sourceScanline );
 					for ( uint X=0; X < THUMBNAIL_WIDTH; X++ ) {
-						targetScanline[X] = sourceScanline[(uint) (imageRatio * (X+0.5f))];
+						targetScanline[X] = sourceScanline[(uint) (imageScale * (X+0.5f))];
 					}
 					m_thumbnail.WriteScanline( Y, targetScanline );
 				}
@@ -210,6 +211,7 @@ namespace Brain2 {
 		/// <summary>
 		/// Contains the full web page snapshot
 		/// </summary>
+		[System.Diagnostics.DebuggerDisplay( "{m_width}x{m_height}" )]
 		public class ChunkWebPageSnapshot : ChunkBase {
 
 			public const uint	DEFAULT_WEBPAGE_WIDTH = 1280;	// Default snapshot width
@@ -255,6 +257,16 @@ namespace Brain2 {
 				m_owner.NotifyWebPageImageChanged( this );
 			}
 
+			/// <summary>
+			/// Releases the image
+			/// </summary>
+			public void	UnloadImage() {
+				if ( m_image != null ) {
+					m_image.Dispose();
+					m_image = null;
+				}
+			}
+
 			public override void Read(BinaryReader _reader) {
 				// Only read image width & height
 				m_width = _reader.ReadUInt32();
@@ -282,8 +294,14 @@ namespace Brain2 {
 				try {
 					_S.Position = (long) m_offset;
 
-					byte[]	content = new byte[m_size];
-					_S.Read( content, 0, (int) m_size );
+					// Use "light" regular reader
+					using ( BinaryReader R = new BinaryReader( _S ) )
+						Read( R );
+
+					// Read remaining
+					uint	contentSize = m_size - (uint) ((ulong) _S.Position - m_offset);
+					byte[]	content = new byte[contentSize];
+					_S.Read( content, 0, (int) contentSize );
 
 					// Attempt to read the PNG file
 					ImageFile	temp = null;
@@ -315,12 +333,12 @@ namespace Brain2 {
 
 		#region FIELDS
 
-		internal FichesDB			m_database = null;
+		private FichesDB			m_database = null;
 
 		private Guid				m_GUID;
 		private DateTime			m_creationTime = DateTime.Now;
 
-		private List< Fiche >		m_tags2 = new List< Fiche >();
+		private List< Fiche >		m_tags = new List< Fiche >();
 		private List< Fiche >		m_references = new List< Fiche >();
 		private Guid[]				m_tagGUIDs = null;
 
@@ -337,7 +355,7 @@ namespace Brain2 {
 
 		#region PROPERTIES
 
-		protected FichesDB			Database {
+		public FichesDB			Database {
 			get { return m_database; }
 			set {
 				if ( value == m_database )
@@ -463,13 +481,15 @@ namespace Brain2 {
 
 			Database = _database;
 		}
-		public	Fiche( FichesDB _database, TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) : this( _database, _title ) {
+		public	Fiche( FichesDB _database, TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) {
+			m_GUID = Guid.NewGuid();
 			m_type = _type;
-			if ( _tags != null ) {
-				AddTags( _tags );
-			}
+			m_title = _title;
 			m_URL = _URL;
+			AddTags( _tags );
 			m_HTMLContent = _HTMLContent;
+
+			Database = _database;
 			m_status = STATUS.READY;
 		}
 		public	Fiche( FichesDB _database, BinaryReader _reader ) {
@@ -506,8 +526,8 @@ namespace Brain2 {
 				// Write hierarchy
 				_writer.Write( m_GUID.ToString() );
 				_writer.Write( m_creationTime.ToString() );
-				_writer.Write( (uint) m_tags2.Count );
-				foreach ( Fiche parent in m_tags2 ) {
+				_writer.Write( (uint) m_tags.Count );
+				foreach ( Fiche parent in m_tags ) {
 					_writer.Write( parent.m_GUID.ToString() );
 				}
 
@@ -516,11 +536,10 @@ namespace Brain2 {
 				_writer.Write( m_title );
 				_writer.Write( m_URL != null );
 				if ( m_URL != null ) {
-					_writer.Write( true );
 					_writer.Write( m_URL.OriginalString );
 				}
+				_writer.Write( m_HTMLContent != null );
 				if ( m_HTMLContent != null ) {
-					_writer.Write( true );
 					_writer.Write( m_HTMLContent );
 				}
 
@@ -528,7 +547,7 @@ namespace Brain2 {
 				_writer.Write( (uint) m_chunks.Count );
 				foreach ( ChunkBase chunk in m_chunks ) {
 					_writer.Write( chunk.GetType().Name );
-					_writer.Write( (uint) 0 );
+					_writer.Write( (uint) 0 );	// Placeholder => Will be filled with proper size when chunk is actually written
 					ulong	chunkStartOffset = (ulong) _writer.BaseStream.Position;
 
 					chunk.Write( _writer );
@@ -536,7 +555,7 @@ namespace Brain2 {
 					// Go back to write chunk size
 					ulong	chunkEndOffset = (ulong) _writer.BaseStream.Position;
 					uint	chunkSize = (uint) (chunkEndOffset - chunkStartOffset);
-					_writer.BaseStream.Position = (long) (chunkStartOffset - sizeof(ulong));
+					_writer.BaseStream.Position = (long) (chunkStartOffset - sizeof(uint));
 					_writer.Write( chunkSize );
 					_writer.BaseStream.Position = (long) chunkEndOffset;
 				}
@@ -572,8 +591,8 @@ namespace Brain2 {
 
 				// We only read the GUIDs while the actual fiches will be processed later
 			uint	parentsCount = _reader.ReadUInt32();
-			while ( m_tags2.Count > 0 ) {
-				RemoveTag( m_tags2[0] );
+			while ( m_tags.Count > 0 ) {
+				RemoveTag( m_tags[0] );
 			}
 			m_tagGUIDs = new Guid[parentsCount];
 			for ( int parentIndex=0; parentIndex < parentsCount; parentIndex++ ) {
@@ -597,7 +616,10 @@ namespace Brain2 {
 			}
 
 			// Read chunks
-			m_chunks.Clear();
+			while ( m_chunks.Count > 0 ) {
+				m_chunks[0].Dispose();
+				m_chunks.RemoveAt( 0 );
+			}
 			uint	chunksCount = _reader.ReadUInt32();
 			for ( uint chunkIndex=0; chunkIndex < chunksCount; chunkIndex++ ) {
 				string		chunkType = _reader.ReadString();
@@ -635,24 +657,26 @@ namespace Brain2 {
 		#region Tags Management
 
 		public void	AddTags( IEnumerable<Fiche> _tags ) {
-			foreach ( Fiche tag in _tags ) {
-				AddTag( tag );
+			if ( _tags != null ) {
+				foreach ( Fiche tag in _tags ) {
+					AddTag( tag );
+				}
 			}
 		}
 
 		public void	AddTag( Fiche _tag ) {
-			if ( m_tags2.Contains( _tag ) )
+			if ( m_tags.Contains( _tag ) )
 				return;	// Already got it!
 			
-			m_tags2.Add( _tag );
+			m_tags.Add( _tag );
 			_tag.AddReference( this );
 		}
 
 		public void	RemoveTag( Fiche _tag ) {
-			if ( !m_tags2.Contains( _tag ) )
+			if ( !m_tags.Contains( _tag ) )
 				return;	// Don't have it!
 			
-			m_tags2.Remove( _tag );
+			m_tags.Remove( _tag );
 			_tag.RemoveReference( this );
 		}
 
@@ -697,7 +721,10 @@ namespace Brain2 {
 			return null;
 		}
 
-		// Create image chunk
+		/// <summary>
+		/// Create the image chunk and feed it our image
+		/// </summary>
+		/// <param name="_imageWebPage"></param>
 		internal void	CreateImageChunk( ImageFile _imageWebPage ) {
 			ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
 			if ( chunk == null ) {
@@ -717,6 +744,15 @@ namespace Brain2 {
 			} else {
 				chunk.UpdateFromWebPageImage( _imageWebPage );
 			}
+		}
+
+		/// <summary>
+		/// Unloads the image chunk's image
+		/// </summary>
+		internal void	UnloadImageChunk() {
+			ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
+			if ( chunk != null )
+				chunk.UnloadImage();
 		}
 
 		#endregion

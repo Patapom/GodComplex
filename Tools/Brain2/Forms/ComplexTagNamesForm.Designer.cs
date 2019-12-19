@@ -24,8 +24,8 @@
 		/// </summary>
 		private void InitializeComponent() {
 			this.groupBoxNames = new System.Windows.Forms.GroupBox();
-			this.labelInfo = new System.Windows.Forms.Label();
 			this.listViewTagNames = new System.Windows.Forms.ListView();
+			this.labelInfo = new System.Windows.Forms.Label();
 			this.groupBoxNames.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -42,16 +42,6 @@
 			this.groupBoxNames.TabStop = false;
 			this.groupBoxNames.Text = "Complex Names";
 			// 
-			// labelInfo
-			// 
-			this.labelInfo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.labelInfo.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelInfo.Location = new System.Drawing.Point(12, 9);
-			this.labelInfo.Name = "labelInfo";
-			this.labelInfo.Size = new System.Drawing.Size(465, 73);
-			this.labelInfo.TabIndex = 1;
-			// 
 			// listViewTagNames
 			// 
 			this.listViewTagNames.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -65,6 +55,16 @@
 			this.listViewTagNames.View = System.Windows.Forms.View.List;
 			this.listViewTagNames.AfterLabelEdit += new System.Windows.Forms.LabelEditEventHandler(this.listViewTagNames_AfterLabelEdit);
 			// 
+			// labelInfo
+			// 
+			this.labelInfo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.labelInfo.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelInfo.Location = new System.Drawing.Point(12, 9);
+			this.labelInfo.Name = "labelInfo";
+			this.labelInfo.Size = new System.Drawing.Size(465, 73);
+			this.labelInfo.TabIndex = 1;
+			// 
 			// ComplexTagNamesForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -75,6 +75,7 @@
 			this.Controls.Add(this.groupBoxNames);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
 			this.Name = "ComplexTagNamesForm";
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "Complex Tag Names Fixer";
 			this.groupBoxNames.ResumeLayout(false);
 			this.ResumeLayout(false);

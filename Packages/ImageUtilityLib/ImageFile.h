@@ -296,7 +296,7 @@ namespace ImageUtilityLib {
 		void				Save( const wchar_t* _fileName ) const;
 		void				Save( const wchar_t* _fileName, FILE_FORMAT _format ) const;
 		void				Save( const wchar_t* _fileName, FILE_FORMAT _format, SAVE_FLAGS _options ) const;
-		void				Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64 _fileSize, void*& _fileContent ) const;	// NOTE: The caller MUST delete the returned buffer!
+		void				Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64& _fileSize, void*& _fileContent ) const;	// NOTE: The caller MUST delete the returned buffer!
 		
 		// Converts the source image to a target format
 		// WARNING: HDR formats need to be tone mapped first before being converted to regular LDR formats

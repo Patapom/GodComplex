@@ -135,8 +135,8 @@ namespace Brain2 {
 						listViewBookmarks.Items.Add( bookmarkItem );
 
 
-if ( bookmarkFile.FullName.IndexOf( "Profile 2" ) != -1 )
-	ImportBookmarksChrome( bookmarkFile );
+// if ( bookmarkFile.FullName.IndexOf( "Profile 2" ) != -1 )
+// 	ImportBookmarksChrome( bookmarkFile );
 
 
 					} catch ( Exception _e ) {
@@ -379,7 +379,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 
 		#endregion
 
-		int	ImportBookmarksChrome( FileInfo _fileName ) {
+		int	ImportBookmarksChrome( FileInfo _fileName, List< Fiche > _createdTags, List< Fiche > _complexNameTags ) {
 			// Attempt to parse JSON file
 			JSONObject	root = null;
 			try {
@@ -391,6 +391,8 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 			}
 
 			// Read bookmarks
+			Bookmark.ms_tags = _createdTags;
+			Bookmark.ms_complexNameTags = _complexNameTags;
 			List< Bookmark >	bookmarks = new List<Bookmark>();
 			try {
 				root = root["root"]["roots"];	// Fetch the actual root
@@ -421,12 +423,6 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 				}
 			}
 
-			// Ask the user to rename complex names
-			if ( Bookmark.ms_tooComplexTags.Count > 0 ) {
-				ComplexTagNamesForm	F = new ComplexTagNamesForm( Bookmark.ms_tooComplexTags.ToArray() );
-				F.ShowDialog( this );
-			}
-
 			return successfullyImportedBookmarksCounter;
 		}
 
@@ -450,7 +446,8 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 			public List< Bookmark >	m_children = new List<Bookmark>();
 
 			// List of tags that may be too complex
-			public static List< Fiche >	ms_tooComplexTags = new List<Fiche>();
+			public static List< Fiche >	ms_tags;// = new List<Fiche>();
+			public static List< Fiche >	ms_complexNameTags;// = new List<Fiche>();
 
 			// Cached fiche
 			private Fiche			m_fiche = null;
@@ -461,7 +458,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 
 					// Create the fiche
 					switch ( m_type ) {
-						case Bookmark.TYPE.FOLDER:
+						case Bookmark.TYPE.FOLDER: {
 							// Folders are like tags, we will create the tag if it doesn't exist or reference it otherwise
 							if ( m_GUID != Guid.Empty ) {
 								m_fiche = m_database.FindFicheByGUID( m_GUID );
@@ -473,42 +470,55 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 								// Create a "tag" fiche...
 
 								// Check the tag name is not too complex...
-								string		name = m_name;
-								string[]	tagWords = name.Split( ' ' );
+								string[]	tagWords = m_name.Split( ' ' );
 								bool		tooComplex = false;
-								if ( tagWords.Length > 1 ) {
-									name = "";
-									if ( tagWords.Length > 4 )
-										tooComplex = true;	// Starts getting complex!
-									float	averageWordLength = 0;
-									foreach ( string word in tagWords ) {
-										averageWordLength += word.Length;
-										string	alphaNumericalWord = WebHelpers.MakeAlphaNumerical( word );
-										if ( alphaNumericalWord != word )
-											tooComplex = true;	// Invalid characters
+								string		name = "";
+								if ( tagWords.Length >= 4 )
+									tooComplex = true;	// Starts getting complex!
+								float	averageWordLength = 0;
+								foreach ( string word in tagWords ) {
+									averageWordLength += word.Length;
+									string	alphaNumericalWord = WebHelpers.MakeAlphaNumerical( word );
+									if ( alphaNumericalWord != word )
+										tooComplex = true;	// Invalid characters
 
-										name += "_" + alphaNumericalWord;
+									name += "_" + alphaNumericalWord;
+								}
+								name = name.Substring( 1 );	// Remove header '_'
+								averageWordLength /= Math.Max( 2, tagWords.Length );	// Single-words are privileged, even though the word is long!
+								if ( averageWordLength >= 6 )
+									tooComplex = true;	// Starts getting complex!
+
+								// Check if a fiche with the same name and URL exist
+								Fiche[]	existingFiches = m_database.FindFichesByTitle( name, false );
+								foreach ( Fiche existingFiche in existingFiches ) {
+									if ( existingFiche.URL == null ) {
+										// So we have a small fiche with the same name and an empty URL, which is exactly the fiche we would create
+										// Let's re-use the existing fiche instead...
+										m_fiche = existingFiche;
+										break;
 									}
-									name = name.Substring( 1 );	// Remove header '_'
-									averageWordLength /= tagWords.Length;
-									if ( averageWordLength >= 8 )
-										tooComplex = true;	// Starts getting complex!
 								}
 
-								// Create the tag fiche
-								m_fiche = m_database.SyncFindOrCreateTagFiche( name );
-								m_fiche.GUID = m_GUID;
-								m_fiche.CreationTime = m_dateAdded;
+								if ( m_fiche == null ) {
+									// Create the tag fiche
+									m_fiche = m_database.SyncFindOrCreateTagFiche( name );
+									m_fiche.GUID = m_GUID;
+									m_fiche.CreationTime = m_dateAdded;
 
-								// Save whenever possible
-								m_database.AsyncSaveFiche( m_fiche );
+									// Save whenever possible
+									m_database.AsyncSaveFiche( m_fiche, true );
 
-								if ( tooComplex )
-									ms_tooComplexTags.Add( m_fiche );
+									// Register new tag
+									ms_tags.Add( m_fiche );
+									if ( tooComplex )
+										ms_complexNameTags.Add( m_fiche );
+								}
 							}
 							break;
+						}
 
-						case Bookmark.TYPE.URL:
+						case Bookmark.TYPE.URL: {
 							// Create a regular fiche
 							Fiche	existingFiche = null;
 							if ( m_GUID != Guid.Empty ) {
@@ -529,9 +539,9 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 								break;	// No need to create the fiche as it already exists...
 							}
 
-							// Attempt to retrieve parent fiches
+							// Attempt to retrieve parent fiches unless they're root folders (the root folders are usually useless)
 							List< Fiche >	parents = new List<Fiche>();
-							if ( m_parent != null ) {
+							if ( m_parent != null && m_parent.m_parent != null ) {
 								parents.Add( m_parent.Fiche );	// This should in turn create the parent fiche if it doesn't exist yet
 							}
 							string[]	tags = WebHelpers.ExtractTags( m_name );
@@ -544,10 +554,12 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 							// Create the new fiche
 							m_fiche = m_database.SyncCreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, m_name, m_URL, parents.ToArray(), null );
 							m_fiche.GUID = m_GUID;
+							m_fiche.CreationTime = m_dateAdded;
 
 							// Asynchronously load content & save the fiche when ready
-							m_database.AsyncLoadContentAndSaveFiche( m_fiche );
+							m_database.AsyncLoadContentAndSaveFiche( m_fiche, true );
 							break;
+						}
 					}
 
 					return m_fiche;
@@ -682,14 +694,16 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 		}
 
 		private void buttonImportBookmarks_Click(object sender, EventArgs e) {
-			int	totalImportedBookmarksCount = 0;
+			int				totalImportedBookmarksCount = 0;
+			List< Fiche >	createdTags = new List<Fiche>();
+			List< Fiche >	complexNameTags = new List<Fiche>();
 			foreach ( ListViewItem item in listViewBookmarks.SelectedItems ) {
 				try {
 					BookmarkFile	bookmark = item.Tag as BookmarkFile;
 
 					switch ( bookmark.m_type ) {
 						case BookmarkFile.BOOKMARK_TYPE.CHROME:
-							totalImportedBookmarksCount += ImportBookmarksChrome( bookmark.m_fileName );
+							totalImportedBookmarksCount += ImportBookmarksChrome( bookmark.m_fileName, createdTags, complexNameTags );
 							break;
 					}
 				} catch ( Exception _e ) {
@@ -697,10 +711,23 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 				}
 			}
 
-			if ( totalImportedBookmarksCount == 0 )
+			if ( totalImportedBookmarksCount == 0 ) {
 				BrainForm.MessageBox( "No bookmarks were imported...", MessageBoxButtons.OK, MessageBoxIcon.Warning );
-			else
-				BrainForm.MessageBox( totalImportedBookmarksCount.ToString() + " bookmarks were successfully imported!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+				return;
+			}
+
+			if ( complexNameTags.Count == 0 ) {
+				BrainForm.MessageBox( (totalImportedBookmarksCount - createdTags.Count).ToString() + " bookmarks were successfully imported.\r\n" + createdTags.Count + " tags have been discovered.", MessageBoxButtons.OK, MessageBoxIcon.Information );
+				return;
+			}
+
+			// Ask the user to rename the tags that were marked as "too complex"
+			BrainForm.MessageBox( (totalImportedBookmarksCount - createdTags.Count).ToString() + " bookmarks were successfully imported.\r\n" + createdTags.Count + " tags have been discovered but " + complexNameTags.Count + " of them have names that are deemed too complex."
+				+ "\r\n\r\nClick OK to open the list where you can rename them into easier-to-read tags (this is totally optional, you can use long tag names if they seem okay to you!).", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+
+			// Ask the user to rename complex names
+			ComplexTagNamesForm	F = new ComplexTagNamesForm( Bookmark.ms_complexNameTags.ToArray() );
+			F.ShowDialog( this );
 		}
 
 		#endregion

@@ -734,3 +734,5 @@ obj
 /Intro/Resources/Scenes/Sponza/Probes/Probe45.pom
 /Intro/Resources/Scenes/Sponza/Probes/Probe46.pom
 /Intro/Resources/Scenes/Sponza/texturesPOM
+*.user
+*.suo

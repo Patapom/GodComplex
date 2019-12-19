@@ -74,7 +74,9 @@ namespace Brain2 {
 		DateTime					m_lastFrameTime;
 
 		// Modeless forms
+		bool						m_showPreferenceFormOnShowMain = false;
 		PreferencesForm				m_preferenceForm = null;
+		bool						m_showEditorFormOnShowMain = false;
 		FicheEditorForm				m_ficheEditorForm = null;
 
 		#endregion
@@ -158,7 +160,7 @@ foreach ( string format in _data.GetFormats() ) {
 	Debug( format + " => " + (data!=null ? data.ToString() : "<null>") );
 }
 Debug( "_____________________________" );
-Hide();
+//Hide();
 
 				// Ask factory to create the best fiche for our data
 				Fiche	fiche = m_database.CreateFicheFromClipboard( _data );
@@ -166,7 +168,7 @@ Hide();
 				// Start edition
 				m_ficheEditorForm.EditedFiche = fiche;
 
-Show();
+//Show();
 
 				m_ficheEditorForm.Show( this );
 
@@ -219,8 +221,14 @@ this.TopMost = false;
 
 				m_database.LoadFichesDescription( rootDBFolder );
 
+			} catch ( FichesDB.DatabaseLoadException _e ) {
+				// Log errors...
+				foreach ( Exception e in _e.m_errors ) {
+					LogError( e );
+				}
+
 			} catch ( Exception _e ) {
- 				MessageBox( "Error when creating forms and loading database!\r\n\n", _e );
+ 				MessageBox( "Error when creating forms!\r\n\n", _e );
 // 				Close();
 //				Application.Exit();
 			}
@@ -408,6 +416,17 @@ this.TopMost = false;
 				}
 			}
 
+			// Restore any previously open form
+			if ( m_showPreferenceFormOnShowMain ) {
+				m_showPreferenceFormOnShowMain = false;
+				m_preferenceForm.Show();
+			}
+
+			if ( m_showEditorFormOnShowMain ) {
+				m_showEditorFormOnShowMain = false;
+				m_ficheEditorForm.Show();
+			}
+
 			base.Show();
 //			Capture = true;
 		}
@@ -417,7 +436,10 @@ this.TopMost = false;
 				return;	// No change...
 
 			// Also hide any open form
+			m_showEditorFormOnShowMain = m_preferenceForm.Visible;
 			m_preferenceForm.Hide();
+
+			m_showEditorFormOnShowMain = m_ficheEditorForm.Visible;
 			m_ficheEditorForm.Hide();
 
 //			Capture = false;
@@ -586,6 +608,17 @@ this.TopMost = false;
 		#endregion
 
 		#region Helpers
+
+		public static void	LogError( Exception _e ) {
+Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
+		}
+
+		static string	ExpandExceptionMessages( Exception _e ) {
+			string	finalMessage = _e.Message;
+			if ( _e.InnerException != null )
+				finalMessage = finalMessage + "\r\n" + ExpandExceptionMessages( _e.InnerException );
+			return finalMessage;
+		}
 
 		public static void	MessageBox( string _message, Exception _e ) {
 			MessageBox( _message + _e.Message, MessageBoxIcon.Error );

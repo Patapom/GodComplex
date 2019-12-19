@@ -201,7 +201,7 @@ void	ImageFile::Save( const wchar_t* _fileName, FILE_FORMAT _format, SAVE_FLAGS 
 	// Apparently, FreeImage **always** flips the images vertically so we need to flip them back after saving
 	FreeImage_FlipVertical( m_bitmap );
 }
-void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64 _fileSize, void*& _fileContent ) const {
+void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64& _fileSize, void*& _fileContent ) const {
 	if ( _format == FILE_FORMAT::UNKNOWN )
 		throw "Unrecognized image file format!";
 	if ( m_bitmap == nullptr )

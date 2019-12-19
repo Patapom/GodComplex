@@ -28,6 +28,21 @@ Of course, there is no obligation to do that as you can use arbitrary tag names,
 			listViewTagNames.ResumeLayout();
 		}
 
+		protected override void OnClosing(CancelEventArgs e) {
+			base.OnClosing(e);
+
+			// Save fiches that changed
+			foreach ( ListViewItem item in listViewTagNames.Items ) {
+				Fiche	fiche = item.Tag as Fiche;
+				if ( item.Text == fiche.Title )
+					continue;	// No change...
+
+				// Update title & request saving
+				fiche.Title = item.Text;
+				fiche.Database.AsyncSaveFiche( fiche, true );
+			}
+		}
+
 		protected override void OnKeyDown(KeyEventArgs e) {
 			base.OnKeyDown(e);
 			if ( e.KeyCode == Keys.Escape )
@@ -35,9 +50,9 @@ Of course, there is no obligation to do that as you can use arbitrary tag names,
 		}
 
 		private void listViewTagNames_AfterLabelEdit(object sender, LabelEditEventArgs e) {
-			ListViewItem	item = listViewTagNames.Items[e.Item];
-			Fiche	F = item.Tag as Fiche;
-					F.Title = e.Label;
+// 			ListViewItem	item = listViewTagNames.Items[e.Item];
+// 			Fiche	F = item.Tag as Fiche;
+// 					F.Title = e.Label;
 		}
 	}
 }

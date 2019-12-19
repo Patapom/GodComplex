@@ -10,6 +10,7 @@ namespace Brain2 {
 	/// <summary>
 	/// The main fiches database
 	/// </summary>
+	[System.Diagnostics.DebuggerDisplay( "{m_fiches.Count} Registered Fiches" )]
 	public class FichesDB : IDisposable {
 
 		#region CONSTANTS
@@ -49,7 +50,7 @@ namespace Brain2 {
 				string	title = text;	// Do better?
 				string	HTML = WebHelpers.BuildHTMLDocument( title, text );
 				Fiche	F = _database.SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, text, null, null, HTML );
-				_database.AsyncSaveFiche( F );
+				_database.AsyncSaveFiche( F, true );
 				return F;
 			}
 		}
@@ -137,7 +138,7 @@ namespace Brain2 {
 				Fiche	F = _database.SyncCreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, _title, _URL, tagFiches.ToArray(), null );
 
 				// Load the web page and save the fiche when ready
-				_database.AsyncLoadContentAndSaveFiche( F );
+				_database.AsyncLoadContentAndSaveFiche( F, true );
 
 				return F;
 			}
@@ -163,13 +164,15 @@ namespace Brain2 {
 
 			public class		JobFillFiche : JobBase {
 				public Fiche		m_fiche;
-				public JobFillFiche( FichesDB _owner, Fiche _fiche ) : base( _owner ) { m_fiche = _fiche; }
+				public bool			m_unloadContentAfterSave;
+				public JobFillFiche( FichesDB _owner, Fiche _fiche, bool _unloadContentAfterSave ) : base( _owner ) { m_fiche = _fiche; m_unloadContentAfterSave = _unloadContentAfterSave; }
 				public override void	Run() {
 					// Request the content asynchronously
 					m_owner.AsyncRenderWebPage( m_fiche.URL,
 						// On success => update content
 						( string _HTMLContent, ImageUtility.ImageFile _imageWebPage ) => {
 							m_fiche.Lock( Fiche.STATUS.UPDATING, () => {
+
 								m_fiche.HTMLContent = _HTMLContent;
 
 								// Create image chunk
@@ -179,7 +182,7 @@ namespace Brain2 {
 								m_fiche.CreateThumbnailChunkFromImage( _imageWebPage );
 
 								// Request to save the fiche now that it's complete...
-								m_owner.AsyncSaveFiche( m_fiche );
+								m_owner.AsyncSaveFiche( m_fiche, m_unloadContentAfterSave );
 							} );
 						},
 						// On error => Log error? Todo?
@@ -193,7 +196,7 @@ namespace Brain2 {
 				public Fiche.ChunkBase	m_caller;
 				public JobLoadChunk( FichesDB _owner, Fiche.ChunkBase _caller ) : base( _owner ) { m_caller = _caller; }
 				public override void	Run() {
-					using ( Stream S = m_owner.RequestFicheStream( m_caller.OwnerFiche, true ) ) {
+					using ( Stream S = m_owner.SyncRequestFicheStream( m_caller.OwnerFiche, true ) ) {
 						m_caller.OwnerFiche.Lock( Fiche.STATUS.LOADING, () => {
 							m_caller.Threaded_LoadContent( S );
 						} );
@@ -202,10 +205,11 @@ namespace Brain2 {
 			}
 
 			public class		JobSaveFiche : JobBase {
-				public Fiche	m_caller;
-				public JobSaveFiche( FichesDB _owner, Fiche _caller ) : base( _owner ) { m_caller = _caller; }
+				public Fiche		m_caller;
+				public bool			m_unloadContentAfterSave;
+				public JobSaveFiche( FichesDB _owner, Fiche _caller, bool _unloadContentAfterSave ) : base( _owner ) { m_caller = _caller; m_unloadContentAfterSave = _unloadContentAfterSave; }
 				public override void	Run() {
-					using ( Stream S = m_owner.RequestFicheStream( m_caller, true ) ) {
+					using ( Stream S = m_owner.SyncRequestFicheStream( m_caller, false ) ) {
 						using ( BinaryWriter W = new BinaryWriter( S ) ) {
 							// Ensure the fiche is ready so it can be saved
 							if ( m_caller.Status != Fiche.STATUS.READY )
@@ -213,6 +217,9 @@ namespace Brain2 {
 
 							m_caller.Lock( Fiche.STATUS.SAVING, () => {
 								m_caller.Write( W );
+
+								if ( m_unloadContentAfterSave )
+									m_caller.UnloadImageChunk();
 							} );
 						}
 					}
@@ -275,7 +282,11 @@ namespace Brain2 {
 					lock ( _this.m_database.m_threadedJobs ) {
 						if ( _this.m_database.m_threadedJobs.Count > 0 ) {
 							JobBase	job = _this.m_database.m_threadedJobs.Dequeue();
-							job.Run();
+							try {
+								job.Run();
+							} catch ( Exception _e ) {
+								_this.m_database.SyncReportError( "A \"" + job.ToString() + "\" failed with error: " + _e.Message );
+							}
 						}
 					}
 				}
@@ -283,6 +294,13 @@ namespace Brain2 {
 		}
 
 		#endregion
+
+		public class DatabaseLoadException : Exception {
+			public Exception[]	m_errors;
+			public DatabaseLoadException( Exception[] _errors ) {
+				m_errors = _errors;
+			}
+		}
 
 		#endregion
 
@@ -440,17 +458,18 @@ namespace Brain2 {
 		// 		}
 
 		public void	LoadFichesDescription( DirectoryInfo _rootFolder ) {
+			List< Exception >	errors = new List<Exception>();
 			try {
 				if ( _rootFolder == null || !_rootFolder.Exists )
 					throw new Exception( "Invalid root folder!" );
 
 				m_rootFolder = _rootFolder;
 
-				// Release all existing fiches first
-				Fiche[]	fiches = m_fiches.ToArray();
-				foreach ( Fiche F in fiches ) {
-					F.Dispose();
-				}
+// 				// Release all existing fiches first
+// 				Fiche[]	fiches = m_fiches.ToArray();
+// 				foreach ( Fiche F in fiches ) {
+// 					F.Dispose();
+// 				}
 
 				// Prepare the Everything query
 				string	everythingQuery = "parent:" + _rootFolder.FullName.Replace( "/", "\\" );
@@ -469,7 +488,6 @@ namespace Brain2 {
 				}
 
 				// Process fiches
-				List< Exception >	errors = new List<Exception>();
 				foreach ( Everything.Search.Result result in results ) {
 					try {
 						if ( !result.IsFile )
@@ -477,7 +495,7 @@ namespace Brain2 {
 
 						FileInfo	file = new FileInfo( result.FullName );
 						if ( !file.Exists )
-							throw new Exception( "Result file \"" + result.PathName + "\" doesn't exist!" );
+							throw new Exception( "Returned fiche file \"" + result.PathName + "\" doesn't exist!" );
 
 						// Attempt to read fiche from file
 						Fiche	F = null;
@@ -488,24 +506,25 @@ namespace Brain2 {
 								}
 							}
 						} catch ( Exception _e ) {
-							throw new Exception( "Error reading file \"" + file.FullName + "\"!", _e );
+							throw new Exception( "Error reading fiche \"" + file.FullName + "\"!", _e );
 						}
 
 					} catch ( Exception _e ) {
 						errors.Add( _e );
 					}
 				}
-				if ( errors.Count > 0 )
-					throw new Exception( "Some errors occurred while processing Everything results..." );
 
 			} catch ( Exception _e ) {
-				throw new Exception( "An error occurred while loading the database: " + _e.Message, _e );
+				errors.Add( _e );
 			} finally {
 				// Resolve all possible tag fiches given their GUID
 				foreach ( Fiche F in m_fiches ) {
 					F.ResolveTags( m_GUID2Fiche );
 				}
 			}
+
+			if ( errors.Count > 0 )
+				throw new DatabaseLoadException( errors.ToArray() );
 		}
 
 		public void	Rebase( DirectoryInfo _rootFolder ) {
@@ -527,14 +546,24 @@ throw new Exception( "TODO!" );
 		public void	OnIdle() {
 			lock ( m_mainThreadJobs ) {
 				while ( m_mainThreadJobs.Count > 0 ) {
-					m_mainThreadJobs.Dequeue().Run();
+					WorkingThread.JobBase	job = m_mainThreadJobs.Dequeue();
+					try {
+						job.Run();
+					} catch ( Exception _e ) {
+						SyncReportError( "A \"" + job.ToString() + "\" failed with error: " + _e.Message );
+					}
 				}
 			}
 
 #if DEBUG_SINGLE_THREADED
 	lock ( m_threadedJobs )
 		while ( m_threadedJobs.Count > 0 ) {
-			m_threadedJobs.Dequeue().Run();
+			WorkingThread.JobBase	job = m_threadedJobs.Dequeue();
+			try {
+				job.Run();
+			} catch ( Exception _e ) {
+				SyncReportError( "A \"" + job.ToString() + "\" failed with error: " + _e.Message );
+			}
 		}
 #endif
 		}
@@ -542,30 +571,6 @@ throw new Exception( "TODO!" );
 		#endregion
 
 		#region Synchronous, Asynchronous & Multithreaded Operations
-
-		/// <summary>
-		/// Ask a thread to fill the content of the fiche asynchronously (we'll be notified on the main thread when the content is available)
-		/// </summary>
-		/// <param name="_fiche"></param>
-		/// <returns>The temporary fiche with only a valid desciptor</returns>
-		internal void	AsyncLoadContentAndSaveFiche( Fiche _fiche ) {
-			// Create a new job and let the threads handle it
-			WorkingThread.JobFillFiche	job = new WorkingThread.JobFillFiche( this, _fiche );
-			lock ( m_threadedJobs )
-				m_threadedJobs.Enqueue( job );
-		}
-
-		/// <summary>
-		/// Creates a fiche with obly a valid descriptor (usually filled later asynchronouly)
-		/// </summary>
-		/// <param name="_type"></param>
-		/// <param name="_title"></param>
-		/// <param name="_URL"></param>
-		/// <param name="_HTMLContent">Optional HTML content, will be replaced by actual content for remote URLs</param>
-		/// <returns></returns>
-		public Fiche	SyncCreateFicheDescriptor( Fiche.TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) {
-			return new Fiche( this, _type, _title, _URL, _tags, _HTMLContent );
-		}
 
 		/// <summary>
 		/// Create a fiche from drag'n drop data types.
@@ -599,15 +604,6 @@ throw new Exception( "TODO!" );
 			if ( bestHandler == null )
 				return null;
 
-			// Create the fiche using the best possible handler
-			object	data = _data.GetData( bestFormat );
-			if ( data == null )
-				throw new Exception( "Failed to retrieve drop data for format \"" + bestFormat + "\"!" );
-
-			Fiche	fiche = bestHandler.CreateFiche( this, bestFormat, data );
-			return fiche;
-		}
-
 // DragContext => System.IO.MemoryStream
 // DragImageBits => System.IO.MemoryStream
 // text/x-moz-url => System.IO.MemoryStream
@@ -619,28 +615,23 @@ throw new Exception( "TODO!" );
 // UnicodeText => https://stackoverflow.com/questions/36822654/alternative-for-text-x-moz-url-in-chrome-ie-10-edge-in-event-datatransfer
 // Text => https://stackoverflow.com/questions/36822654/alternative-for-text-x-moz-url-in-chrome-ie-10-edge-in-event-datatransfer
 
-		/// <summary>
-		/// Finds or creates the requested tag fiche
-		/// </summary>
-		/// <param name="_tag"></param>
-		/// <returns></returns>
-		public Fiche	SyncFindOrCreateTagFiche( string _tag ) {
-			Fiche[]	tagFiches = FindFichesByTitle( _tag, false );
-			if ( tagFiches.Length > 0 ) {
-				return tagFiches[0];	// Arbitrarily use first tag...
-			}
+			// Create the fiche using the best possible handler
+			object	data = _data.GetData( bestFormat );
+			if ( data == null )
+				throw new Exception( "Failed to retrieve drop data for format \"" + bestFormat + "\"!" );
 
-			// Create the tag
-			return SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, null, null, WebHelpers.BuildHTMLDocument( _tag, null ) );
+			Fiche	fiche = bestHandler.CreateFiche( this, bestFormat, data );
+			return fiche;
 		}
 
 		/// <summary>
 		/// Ask a thread to perform the save asynchronously (we'll be notified on the main thread when the content is saved)
 		/// </summary>
 		/// <param name="_caller"></param>
-		internal void	AsyncSaveFiche( Fiche _caller ) {
+		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
+		internal void	AsyncSaveFiche( Fiche _caller, bool _unloadContentAfterSave ) {
 			// Create a new job and let the loading threads handle it
-			WorkingThread.JobSaveFiche	job = new WorkingThread.JobSaveFiche( this, _caller );
+			WorkingThread.JobSaveFiche	job = new WorkingThread.JobSaveFiche( this, _caller, _unloadContentAfterSave );
 			lock ( m_threadedJobs )
 				m_threadedJobs.Enqueue( job );
 		}
@@ -667,6 +658,45 @@ throw new Exception( "TODO!" );
 				m_threadedJobs.Enqueue( job );
 		}
 
+		/// <summary>
+		/// Ask a thread to fill the content of the fiche asynchronously (we'll be notified on the main thread when the content is available)
+		/// </summary>
+		/// <param name="_fiche"></param>
+		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
+		/// <returns>The temporary fiche with only a valid desciptor</returns>
+		internal void	AsyncLoadContentAndSaveFiche( Fiche _fiche, bool _unloadContentAfterSave ) {
+			// Create a new job and let the threads handle it
+			WorkingThread.JobFillFiche	job = new WorkingThread.JobFillFiche( this, _fiche, _unloadContentAfterSave );
+			lock ( m_threadedJobs )
+				m_threadedJobs.Enqueue( job );
+		}
+
+		/// <summary>
+		/// Creates a fiche with obly a valid descriptor (usually filled later asynchronouly)
+		/// </summary>
+		/// <param name="_type"></param>
+		/// <param name="_title"></param>
+		/// <param name="_URL"></param>
+		/// <param name="_HTMLContent">Optional HTML content, will be replaced by actual content for remote URLs</param>
+		/// <returns></returns>
+		public Fiche	SyncCreateFicheDescriptor( Fiche.TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) {
+			return new Fiche( this, _type, _title, _URL, _tags, _HTMLContent );
+		}
+
+		/// <summary>
+		/// Finds or creates the requested tag fiche
+		/// </summary>
+		/// <param name="_tag"></param>
+		/// <returns></returns>
+		public Fiche	SyncFindOrCreateTagFiche( string _tag ) {
+			Fiche[]	tagFiches = FindFichesByTitle( _tag, false );
+			if ( tagFiches.Length > 0 ) {
+				return tagFiches[0];	// Arbitrarily use first tag...
+			}
+
+			// Create the tag
+			return SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, null, null, WebHelpers.BuildHTMLDocument( _tag, null ) );
+		}
 
 		/// <summary>
 		/// Ask the main thread to perform our notification for us
@@ -696,8 +726,8 @@ throw new Exception( "TODO!" );
 		/// <param name="_fiche"></param>
 		/// <param name="_readOnly"></param>
 		/// <returns></returns>
-		internal Stream	RequestFicheStream( Fiche _fiche, bool _readOnly ) {
-			FileInfo	ficheFileName = new FileInfo( _fiche.FileName );
+		internal Stream	SyncRequestFicheStream( Fiche _fiche, bool _readOnly ) {
+			FileInfo	ficheFileName = new FileInfo( Path.Combine( m_rootFolder.FullName, _fiche.FileName ) );
 			if ( _readOnly )
 				return ficheFileName.OpenRead();
 			else
