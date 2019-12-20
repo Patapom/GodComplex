@@ -17,7 +17,7 @@ namespace Brain2 {
 
 		protected const uint	MAX_WORKING_THREADS_COUNT = 10;
 
-		protected const float	DEFAULT_DELAY_BEFORE_SAVE_SECONDS = 10.0f;	// Automatically save modified fiched after 10 secondes
+		protected const float	DEFAULT_DELAY_BEFORE_SAVE_SECONDS = 5.0f;	// Automatically save modified fiched after 5 seconds
 
 		#endregion
 
@@ -210,7 +210,7 @@ namespace Brain2 {
 					try {
 						using ( FileStream S = m_ficheFileName.OpenRead() ) {
 							using ( BinaryReader R = new BinaryReader( S ) ) {
-								F = new Fiche( m_owner, R );
+								Fiche	F = new Fiche( m_owner, R );
 							}
 						}
 					} catch ( Exception _e ) {
@@ -240,7 +240,8 @@ namespace Brain2 {
 				public string	m_error;
 				public JobReportError( FichesDB _owner, string _error ) : base( _owner ) { m_error = _error; }
 				public override void	Run() {
-					m_owner.SyncReportError( m_error );
+					if ( m_owner.ErrorOccurred != null )
+						m_owner.ErrorOccurred( m_error );
 				}
 			}
 
@@ -303,6 +304,9 @@ namespace Brain2 {
 		class FicheUpdatedNeedsSaving {
 			public DateTime	m_timeLastModified;	// The time when the file was last accessed
 			public Fiche	m_fiche;			// The fiche that needs saving after having been updated
+			public FicheUpdatedNeedsSaving( Fiche _fiche ) {
+				m_fiche = _fiche;
+			}
 		}
 
 		public class DatabaseLoadException : Exception {
@@ -311,6 +315,8 @@ namespace Brain2 {
 				m_errors = _errors;
 			}
 		}
+
+		public delegate void	ErrorHandler( string _error );
 
 		#endregion
 
@@ -346,6 +352,8 @@ namespace Brain2 {
 		#endregion
 
 		#region PROPERTIES
+
+		public event ErrorHandler		ErrorOccurred;
 
 		#endregion
 
@@ -735,7 +743,7 @@ throw new Exception( "TODO!" );
 			lock ( m_fiche2NeedToSave ) {
 				FicheUpdatedNeedsSaving	saveTimer = null;
 				if ( !m_fiche2NeedToSave.TryGetValue( _fiche, out saveTimer ) )
-					m_fiche2NeedToSave.Add( _fiche, saveTimer = new FicheUpdatedNeedsSaving() );
+					m_fiche2NeedToSave.Add( _fiche, saveTimer = new FicheUpdatedNeedsSaving( _fiche ) );
 				saveTimer.m_timeLastModified = DateTime.Now;	// Reset timer
 			}
 		}
@@ -947,16 +955,18 @@ throw new Exception( "TODO!" );
 			lock ( m_GUID2FichesRequiringTag ) {
 				// Attempt to register the fiche's tags
 				List< Fiche >	fichesTaggedWithNewFiche = null;
-				foreach ( Guid tagGUID in _fiche.m_tagGUIDs ) {
-					Fiche	tag = null;
-					if ( m_GUID2Fiche.TryGetValue( tagGUID, out tag ) ) {
-						_fiche.ResolveTag( tag );	// The tag already exists, resolve it now...
-					} else {
-						// The fiche isn't available yet, register ourselves as a requester...
-						if ( !m_GUID2FichesRequiringTag.TryGetValue( tagGUID, out fichesTaggedWithNewFiche ) ) {
-							m_GUID2FichesRequiringTag.Add( tagGUID, fichesTaggedWithNewFiche = new List<Fiche>() );
+				if ( _fiche.m_tagGUIDs != null ) {
+					foreach ( Guid tagGUID in _fiche.m_tagGUIDs ) {
+						Fiche	tag = null;
+						if ( m_GUID2Fiche.TryGetValue( tagGUID, out tag ) ) {
+							_fiche.ResolveTag( tag );	// The tag already exists, resolve it now...
+						} else {
+							// The fiche isn't available yet, register ourselves as a requester...
+							if ( !m_GUID2FichesRequiringTag.TryGetValue( tagGUID, out fichesTaggedWithNewFiche ) ) {
+								m_GUID2FichesRequiringTag.Add( tagGUID, fichesTaggedWithNewFiche = new List<Fiche>() );
+							}
+							fichesTaggedWithNewFiche.Add( _fiche );
 						}
-						fichesTaggedWithNewFiche.Add( _fiche );
 					}
 				}
 

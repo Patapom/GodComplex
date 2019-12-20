@@ -196,6 +196,7 @@ this.TopMost = false;
 
 			try {
 				m_database = new FichesDB();
+				m_database.ErrorOccurred += database_ErrorOccurred;
 
 				// Create the modeless forms
 				m_preferenceForm = new PreferencesForm( this );
@@ -515,7 +516,16 @@ this.TopMost = false;
 							// Create quick fiche & ask for tags in a very light way
 							try {
 								IDataObject	clipboardData = Clipboard.GetDataObject();
-								Fiche	F = m_database.CreateFicheFromClipboard( clipboardData );
+								Fiche	fiche = m_database.CreateFicheFromClipboard( clipboardData );
+
+								FastTaggerForm	F = new FastTaggerForm( this, new Fiche[] { fiche } );
+												//F.Location = this.Location + this.Size - F.Size;	// Bottom-right of the screen
+												F.CenterOnPoint( Control.MousePosition );			// Center on mouse
+												F.Show( this );
+
+								// Make it the last edited fiche
+								m_ficheEditorForm.EditedFiche = fiche;
+
 							} catch ( Exception _e ) {
 // @TODO => Show an error dialog!
 								LogError( _e );
@@ -527,11 +537,14 @@ this.TopMost = false;
 							try {
  								Fiche	fiche = m_database.SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, "New Fiche", null, null, null );
 
-FastTaggerForm	F = new FastTaggerForm( fiche );
+FastTaggerForm	F = new FastTaggerForm( this, new Fiche[] { fiche } );
 F.Show( this );
+//F.Location = this.Location + this.Size - F.Size;	// Bottom-right of the screen
+F.CenterOnPoint( Control.MousePosition );			// Center on mouse
 
-// 								m_ficheEditorForm.EditedFiche = fiche;
-// 
+								// Make it the last edited fiche
+ 								m_ficheEditorForm.EditedFiche = fiche;
+ 
 // 								// Show both the application & the fiche editor
 // 								m_showEditorFormOnShowMain = true;
 // 								Show();
@@ -688,6 +701,10 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 		#endregion
 
 		#region EVENTS
+
+		private void database_ErrorOccurred( string _error ) {
+			LogError( new Exception( _error ) );
+		}
 
 // 		protected override bool ProcessKeyPreview(ref Message m) {
 // 			return base.ProcessKeyPreview(ref m);

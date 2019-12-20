@@ -26,6 +26,7 @@ namespace Brain2 {
 
 		#region PROPERTIES
 
+		protected override bool Sizeable => false;
 		public override Keys SHORTCUT_KEY => Keys.F9;
 
 		public string		RootDBFolder {

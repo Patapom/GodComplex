@@ -26,6 +26,7 @@ namespace Brain2 {
 
 		#region PROPERTIES
 
+		protected override bool Sizeable => true;
 		public override Keys SHORTCUT_KEY => Keys.F5;
 
 		public Fiche		EditedFiche {
@@ -70,7 +71,6 @@ namespace Brain2 {
 		#region METHODS
 
 		public FicheEditorForm( BrainForm _owner ) : base( _owner ) {
-			m_sizeable = true;
 			InitializeComponent();
 
 			webEditor.DocumentUpdated += WebEditor_DocumentUpdated;

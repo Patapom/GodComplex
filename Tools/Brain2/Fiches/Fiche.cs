@@ -447,6 +447,10 @@ namespace Brain2 {
 			}
 		}
 
+		public Fiche[]				Tags {
+			get { return m_tags.ToArray(); }
+		}
+
 		/// <summary>
 		/// Generates a unique filename for the fiche
 		/// </summary>

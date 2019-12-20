@@ -23,7 +23,6 @@ namespace Brain2 {
 
 		protected BrainForm	m_owner = null;
 
-		protected bool		m_sizeable = false;
 		protected int		m_hitArea = Interop.HTCAPTION;
 
 		protected System.Drawing.Size		m_relativeLocation = new System.Drawing.Size( -1, -1 );
@@ -32,6 +31,7 @@ namespace Brain2 {
 
 		#region PROPERTIES
 
+		protected abstract bool	Sizeable { get; }
 		public abstract Keys	SHORTCUT_KEY { get; }
 
 		#endregion
@@ -42,6 +42,20 @@ namespace Brain2 {
 			m_owner = _owner;
 
 			InitializeComponent();
+			KeyPreview = true;
+		}
+
+		/// <summary>
+		/// Centers the form on the specified screen position, ensuring the form rectangle doesn't crosse screen boundaries
+		/// </summary>
+		/// <param name="_screenPosition"></param>
+		public void	CenterOnPoint( Point _screenPosition ) {
+			Point	topLeft = _screenPosition;
+			topLeft.X -= Width / 2;
+			topLeft.Y -= Height / 2;
+			topLeft.X = Math.Max( m_owner.Left, Math.Min( m_owner.Right - Width, topLeft.X ) );
+			topLeft.Y = Math.Max( m_owner.Top, Math.Min( m_owner.Bottom - Height, topLeft.Y ) );
+			this.Location = topLeft;
 		}
 
 // 		public new void	Show() {
@@ -141,7 +155,7 @@ namespace Brain2 {
 // 			}
 
 			m_hitArea = Interop.HTCAPTION;
-			if ( m_sizeable ) {
+			if ( Sizeable ) {
 				int	borderLeft = e.X < BORDER_SIZE ? 1 : 0;
 				int	borderRight = e.X > Width-BORDER_SIZE ? 2 : 0;
 				int	borderTop = e.Y < BORDER_SIZE ? 4 : 0;

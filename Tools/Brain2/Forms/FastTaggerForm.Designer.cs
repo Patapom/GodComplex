@@ -49,8 +49,8 @@
 			this.richTextBoxTags.Multiline = false;
 			this.richTextBoxTags.Name = "richTextBoxTags";
 			this.richTextBoxTags.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
-			this.richTextBoxTags.Size = new System.Drawing.Size(678, 42);
-			this.richTextBoxTags.TabIndex = 2;
+			this.richTextBoxTags.Size = new System.Drawing.Size(676, 42);
+			this.richTextBoxTags.TabIndex = 0;
 			this.richTextBoxTags.Text = "#Tag";
 			this.richTextBoxTags.WordWrap = false;
 			this.richTextBoxTags.TextChanged += new System.EventHandler(this.richTextBoxTags_TextChanged);
@@ -60,10 +60,12 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-			this.ClientSize = new System.Drawing.Size(702, 79);
+			this.ClientSize = new System.Drawing.Size(700, 79);
 			this.Controls.Add(this.richTextBoxTags);
 			this.Controls.Add(this.labelInfo);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+			this.MaximumSize = new System.Drawing.Size(1920, 79);
+			this.MinimumSize = new System.Drawing.Size(700, 79);
 			this.Name = "FastTaggerForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "Complex Tag Names Fixer";
