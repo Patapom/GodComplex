@@ -33,6 +33,7 @@ namespace Brain2 {
 		/// </summary>
 		[Flags]
 		public enum NativeModifierKeys : uint {
+			None = 0,
 			Alt = 1,
 			Control = 2,
 			Shift = 4,
@@ -106,7 +107,10 @@ namespace Brain2 {
 		/// </summary>
 		/// <param name="modifier">The modifiers that are associated with the hot key.</param>
 		/// <param name="key">The key itself that is associated with the hot key.</param>
-		public static void RegisterHotKey( Control _owner,  Interop.NativeModifierKeys modifier, Keys key ) {
+		public static void RegisterHotKey( Control _owner, Interop.NativeModifierKeys modifier, Keys key ) {
+			RegisterHotKey( _owner, 0, modifier, key );
+		}
+		public static void RegisterHotKey( Control _owner, int _ID, Interop.NativeModifierKeys modifier, Keys key ) {
 			if ( !Interop.RegisterHotKey( _owner.Handle, 0, (uint) modifier, (uint) key ) )
 				throw new InvalidOperationException( "Couldn’t register the hot key." );
 		}

@@ -258,9 +258,8 @@ this.TopMost = false;
 				m_startTime = DateTime.Now;
 				Application.Idle += Application_Idle;
 
-				// Register Win+X to toggle visibility
-//				Interop.RegisterHotKey( this, Interop.NativeModifierKeys.Win | NativeModifierKeys.Shift, Keys.X );
-				Interop.RegisterHotKey( this, Interop.NativeModifierKeys.Win, Keys.X );
+				// Register global shortcuts
+				m_preferenceForm.RegisterHotKeys();
 
 				Focus();
 
@@ -436,7 +435,7 @@ this.TopMost = false;
 				return;	// No change...
 
 			// Also hide any open form
-			m_showEditorFormOnShowMain = m_preferenceForm.Visible;
+			m_showPreferenceFormOnShowMain = m_preferenceForm.Visible;
 			m_preferenceForm.Hide();
 
 			m_showEditorFormOnShowMain = m_ficheEditorForm.Visible;
@@ -499,11 +498,43 @@ this.TopMost = false;
 					Keys						key = (Keys) (((int)m.LParam >> 16) & 0xFFFF);
 					Interop.NativeModifierKeys	modifiers = (Interop.NativeModifierKeys) ((int)m.LParam & 0xFFFF);
 
-					// Toggle visibility
-					if ( Visible )
-						Hide();
-					else
-						Show();
+					PreferencesForm.Shortcut	shortcut = m_preferenceForm.HandleHotKey( modifiers, key );
+					if ( shortcut == null )
+						break;
+
+					switch ( shortcut.m_type ) {
+						case PreferencesForm.Shortcut.SHORTCUT.TOGGLE:
+							// Toggle visibility
+							if ( Visible )
+								Hide();
+							else
+								Show();
+							break;
+
+						case PreferencesForm.Shortcut.SHORTCUT.PASTE:
+							// Create quick fiche & ask for tags in a very light way
+							try {
+								IDataObject	clipboardData = Clipboard.GetDataObject();
+								Fiche	F = m_database.CreateFicheFromClipboard( clipboardData );
+							} catch ( Exception _e ) {
+// @TODO => Show an error dialog!
+								LogError( _e );
+							}
+							break;
+
+						case PreferencesForm.Shortcut.SHORTCUT.NEW:
+							// Show and create a new empty editable fiche
+							try {
+								Show();
+								Fiche	fiche = m_database.SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, "New Fiche", null, null, null );
+								m_ficheEditorForm.EditedFiche = fiche;
+								m_ficheEditorForm.Show( this );
+							} catch ( Exception _e ) {
+// @TODO => Show an error dialog!
+								LogError( _e );
+							}
+							break;
+					}
 					break;
 
 				case Interop.WM_KEYDOWN:
@@ -513,7 +544,8 @@ this.TopMost = false;
 					break;
 
 				default:
-					System.Diagnostics.Debug.WriteLine( "Message: " + m );
+// Log every message!
+//System.Diagnostics.Debug.WriteLine( "Message: " + m );
 					break;
 			}
 

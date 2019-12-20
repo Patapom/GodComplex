@@ -60,8 +60,134 @@ namespace Brain2 {
 			string	defaultDBFolder = Path.Combine( Directory.GetCurrentDirectory(), "BrainFiches" );
 			textBoxDatabaseRoot.Text = GetRegKey( "RootDBFolder", defaultDBFolder );
 
+			// Display shortcuts
+			labelShortcutToggle.Text = m_shortcuts[0].ToString();
+			labelShortcutPaste.Text = m_shortcuts[1].ToString();
+			labelShortcutNew.Text = m_shortcuts[2].ToString();
+
+			// Attempt to locate known browsers' bookmarks
 			LocateBookmarks();
 		}
+
+		#region Shortcuts Management
+
+		public class Shortcut {
+			public enum SHORTCUT {
+				TOGGLE,
+				PASTE,
+				NEW,
+			}
+
+			public SHORTCUT						m_type;
+			public Interop.NativeModifierKeys	m_modifier;
+			public Keys							m_key;
+			public int							m_ID = -1;
+
+			public override string ToString() {
+				string	str = "";
+				if ( m_modifier != Interop.NativeModifierKeys.None ) {
+					if ( (m_modifier & Interop.NativeModifierKeys.Win) != 0 )
+						str += "Win+";
+					if ( (m_modifier & Interop.NativeModifierKeys.Control) != 0 )
+						str += "Ctrl+";
+					if ( (m_modifier & Interop.NativeModifierKeys.Alt) != 0 )
+						str += "Alt+";
+					if ( (m_modifier & Interop.NativeModifierKeys.Shift) != 0 )
+						str += "Shift+";
+				}
+				str += m_key;
+				return str;
+			}
+
+			public delegate void	KeyCombinationUpdateHandler( Shortcut _S, Interop.NativeModifierKeys _newModifiers, Keys _newKey, bool _canceled );
+
+			public void	HandleKeyCombination( Interop.NativeModifierKeys _modifiers, Keys _key, KeyCombinationUpdateHandler _update ) {
+				if ( _key != Keys.Y )
+					return;
+				bool	canceled = _key == Keys.Escape;
+
+				_update( this, _modifiers, _key, canceled );
+			}
+
+			public void	Update( PreviewKeyDownEventArgs e ) {
+				m_modifier = Interop.NativeModifierKeys.None;
+				if ( (e.Modifiers & Keys.LWin) != 0 ) m_modifier |= Interop.NativeModifierKeys.Win;
+				if ( e.Control ) m_modifier |= Interop.NativeModifierKeys.Control;
+				if ( e.Alt ) m_modifier |= Interop.NativeModifierKeys.Alt;
+				if ( e.Shift ) m_modifier |= Interop.NativeModifierKeys.Shift;
+				m_key = e.KeyCode;
+			}
+			public void Update( Interop.NativeModifierKeys _modifiers, Keys _key ) {
+				m_modifier = _modifiers;
+				m_key = _key;
+			}
+		}
+
+		private Shortcut[]	m_shortcuts = new Shortcut[] {
+			new Shortcut() { m_type = Shortcut.SHORTCUT.TOGGLE,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.X },
+			new Shortcut() { m_type = Shortcut.SHORTCUT.PASTE,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.V },
+			new Shortcut() { m_type = Shortcut.SHORTCUT.NEW,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.N },
+		};
+
+		public void	RegisterHotKeys() {
+			int	keyID = 0;
+			foreach ( Shortcut S in m_shortcuts ) {
+				try {
+					Interop.RegisterHotKey( m_owner, keyID, S.m_modifier, S.m_key );
+					S.m_ID = keyID++;
+				} catch ( Exception _e ) {
+					// Maybe already hooked?
+					BrainForm.LogError( new Exception( "Failed to register " + S.m_type + " hotkey", _e ) );
+				}
+			}
+		}
+
+		public void	UnRegisterHotKeys() {
+			foreach ( Shortcut S in m_shortcuts ) {
+				try {
+					if ( S.m_ID >= 0 )
+						Interop.UnregisterHotKey( m_owner.Handle, S.m_ID );
+				} catch ( Exception _e ) {
+					BrainForm.LogError( new Exception( "Failed to unregister " + S.m_type + " hotkey", _e ) );
+				}
+			}
+		}
+
+		public Shortcut	HandleHotKey( Interop.NativeModifierKeys _modifier, Keys _key ) {
+			foreach ( Shortcut S in m_shortcuts ) {
+				if ( _modifier == S.m_modifier && _key == S.m_key )
+					return S;
+			}
+			return null;
+		}
+
+		private Shortcut	m_currentlyEditingShortcut = null;
+		private Label		m_currentlyEditingShortcutLabel = null;
+
+		protected override bool ProcessKeyPreview(ref Message m) {
+			if ( m_currentlyEditingShortcut == null )
+				return base.ProcessKeyPreview(ref m);
+
+			// Let's handle the message ourselves!
+// 			Keys						key = (Keys) (((int)m.LParam >> 16) & 0xFFFF);
+// 			Interop.NativeModifierKeys	modifiers = (Interop.NativeModifierKeys) ((int)m.LParam & 0xFFFF);
+
+			Interop.NativeModifierKeys	modifiers = Interop.NativeModifierKeys.None;
+			Keys						key = (Keys) m.WParam.ToInt32();
+
+			m_currentlyEditingShortcut.HandleKeyCombination( modifiers, key, ( Shortcut _S, Interop.NativeModifierKeys _newModifiers, Keys _newKey, bool _canceled ) => {
+				if ( !_canceled ) {
+					_S.Update( _newModifiers, _newKey );		// Validate combination
+				}
+
+				RegisterHotKeys();
+				m_currentlyEditingShortcutLabel.Text = _S.ToString();
+			} );
+
+			return true;	// Processed!
+		}
+
+		#endregion
 
 		#region Registry
 
@@ -675,19 +801,31 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 			RootDBFolder = folderBrowserDialog.SelectedPath;
 		}
 
-		private void labelShortcut_Click(object sender, EventArgs e) {
-			labelShortcut.Capture = true;
-			labelShortcut.Text = "";	// Expecting keys...
-		}
-
-		private void labelShortcut_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
-			if ( !labelShortcut.Capture )
-				return;
+		#region Shortcuts Edition
 
 // Also check https://stackoverflow.com/questions/400113/best-way-to-implement-keyboard-shortcuts-in-a-windows-forms-application
 
-			labelShortcut.Text = e.KeyCode.ToString();
+		void	SetCurrentlyEditingShortcut( Shortcut _S, Label _label ) {
+			m_currentlyEditingShortcut = _S;
+			m_currentlyEditingShortcutLabel = _label;
+
+			m_currentlyEditingShortcutLabel.Text = "...";
+			UnRegisterHotKeys();
 		}
+
+		private void labelShortcutToggle_Click(object sender, EventArgs e) {
+			SetCurrentlyEditingShortcut( m_shortcuts[0], sender as Label );
+		}
+
+		private void labelShortcutPaste_Click(object sender, EventArgs e) {
+			SetCurrentlyEditingShortcut( m_shortcuts[1], sender as Label );
+		}
+
+		private void labelShortcutNew_Click(object sender, EventArgs e) {
+			SetCurrentlyEditingShortcut( m_shortcuts[2], sender as Label );
+		}
+
+		#endregion
 
 		private void listViewBookmarks_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e) {
 			buttonImportBookmarks.Enabled = e.Item != null && e.Item.Selected && e.Item.Tag != null;

@@ -628,7 +628,7 @@ namespace Brain2 {
 
 				ChunkBase	chunk = CreateChunkFromType( chunkType, chunkStartOffset, chunkLength );
 				if ( chunk != null ) {
-					chunk.Read( _reader );	// Only shallow data will be available, heavy data will be loaded asynchonously
+					chunk.Read( _reader );	// Only shallow data will be available, heavy data will be loaded asynchonously on demand
 				}
 
 				// Always jump to chunk's end, whether it read something or not...

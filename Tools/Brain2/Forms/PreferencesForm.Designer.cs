@@ -29,13 +29,17 @@
 			this.textBoxDatabaseRoot = new System.Windows.Forms.TextBox();
 			this.buttonSelectRootDBFolder = new System.Windows.Forms.Button();
 			this.label3 = new System.Windows.Forms.Label();
-			this.labelShortcut = new System.Windows.Forms.Label();
+			this.labelShortcutToggle = new System.Windows.Forms.Label();
 			this.buttonImportBookmarks = new System.Windows.Forms.Button();
 			this.groupBoxImport = new System.Windows.Forms.GroupBox();
+			this.listViewBookmarks = new System.Windows.Forms.ListView();
 			this.label4 = new System.Windows.Forms.Label();
 			this.folderBrowserDialogBookmarks = new System.Windows.Forms.FolderBrowserDialog();
 			this.openFileDialogBookmarks = new System.Windows.Forms.OpenFileDialog();
-			this.listViewBookmarks = new System.Windows.Forms.ListView();
+			this.label5 = new System.Windows.Forms.Label();
+			this.labelShortcutPaste = new System.Windows.Forms.Label();
+			this.label6 = new System.Windows.Forms.Label();
+			this.labelShortcutNew = new System.Windows.Forms.Label();
 			this.groupBoxImport.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -85,22 +89,21 @@
 			this.label3.AutoSize = true;
 			this.label3.Location = new System.Drawing.Point(14, 75);
 			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(80, 13);
+			this.label3.Size = new System.Drawing.Size(116, 13);
 			this.label3.TabIndex = 1;
-			this.label3.Text = "Global Shortcut";
+			this.label3.Text = "Global Shortcut Toggle";
 			// 
-			// labelShortcut
+			// labelShortcutToggle
 			// 
-			this.labelShortcut.BackColor = System.Drawing.SystemColors.ControlLightLight;
-			this.labelShortcut.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelShortcut.Location = new System.Drawing.Point(131, 70);
-			this.labelShortcut.Name = "labelShortcut";
-			this.labelShortcut.Size = new System.Drawing.Size(100, 23);
-			this.labelShortcut.TabIndex = 4;
-			this.labelShortcut.Text = "Win+X";
-			this.labelShortcut.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-			this.labelShortcut.Click += new System.EventHandler(this.labelShortcut_Click);
-			this.labelShortcut.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.labelShortcut_PreviewKeyDown);
+			this.labelShortcutToggle.BackColor = System.Drawing.SystemColors.ControlLightLight;
+			this.labelShortcutToggle.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelShortcutToggle.Location = new System.Drawing.Point(131, 70);
+			this.labelShortcutToggle.Name = "labelShortcutToggle";
+			this.labelShortcutToggle.Size = new System.Drawing.Size(100, 23);
+			this.labelShortcutToggle.TabIndex = 4;
+			this.labelShortcutToggle.Text = "Win+X";
+			this.labelShortcutToggle.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.labelShortcutToggle.Click += new System.EventHandler(this.labelShortcutToggle_Click);
 			// 
 			// buttonImportBookmarks
 			// 
@@ -125,6 +128,17 @@
 			this.groupBoxImport.TabStop = false;
 			this.groupBoxImport.Text = "Import Bookmarks";
 			// 
+			// listViewBookmarks
+			// 
+			this.listViewBookmarks.HideSelection = false;
+			this.listViewBookmarks.Location = new System.Drawing.Point(6, 58);
+			this.listViewBookmarks.Name = "listViewBookmarks";
+			this.listViewBookmarks.Size = new System.Drawing.Size(401, 54);
+			this.listViewBookmarks.TabIndex = 7;
+			this.listViewBookmarks.UseCompatibleStateImageBehavior = false;
+			this.listViewBookmarks.View = System.Windows.Forms.View.List;
+			this.listViewBookmarks.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.listViewBookmarks_ItemSelectionChanged);
+			// 
 			// label4
 			// 
 			this.label4.Location = new System.Drawing.Point(7, 25);
@@ -145,16 +159,47 @@
 			this.openFileDialogBookmarks.Filter = "Bookmark Files (*.xml)|*.xml|All Files (*.xml)|*.*";
 			this.openFileDialogBookmarks.Title = "Select the bookmark files to import";
 			// 
-			// listViewBookmarks
+			// label5
 			// 
-			this.listViewBookmarks.HideSelection = false;
-			this.listViewBookmarks.Location = new System.Drawing.Point(6, 58);
-			this.listViewBookmarks.Name = "listViewBookmarks";
-			this.listViewBookmarks.Size = new System.Drawing.Size(401, 54);
-			this.listViewBookmarks.TabIndex = 7;
-			this.listViewBookmarks.UseCompatibleStateImageBehavior = false;
-			this.listViewBookmarks.View = System.Windows.Forms.View.List;
-			this.listViewBookmarks.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.listViewBookmarks_ItemSelectionChanged);
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(14, 103);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(110, 13);
+			this.label5.TabIndex = 1;
+			this.label5.Text = "Global Shortcut Paste";
+			// 
+			// labelShortcutPaste
+			// 
+			this.labelShortcutPaste.BackColor = System.Drawing.SystemColors.ControlLightLight;
+			this.labelShortcutPaste.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelShortcutPaste.Location = new System.Drawing.Point(131, 98);
+			this.labelShortcutPaste.Name = "labelShortcutPaste";
+			this.labelShortcutPaste.Size = new System.Drawing.Size(100, 23);
+			this.labelShortcutPaste.TabIndex = 4;
+			this.labelShortcutPaste.Text = "Win+V";
+			this.labelShortcutPaste.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.labelShortcutPaste.Click += new System.EventHandler(this.labelShortcutPaste_Click);
+			// 
+			// label6
+			// 
+			this.label6.AutoSize = true;
+			this.label6.Location = new System.Drawing.Point(14, 131);
+			this.label6.Name = "label6";
+			this.label6.Size = new System.Drawing.Size(105, 13);
+			this.label6.TabIndex = 1;
+			this.label6.Text = "Global Shortcut New";
+			// 
+			// labelShortcutNew
+			// 
+			this.labelShortcutNew.BackColor = System.Drawing.SystemColors.ControlLightLight;
+			this.labelShortcutNew.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelShortcutNew.Location = new System.Drawing.Point(131, 126);
+			this.labelShortcutNew.Name = "labelShortcutNew";
+			this.labelShortcutNew.Size = new System.Drawing.Size(100, 23);
+			this.labelShortcutNew.TabIndex = 4;
+			this.labelShortcutNew.Text = "Win+N";
+			this.labelShortcutNew.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.labelShortcutNew.Click += new System.EventHandler(this.labelShortcutNew_Click);
 			// 
 			// PreferencesForm
 			// 
@@ -162,9 +207,13 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(541, 449);
 			this.Controls.Add(this.groupBoxImport);
-			this.Controls.Add(this.labelShortcut);
+			this.Controls.Add(this.labelShortcutNew);
+			this.Controls.Add(this.labelShortcutPaste);
+			this.Controls.Add(this.labelShortcutToggle);
 			this.Controls.Add(this.buttonSelectRootDBFolder);
 			this.Controls.Add(this.textBoxDatabaseRoot);
+			this.Controls.Add(this.label6);
+			this.Controls.Add(this.label5);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label1);
@@ -188,12 +237,16 @@
 		private System.Windows.Forms.TextBox textBoxDatabaseRoot;
 		private System.Windows.Forms.Button buttonSelectRootDBFolder;
 		private System.Windows.Forms.Label label3;
-		private System.Windows.Forms.Label labelShortcut;
+		private System.Windows.Forms.Label labelShortcutToggle;
 		private System.Windows.Forms.Button buttonImportBookmarks;
 		private System.Windows.Forms.GroupBox groupBoxImport;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.FolderBrowserDialog folderBrowserDialogBookmarks;
 		private System.Windows.Forms.OpenFileDialog openFileDialogBookmarks;
 		private System.Windows.Forms.ListView listViewBookmarks;
+		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.Label labelShortcutPaste;
+		private System.Windows.Forms.Label label6;
+		private System.Windows.Forms.Label labelShortcutNew;
 	}
 }
