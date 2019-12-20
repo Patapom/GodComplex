@@ -17,9 +17,7 @@ namespace Brain2 {
 
 		protected const uint	MAX_WORKING_THREADS_COUNT = 10;
 
-// 		public const uint	SIGNATURE = 0x48434946U;	// 'FICH';
-// 		public const ushort	VERSION_MAJOR = 1;
-// 		public const ushort	VERSION_MINOR = 0;
+		protected const float	DEFAULT_DELAY_BEFORE_SAVE_SECONDS = 10.0f;	// Automatically save modified fiched after 10 secondes
 
 		#endregion
 
@@ -204,25 +202,29 @@ namespace Brain2 {
 				}
 			}
 
+			public class		JobLoadFiche : JobBase {
+				public FileInfo		m_ficheFileName;
+				public bool			m_unloadContentAfterSave;
+				public JobLoadFiche( FichesDB _owner, FileInfo _ficheFileName ) : base( _owner ) { m_ficheFileName = _ficheFileName; }
+				public override void	Run() {
+					try {
+						using ( FileStream S = m_ficheFileName.OpenRead() ) {
+							using ( BinaryReader R = new BinaryReader( S ) ) {
+								F = new Fiche( m_owner, R );
+							}
+						}
+					} catch ( Exception _e ) {
+						throw new Exception( "Error reading fiche \"" + m_ficheFileName.FullName + "\"!", _e );
+					}
+				}
+			}
+
 			public class		JobSaveFiche : JobBase {
 				public Fiche		m_caller;
 				public bool			m_unloadContentAfterSave;
 				public JobSaveFiche( FichesDB _owner, Fiche _caller, bool _unloadContentAfterSave ) : base( _owner ) { m_caller = _caller; m_unloadContentAfterSave = _unloadContentAfterSave; }
 				public override void	Run() {
-					using ( Stream S = m_owner.SyncRequestFicheStream( m_caller, false ) ) {
-						using ( BinaryWriter W = new BinaryWriter( S ) ) {
-							// Ensure the fiche is ready so it can be saved
-							if ( m_caller.Status != Fiche.STATUS.READY )
-								throw new Exception( "Can't save while fiche is not ready!" );
-
-							m_caller.Lock( Fiche.STATUS.SAVING, () => {
-								m_caller.Write( W );
-
-								if ( m_unloadContentAfterSave )
-									m_caller.UnloadImageChunk();
-							} );
-						}
-					}
+					m_owner.SyncSaveFiche( m_caller, m_unloadContentAfterSave );
 				}
 			}
 
@@ -295,6 +297,14 @@ namespace Brain2 {
 
 		#endregion
 
+		/// <summary>
+		/// Whenever a fiche is modified, it should call FicheDB.SyncNotifyFicheModifiedAndNeedsSaving() so a timer is started and the fiche gets automatically saved when the timer expires
+		/// </summary>
+		class FicheUpdatedNeedsSaving {
+			public DateTime	m_timeLastModified;	// The time when the file was last accessed
+			public Fiche	m_fiche;			// The fiche that needs saving after having been updated
+		}
+
 		public class DatabaseLoadException : Exception {
 			public Exception[]	m_errors;
 			public DatabaseLoadException( Exception[] _errors ) {
@@ -308,9 +318,13 @@ namespace Brain2 {
 
 		private	DirectoryInfo						m_rootFolder = null;
 
+		// Fiches and referencing structures
 		private List< Fiche >						m_fiches = new List< Fiche >();
 		private Dictionary< Guid, Fiche >			m_GUID2Fiche = new Dictionary<Guid, Fiche>();
 		private Dictionary< Uri, Fiche >			m_URL2Fiche = new Dictionary<Uri, Fiche>();
+
+		private Dictionary< Guid, List< Fiche > >				m_GUID2FichesRequiringTag = new Dictionary<Guid, List<Fiche>>();		// The list of fiches requiring the key GUID as a tag (polled each time a new fiche is registered)
+		private Dictionary< Fiche, FicheUpdatedNeedsSaving >	m_fiche2NeedToSave = new Dictionary<Fiche, FicheUpdatedNeedsSaving>();	// The map of fiches that were accessed and should be saved ASAP
 
 		// Tags/titles references
 		private Dictionary< string, List< Fiche > >	m_titleCaseSensitive2Fiches = new Dictionary<string, List<Fiche>>();
@@ -354,6 +368,13 @@ namespace Brain2 {
 		public void Dispose() {
 			for (  uint i=0; i < m_workingThreads.Length; i++ ) {
 				m_workingThreads[i].Dispose();	// This will abort the threads
+			}
+
+			// Save remaining modified fiches now
+			lock ( m_fiche2NeedToSave ) {
+				foreach ( FicheUpdatedNeedsSaving value in m_fiche2NeedToSave.Values ) {
+					SyncSaveFiche( value.m_fiche, false );
+				}
 			}
 
 			// Release all fiches
@@ -498,16 +519,7 @@ namespace Brain2 {
 							throw new Exception( "Returned fiche file \"" + result.PathName + "\" doesn't exist!" );
 
 						// Attempt to read fiche from file
-						Fiche	F = null;
-						try {
-							using ( FileStream S = file.OpenRead() ) {
-								using ( BinaryReader R = new BinaryReader( S ) ) {
-									F = new Fiche( this, R );
-								}
-							}
-						} catch ( Exception _e ) {
-							throw new Exception( "Error reading fiche \"" + file.FullName + "\"!", _e );
-						}
+						AsyncLoadAndRegisterFiche( file );
 
 					} catch ( Exception _e ) {
 						errors.Add( _e );
@@ -516,11 +528,6 @@ namespace Brain2 {
 
 			} catch ( Exception _e ) {
 				errors.Add( _e );
-			} finally {
-				// Resolve all possible tag fiches given their GUID
-				foreach ( Fiche F in m_fiches ) {
-					F.ResolveTags( m_GUID2Fiche );
-				}
 			}
 
 			if ( errors.Count > 0 )
@@ -544,6 +551,7 @@ throw new Exception( "TODO!" );
 		/// Processes main thread messages
 		/// </summary>
 		public void	OnIdle() {
+			// Process main thread jobs
 			lock ( m_mainThreadJobs ) {
 				while ( m_mainThreadJobs.Count > 0 ) {
 					WorkingThread.JobBase	job = m_mainThreadJobs.Dequeue();
@@ -551,6 +559,19 @@ throw new Exception( "TODO!" );
 						job.Run();
 					} catch ( Exception _e ) {
 						SyncReportError( "A \"" + job.ToString() + "\" failed with error: " + _e.Message );
+					}
+				}
+			}
+
+			// Process timed saving
+			lock ( m_fiche2NeedToSave ) {
+				DateTime	now = DateTime.Now;
+				foreach ( FicheUpdatedNeedsSaving value in m_fiche2NeedToSave.Values ) {
+					float	timeSinceLastModification = (float) (now - value.m_timeLastModified).TotalSeconds;
+					if ( timeSinceLastModification > DEFAULT_DELAY_BEFORE_SAVE_SECONDS ) {
+						// Okay, enough time has passed, we can asynchronously save the fiche now...
+						m_fiche2NeedToSave.Remove( value.m_fiche );
+						AsyncSaveFiche( value.m_fiche, true );
 					}
 				}
 			}
@@ -624,14 +645,21 @@ throw new Exception( "TODO!" );
 			return fiche;
 		}
 
+		internal void	AsyncLoadAndRegisterFiche( FileInfo _ficheFileName ) {
+			// Create a new job and let the threads handle it
+			WorkingThread.JobLoadFiche	job = new WorkingThread.JobLoadFiche( this, _ficheFileName );
+			lock ( m_threadedJobs )
+				m_threadedJobs.Enqueue( job );
+		}
+
 		/// <summary>
 		/// Ask a thread to perform the save asynchronously (we'll be notified on the main thread when the content is saved)
 		/// </summary>
 		/// <param name="_caller"></param>
 		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
-		internal void	AsyncSaveFiche( Fiche _caller, bool _unloadContentAfterSave ) {
-			// Create a new job and let the loading threads handle it
-			WorkingThread.JobSaveFiche	job = new WorkingThread.JobSaveFiche( this, _caller, _unloadContentAfterSave );
+		internal void	AsyncSaveFiche( Fiche _fiche, bool _unloadContentAfterSave ) {
+			// Create a new job and let the threads handle it
+			WorkingThread.JobSaveFiche	job = new WorkingThread.JobSaveFiche( this, _fiche, _unloadContentAfterSave );
 			lock ( m_threadedJobs )
 				m_threadedJobs.Enqueue( job );
 		}
@@ -696,6 +724,43 @@ throw new Exception( "TODO!" );
 
 			// Create the tag
 			return SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, null, null, WebHelpers.BuildHTMLDocument( _tag, null ) );
+		}
+
+		/// <summary>
+		/// Ask the main thread to save the fiche whenever possible after some time has elapsed
+		/// The idea is to notify often, but save only once the fiche is left alone for some time...
+		/// </summary>
+		/// <param name="_fiche"></param>
+		internal void	SyncNotifyFicheModifiedAndNeedsSaving( Fiche _fiche ) {
+			lock ( m_fiche2NeedToSave ) {
+				FicheUpdatedNeedsSaving	saveTimer = null;
+				if ( !m_fiche2NeedToSave.TryGetValue( _fiche, out saveTimer ) )
+					m_fiche2NeedToSave.Add( _fiche, saveTimer = new FicheUpdatedNeedsSaving() );
+				saveTimer.m_timeLastModified = DateTime.Now;	// Reset timer
+			}
+		}
+
+		/// <summary>
+		/// Perform the save immediately
+		/// </summary>
+		/// <param name="_fiche"></param>
+		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
+		internal void	SyncSaveFiche( Fiche _fiche, bool _unloadContentAfterSave ) {
+			using ( Stream S = SyncRequestFicheStream( _fiche, false ) ) {
+				using ( BinaryWriter W = new BinaryWriter( S ) ) {
+					// Ensure the fiche is ready so it can be saved
+					if ( _fiche.Status != Fiche.STATUS.READY )
+						throw new Exception( "Can't save while fiche is not ready!" );
+
+					_fiche.Lock( Fiche.STATUS.SAVING, () => {
+						_fiche.Write( W );
+
+						// Unload heavy content if requested...
+						if ( _unloadContentAfterSave )
+							_fiche.UnloadImageChunk();
+					} );
+				}
+			}
 		}
 
 		/// <summary>
@@ -878,6 +943,33 @@ throw new Exception( "TODO!" );
 			if ( _fiche.URL != null )
 				m_URL2Fiche.Add( _fiche.URL, _fiche );
 			FicheTitleChanged( _fiche, null );	// Will add the fiche to dictionaries
+
+			lock ( m_GUID2FichesRequiringTag ) {
+				// Attempt to register the fiche's tags
+				List< Fiche >	fichesTaggedWithNewFiche = null;
+				foreach ( Guid tagGUID in _fiche.m_tagGUIDs ) {
+					Fiche	tag = null;
+					if ( m_GUID2Fiche.TryGetValue( tagGUID, out tag ) ) {
+						_fiche.ResolveTag( tag );	// The tag already exists, resolve it now...
+					} else {
+						// The fiche isn't available yet, register ourselves as a requester...
+						if ( !m_GUID2FichesRequiringTag.TryGetValue( tagGUID, out fichesTaggedWithNewFiche ) ) {
+							m_GUID2FichesRequiringTag.Add( tagGUID, fichesTaggedWithNewFiche = new List<Fiche>() );
+						}
+						fichesTaggedWithNewFiche.Add( _fiche );
+					}
+				}
+
+				// Resolve fiches waiting for this fiche as a tag
+				fichesTaggedWithNewFiche = null;
+				if ( m_GUID2FichesRequiringTag.TryGetValue( _fiche.GUID, out fichesTaggedWithNewFiche ) ) {
+					// Resolve all fiches requiring the new fiche
+					foreach ( Fiche resolvableFiche in fichesTaggedWithNewFiche ) {
+						resolvableFiche.ResolveTag( _fiche );
+					}
+					m_GUID2FichesRequiringTag.Remove( _fiche.GUID );	// We're done with that tag now!
+				}
+			}
 		}
 
 		internal void	UnRegisterFiche( Fiche _fiche ) {

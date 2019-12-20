@@ -340,7 +340,7 @@ namespace Brain2 {
 
 		private List< Fiche >		m_tags = new List< Fiche >();
 		private List< Fiche >		m_references = new List< Fiche >();
-		private Guid[]				m_tagGUIDs = null;
+		internal Guid[]				m_tagGUIDs = null;
 
 		private TYPE				m_type = TYPE.REMOTE_ANNOTABLE_WEBPAGE;	// Default for fiches built from a URL
 		private string				m_title = "";
@@ -640,16 +640,32 @@ namespace Brain2 {
 			m_status = STATUS.READY;
 		}
 
+// 		/// <summary>
+// 		/// Called as a post-process to finally resolve actual tag links after read
+// 		/// </summary>
+// 		/// <param name="_ID2Fiche"></param>
+// 		public void		ResolveTags( Dictionary< Guid, Fiche > _ID2Fiche ) {
+// 			foreach ( Guid parentID in m_tagGUIDs ) {
+// 				Fiche	parent = null;
+// 				if ( _ID2Fiche.TryGetValue( parentID, out parent ) )
+// 					AddTag( parent );
+// 			}
+// 		}
+
 		/// <summary>
-		/// Called as a post-process to finally resolve actual tag links after read
+		/// Resolve one of our missing tags
 		/// </summary>
-		/// <param name="_ID2Fiche"></param>
-		public void		ResolveTags( Dictionary< Guid, Fiche > _ID2Fiche ) {
-			foreach ( Guid parentID in m_tagGUIDs ) {
-				Fiche	parent = null;
-				if ( _ID2Fiche.TryGetValue( parentID, out parent ) )
-					AddTag( parent );
+		/// <param name="_fiche"></param>
+		public void		ResolveTag( Fiche _fiche ) {
+			foreach ( Guid tagGUIID in m_tagGUIDs ) {
+				if ( tagGUIID == _fiche.GUID ) {
+					// Found it!
+					AddTag( _fiche );
+					return;
+				}
 			}
+
+			throw new Exception( "Fiche is not one of our tags!" );
 		}
 
 		#endregion

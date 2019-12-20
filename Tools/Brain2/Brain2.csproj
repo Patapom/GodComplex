@@ -83,6 +83,12 @@
       <DependentUpon>WebEditor_COMError.cs</DependentUpon>
     </None>
     <Compile Include="Fiches\Fiche.cs" />
+    <Compile Include="Forms\FastTaggerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FastTaggerForm.Designer.cs">
+      <DependentUpon>FastTaggerForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\ComplexTagNamesForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -114,6 +120,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="BrainForm.resx">
       <DependentUpon>BrainForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FastTaggerForm.resx">
+      <DependentUpon>FastTaggerForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\ComplexTagNamesForm.resx">

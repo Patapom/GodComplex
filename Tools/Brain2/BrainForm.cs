@@ -525,10 +525,17 @@ this.TopMost = false;
 						case PreferencesForm.Shortcut.SHORTCUT.NEW:
 							// Show and create a new empty editable fiche
 							try {
-								Show();
-								Fiche	fiche = m_database.SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, "New Fiche", null, null, null );
-								m_ficheEditorForm.EditedFiche = fiche;
-								m_ficheEditorForm.Show( this );
+ 								Fiche	fiche = m_database.SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, "New Fiche", null, null, null );
+
+FastTaggerForm	F = new FastTaggerForm( fiche );
+F.Show( this );
+
+// 								m_ficheEditorForm.EditedFiche = fiche;
+// 
+// 								// Show both the application & the fiche editor
+// 								m_showEditorFormOnShowMain = true;
+// 								Show();
+
 							} catch ( Exception _e ) {
 // @TODO => Show an error dialog!
 								LogError( _e );
