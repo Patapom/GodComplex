@@ -113,6 +113,12 @@
     <Compile Include="Forms\PreferencesForm.Designer.cs">
       <DependentUpon>PreferencesForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\SuggestionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\SuggestionForm.Designer.cs">
+      <DependentUpon>SuggestionForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Interop\Interop.cs" />
     <Compile Include="Web Interface\WebHelpers.cs" />
     <Compile Include="Web Interface\WebPage2Image.cs" />
@@ -138,6 +144,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\PreferencesForm.resx">
       <DependentUpon>PreferencesForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\SuggestionForm.resx">
+      <DependentUpon>SuggestionForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

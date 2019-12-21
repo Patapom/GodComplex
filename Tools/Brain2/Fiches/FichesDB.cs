@@ -428,6 +428,7 @@ namespace Brain2 {
 		public void	FindNearestTagMatches( string _title, List< Fiche > _matches ) {
 			if ( _title == null )
 				throw new Exception( "Invalid title!" );
+			_title = _title.ToLower();
 
 			// List exact matches first
 			List<Fiche>	results = null;
@@ -457,7 +458,7 @@ namespace Brain2 {
 			}
 
 			// Sort results by references count so most used tags are listed first
-			_matches.Sort( ( Fiche x, Fiche y ) => { return x.ReferencesCount < y.ReferencesCount ? -1 : (x.ReferencesCount > y.ReferencesCount ? 1 : 0); } );
+			_matches.Sort( ( Fiche x, Fiche y ) => { return x.ReferencesCount > y.ReferencesCount ? -1 : (x.ReferencesCount < y.ReferencesCount ? 1 : 0); } );
 		}
 
 		// @TODO: Advanced search => in content, by tag, etc.

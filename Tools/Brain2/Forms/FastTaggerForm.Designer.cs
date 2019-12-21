@@ -69,6 +69,7 @@
 			this.Name = "FastTaggerForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "Complex Tag Names Fixer";
+			this.ShowInTaskbar = false;
 			this.ResumeLayout(false);
 			this.PerformLayout();
 

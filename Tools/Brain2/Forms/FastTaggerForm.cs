@@ -18,6 +18,8 @@ namespace Brain2 {
 		Fiche[]			m_fiches = null;
 		List< Fiche >	m_tags = new List<Fiche>();
 
+		SuggestionForm	m_suggestionForm = new SuggestionForm();
+
 		// The list of edited tags
 		class TagName {
 			public string	m_tag;
@@ -50,6 +52,7 @@ namespace Brain2 {
 		public FastTaggerForm( BrainForm _owner, Fiche[] _fiches ) : base( _owner ) {
 			InitializeComponent();
 			m_fiches = _fiches;
+			m_suggestionForm.SuggestionSelected += suggestionForm_SuggestionSelected;
 
 			// List common tags
 			Dictionary< Fiche, uint >	tag2Count = new Dictionary<Fiche, uint>();
@@ -73,6 +76,28 @@ namespace Brain2 {
 			if ( tagsText.Length > 0 )
 				tagsText.Remove( 0, 1 );
 			richTextBoxTags.Text = tagsText;
+			richTextBoxTags.Focus();
+		}
+
+		protected override void OnVisibleChanged(EventArgs e) {
+			if ( !Visible )
+				Close();	// For this form, closing is fatal actually...
+// 			if ( !Visible && m_suggestionForm.Visible )
+// 				m_suggestionForm.Hide();	// Hide as well
+
+			base.OnVisibleChanged(e);
+		}
+
+		protected override void OnClosing(CancelEventArgs e) {
+			base.OnClosing(e);
+			m_suggestionForm.Close();	// Close as well
+		}
+
+		bool	m_autoModifyingText = false;
+		private void suggestionForm_SuggestionSelected(object sender, EventArgs e) {
+			m_autoModifyingText = true;
+			richTextBoxTags.Text = "PLOUP ! TODO !";
+			m_autoModifyingText = false;
 		}
 
 		/// <summary>
@@ -110,14 +135,48 @@ namespace Brain2 {
 			return currentTag;
 		}
 
+		List< Fiche >	m_matches = new List<Fiche>();
 		private void richTextBoxTags_TextChanged(object sender, EventArgs e) {
+			if ( m_autoModifyingText )
+				return;
 
 			// Retrieve the tag we're currently modifying
 			TagName	currentTag = ListEditedTagNames( richTextBoxTags.Text, richTextBoxTags.SelectionStart );
+			if ( currentTag == null )
+				return;
 
 			// Handle auto-completion
-// 			FicheDB.FindNearestTagMatches()
-// 
+			m_matches.Clear();
+ 			m_owner.Database.FindNearestTagMatches( currentTag.m_tag, m_matches );
+			if ( m_matches.Count == 0 ) {
+				// No match...
+				if ( m_suggestionForm.Visible )
+					m_suggestionForm.Hide();
+			} else {
+				// Show potential matches
+				const int	MAX_MATCHES = 10;
+
+				string[]	matchStrings = new string[Math.Min( MAX_MATCHES, m_matches.Count )];
+				for ( int matchIndex=0; matchIndex < matchStrings.Length; matchIndex++ )
+					matchStrings[matchIndex] = m_matches[matchIndex].Title;
+
+				m_suggestionForm.UpdateList( matchStrings, 10 );
+
+				// Locate either above or below the edit box depending on screen position
+				string	textUntilTag = richTextBoxTags.Text.Substring( 0, currentTag.m_startIndex );
+				Size	textSizeUntilTag = TextRenderer.MeasureText( textUntilTag, richTextBoxTags.Font );
+				int		tagStartPositionX = Left + richTextBoxTags.Left + textSizeUntilTag.Width;
+				int		tagStartPositionY = Top + richTextBoxTags.Bottom;
+				if ( tagStartPositionY + m_suggestionForm.Height > m_owner.Bottom ) {
+					tagStartPositionY = Top + richTextBoxTags.Top - m_suggestionForm.Height;	// Make the form pop above the text box instead, otherwise it will go too low
+				}
+				m_suggestionForm.Location = new Point( tagStartPositionX, tagStartPositionY );
+
+				if ( !m_suggestionForm.Visible )
+					m_suggestionForm.Show( this );
+			}
+
+			richTextBoxTags.Focus();
 		}
 
 		int		GetTagEndIndex( string _text, int _length, int _startIndex ) {
