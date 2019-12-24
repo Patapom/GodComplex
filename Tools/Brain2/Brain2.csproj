@@ -119,6 +119,12 @@
     <Compile Include="Forms\SuggestionForm.Designer.cs">
       <DependentUpon>SuggestionForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\TagEditBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Forms\TagEditBox.Designer.cs">
+      <DependentUpon>TagEditBox.cs</DependentUpon>
+    </Compile>
     <Compile Include="Interop\Interop.cs" />
     <Compile Include="Web Interface\WebHelpers.cs" />
     <Compile Include="Web Interface\WebPage2Image.cs" />
