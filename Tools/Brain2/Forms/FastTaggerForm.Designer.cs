@@ -24,7 +24,7 @@
 		/// </summary>
 		private void InitializeComponent() {
 			this.labelInfo = new System.Windows.Forms.Label();
-			this.richTextBoxTags = new System.Windows.Forms.RichTextBox();
+			this.richTextBoxTags = new TagEditBox();
 			this.SuspendLayout();
 			// 
 			// labelInfo
@@ -53,7 +53,6 @@
 			this.richTextBoxTags.TabIndex = 0;
 			this.richTextBoxTags.Text = "#Tag";
 			this.richTextBoxTags.WordWrap = false;
-			this.richTextBoxTags.TextChanged += new System.EventHandler(this.richTextBoxTags_TextChanged);
 			// 
 			// FastTaggerForm
 			// 
@@ -77,6 +76,6 @@
 
 		#endregion
 		private System.Windows.Forms.Label labelInfo;
-		private System.Windows.Forms.RichTextBox richTextBoxTags;
+		private TagEditBox richTextBoxTags;
 	}
 }

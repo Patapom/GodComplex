@@ -26,9 +26,19 @@
 		/// the contents of this method with the code editor.
 		/// </summary>
 		private void InitializeComponent() {
-			components = new System.ComponentModel.Container();
+			this.components = new System.ComponentModel.Container();
+			this.toolTipTag = new System.Windows.Forms.ToolTip(this.components);
+			this.SuspendLayout();
+			// 
+			// toolTipTag
+			// 
+			this.toolTipTag.Popup += new System.Windows.Forms.PopupEventHandler(this.toolTipTag_Popup);
+			this.ResumeLayout(false);
+
 		}
 
 		#endregion
+
+		private System.Windows.Forms.ToolTip toolTipTag;
 	}
 }

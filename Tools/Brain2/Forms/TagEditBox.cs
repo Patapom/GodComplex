@@ -13,20 +13,49 @@ namespace Brain2 {
 
 		#region CONSTANTS
 
-		const int	MAX_MATCHES = 10;	// Max display matches
+		const int	MAX_MATCHES = 10;		// Max display matches
+		const int	MAX_TAG_LENGTH = 10;	// Max tag length
 
 		#endregion
 
 		#region NESTED TYPES
 
-		class TagName {
-			public string	m_tag;
-			public int		m_startIndex, m_endIndex;
+		[System.Diagnostics.DebuggerDisplay( "{m_tagString}" )]
+		class EditedTag {
+			public EditedTag	m_previous = null;
+			public EditedTag	m_next = null;
+			public Fiche		m_tag = null;
+			public string		m_tagString = null;
 
-			public TagName( string _tag, int _startIndex, int _endIndex ) {
+			public EditedTag	First {
+				get { return m_previous == null ? this : m_previous.First; }
+			}
+
+			public EditedTag	Last {
+				get { return m_next == null ? this : m_next.Last; }
+			}
+
+ 			public int			StartIndex {
+				get { return m_previous != null ? m_previous.StartIndex + m_previous.m_tagString.Length : 0; }
+			}
+
+			public EditedTag( Fiche _tag, EditedTag _previousTag ) {
 				m_tag = _tag;
-				m_startIndex = _startIndex;
-				m_endIndex = _endIndex;
+				m_previous = _previousTag;
+				if ( m_previous != null )
+					m_previous.m_next = this;
+
+				// Build tag string
+				m_tagString = CleanTagName( m_tag.Title );
+				if ( m_tagString.Length > MAX_TAG_LENGTH )
+					m_tagString = m_tagString.Substring( 0, MAX_TAG_LENGTH ) + "...";
+				if ( m_tagString.IndexOf( ' ' ) != -1 )
+					m_tagString = "\"" + m_tagString + "\"";
+				m_tagString += " ";	// Append end space
+			}
+
+			public override string ToString() {
+				return m_tagString;
 			}
 
 			public static string	CleanTagName( string _tagName ) {
@@ -50,25 +79,56 @@ namespace Brain2 {
 
 		#region FIELDS
 
-		BrainForm		m_ownerForm = null;
-		FichesDB		m_database =  null;
+		BrainForm				m_ownerForm = null;
 
-		bool			m_internalChange = false;			// If true, we won't react to text change events
+		List< EditedTag >		m_tags = new List<EditedTag>();		// The current list of tags (recognized or not)
+		EditedTag				m_currentTag = null;				// The currently-selected tag
 
-		List< TagName >	m_editedTags = new List<TagName>();	// The current list of tags (recognized or not)
-		TagName			m_currentTag = null;
+		List< Fiche >			m_matches = new List<Fiche>();		// The list of matches for the currently typed tag
 
-		List< Fiche >	m_matches = new List<Fiche>();		// The list of matches for the currently typed tag
+		SuggestionForm			m_suggestionForm = new SuggestionForm();
 
-		SuggestionForm	m_suggestionForm = new SuggestionForm();
+		bool					m_internalChange = false;			// If true, we won't react to text change events
 
 		#endregion
 
 		#region PROPERTIES
 
-		FichesDB		Database {
-			get { return m_database; }
-			set { m_database = value; }
+		public BrainForm		OwnerForm {
+			get { return m_ownerForm; }
+			set { m_ownerForm = value; }
+		}
+
+		public Fiche[]		Tags {
+			get {
+				Fiche[]	result = new Fiche[m_tags.Count];
+				for ( int i=0; i < m_tags.Count; i++ )
+					result[i] = m_tags[i].m_tag;
+				return result;
+			}
+			set {
+				if ( value == null )
+					value = new Fiche[0];
+				
+				m_tags.Clear();
+
+				EditedTag	previousTag = null;
+				string		text = "";
+				foreach ( Fiche F in value ) {
+					EditedTag	T = new EditedTag( F, previousTag );
+					m_tags.Add( T );
+
+					string	tagName = T.ToString();
+					text += tagName;
+
+					previousTag = T;
+				}
+
+				// Update text
+				m_internalChange = true;
+				this.Text = text;
+				m_internalChange = false;
+			}
 		}
 
 		#endregion
@@ -77,38 +137,42 @@ namespace Brain2 {
 
 		public TagEditBox() {
 			InitializeComponent();
-			m_suggestionForm.SuggestionSelected += suggestionForm_SuggestionSelected;
+			Init();
 		}
 
 		public TagEditBox(IContainer container) {
 			container.Add(this);
-
 			InitializeComponent();
+			Init();
 		}
 
+		void	Init() {
+			m_suggestionForm.SuggestionSelected += suggestionForm_SuggestionSelected;
+		}
+/*
 		/// <summary>
 		/// Lists all the tag names found in the text box
 		/// </summary>
 		/// <param name="_text"></param>
 		/// <param name="_caretPosition"></param>
 		/// <returns></returns>
-		TagName		ListEditedTagNames( string _text, int _caretPosition ) {
+		Tag		ListEditedTagNames( string _text, int _caretPosition ) {
 			int		length = _text.Length;
-			TagName		currentTag = null;
+			Tag		currentTag = null;
 
-			m_editedTags.Clear();
+			m_tags.Clear();
 			for ( int i=0; i < length; i++ ) {
 
 				// Read next tag name
 				int	startIndex = i;
 				int	endIndex = GetTagEndIndex( _text, length, startIndex );
 				string	currentTagName = _text.Substring( startIndex, endIndex - startIndex );
-						currentTagName = TagName.CleanTagName( currentTagName );
+						currentTagName = Tag.CleanTagName( currentTagName );
 
 				if ( currentTagName != null && currentTagName.Length > 0 ) {
 					// Create a valid tag
-					TagName	tag = new TagName( currentTagName, startIndex, endIndex );
-					m_editedTags.Add( tag );
+					Tag	tag = new Tag( currentTagName, startIndex, endIndex );
+					m_tags.Add( tag );
 
 					if ( _caretPosition >= startIndex && _caretPosition <= endIndex )
 						currentTag = tag;
@@ -135,33 +199,159 @@ namespace Brain2 {
 
 			return _startIndex;
 		}
+*/
+		void	AddTag( EditedTag _tag ) {
+			if ( _tag == null )
+				return;
+
+			// Include it
+			m_internalChange = true;
+
+			m_tags.Add( _tag );
+			int	tagStartIndex = m_currentTag != null ? m_currentTag.StartIndex : 0;
+			this.Text = this.Text.Substring( 0, tagStartIndex ) + _tag.m_tagString + this.Text.Substring( tagStartIndex );
+
+			// Link tag in
+			if ( m_currentTag != null ) {
+				_tag.m_previous = m_currentTag.m_previous;
+				_tag.m_next = m_currentTag;
+			}
+			if ( _tag.m_previous != null )
+				_tag.m_previous.m_next = _tag;
+			if ( _tag.m_next != null )
+				_tag.m_next.m_previous = _tag;
+
+			SelectTag( _tag );
+
+			m_internalChange = false;
+		}
+
+		void	DeleteTag( EditedTag _tag ) {
+			if ( _tag == null )
+				return;
+
+			m_internalChange = true;
+
+			// Link over tag
+			if ( _tag.m_next != null ) {
+				_tag.m_next.m_previous = _tag.m_previous;
+				SelectTag( _tag.m_next );
+			}
+			if ( _tag.m_previous != null ) {
+				_tag.m_previous.m_next = _tag.m_next;
+				SelectTag( _tag.m_previous );
+			}
+
+			// Remove it
+			m_tags.Remove( _tag );
+			this.Text = this.Text.Remove( _tag.StartIndex, _tag.m_tagString.Length );
+
+			m_internalChange = false;
+		}
+
+		void	SelectTag( EditedTag _tag ) {
+			if ( _tag == null )
+				return;
+
+			m_internalChange = true;
+			this.SelectionStart = _tag.StartIndex;
+			m_currentTag = _tag;
+			m_internalChange = false;
+		}
 
 		#endregion
 
 		#region EVENTS
 
-		protected override void OnLocationChanged(EventArgs e) {
-			base.OnLocationChanged(e);
-			if ( !m_suggestionForm.Visible || m_currentTag == null )
+		protected override bool ProcessKeyMessage(ref Message m) {
+
+			switch ( m.Msg ) {
+				case Interop.WM_KEYDOWN:
+					Keys	key = (Keys) m.WParam;
+					switch ( key ) {
+						case Keys.Escape:
+							return base.ProcessKeyMessage(ref m);	// Feed to parent to close the form
+
+						case Keys.Back:
+							if ( m_currentTag != null ) {
+								EditedTag	tagToDelete = this.SelectionStart > m_currentTag.StartIndex ? m_currentTag.m_previous : m_currentTag;
+								DeleteTag( tagToDelete );
+							}
+							return true;
+
+						case Keys.Delete:
+							if ( m_currentTag != null ) {
+								DeleteTag( m_currentTag );
+							}
+							return true;
+
+						case Keys.Left:
+							if ( m_currentTag != null )
+								SelectTag( m_currentTag.m_previous );
+							return true;
+
+						case Keys.Right:
+							if ( m_currentTag != null )
+								SelectTag( m_currentTag.m_next );
+							return true;
+
+						case Keys.Home:
+							if ( m_currentTag != null )
+								SelectTag( m_currentTag.First );
+							return true;
+
+						case Keys.End:
+							if ( m_currentTag != null )
+								SelectTag( m_currentTag.Last );
+							return true;
+
+						case Keys.Down:
+							if ( m_suggestionForm.IsSuggesting )
+								m_suggestionForm.Focus();
+							return true;
+
+						case Keys.Return:
+							if ( m_suggestionForm.IsSuggesting )
+								m_suggestionForm.AcceptSuggestion();
+							return true;
+
+						default:
+							// Handle any other key as a possible new tag to auto-complete using the suggestion form
+							break;
+					}
+
+					break;
+			}
+
+			return base.ProcessKeyMessage(ref m);
+		}
+
+// 		protected override void OnKeyDown(KeyEventArgs e) {
+// 			base.OnKeyDown(e);
+// 		}
+// 		protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e) {
+// 			base.OnPreviewKeyDown(e);
+// 		}
+
+		protected override void OnSelectionChanged(EventArgs e) {
+			if ( m_internalChange )
 				return;
 
-			// Locate either above or below the edit box depending on screen position
-			string	textUntilTag = this.Text.Substring( 0, m_currentTag.m_startIndex );
-			Size	textSizeUntilTag = TextRenderer.MeasureText( textUntilTag, this.Font );
-
-			Point	screenBottomLeft = this.PointToScreen( this.Location );
-					screenBottomLeft.Y += this.Height;				// Bottom
-					screenBottomLeft.X += textSizeUntilTag.Width;	// Advance to current edition position
-
-			if ( screenBottomLeft.Y + m_suggestionForm.Height > m_ownerForm.Bottom ) {
-				screenBottomLeft.Y -= this.Height - m_suggestionForm.Height;	// Make the form pop above the text box instead, otherwise it will go too low
+			foreach ( EditedTag tag in m_tags ) {
+				int	startIndex = tag.StartIndex;
+				if ( SelectionStart > startIndex && SelectionStart < startIndex + tag.m_tagString.Length ) {
+					// Select new tag
+					SelectTag( tag );
+					break;
+				}
 			}
-			m_suggestionForm.Location = screenBottomLeft;
+
+			base.OnSelectionChanged(e);
 		}
 
 		protected override void OnTextChanged(EventArgs e) {
-//			base.OnTextChanged(e);
-			if ( m_internalChange )
+			base.OnTextChanged(e);
+/*			if ( m_internalChange )
 				return;
 
 			// Retrieve the tag we're currently modifying
@@ -191,14 +381,38 @@ namespace Brain2 {
 
 			// Update location
 			OnLocationChanged( e );
-
 			this.Focus();
+*/
+		}
+
+		protected override void OnLocationChanged(EventArgs e) {
+			base.OnLocationChanged(e);
+			if ( !m_suggestionForm.Visible || m_currentTag == null )
+				return;
+
+			// Locate either above or below the edit box depending on screen position
+			string	textUntilTag = this.Text.Substring( 0, m_currentTag.StartIndex );
+			Size	textSizeUntilTag = TextRenderer.MeasureText( textUntilTag, this.Font );
+
+			Point	screenBottomLeft = this.PointToScreen( this.Location );
+					screenBottomLeft.Y += this.Height;				// Bottom
+					screenBottomLeft.X += textSizeUntilTag.Width;	// Advance to current edition position
+
+			if ( screenBottomLeft.Y + m_suggestionForm.Height > m_ownerForm.Bottom ) {
+				screenBottomLeft.Y -= this.Height - m_suggestionForm.Height;	// Make the form pop above the text box instead, otherwise it will go too low
+			}
+			m_suggestionForm.Location = screenBottomLeft;
 		}
 
 		private void suggestionForm_SuggestionSelected(object sender, EventArgs e) {
-			m_internalChange = true;
-			this.Text = "PLOUP ! TODO !";
-			m_internalChange = false;
+			Fiche		suggestedFiche = m_matches[m_suggestionForm.SelectedSuggestionIndex];
+			EditedTag	newTag = new EditedTag( suggestedFiche, m_currentTag );
+
+			AddTag( newTag );
+		}
+
+		private void toolTipTag_Popup(object sender, PopupEventArgs e) {
+			toolTipTag.ToolTipTitle = m_currentTag != null ? m_currentTag.m_tag.Title : "";
 		}
 
 		#endregion

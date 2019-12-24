@@ -15,70 +15,73 @@ namespace Brain2 {
 		protected override bool Sizeable => true;
 		public override Keys	SHORTCUT_KEY => Keys.None;
 
-		Fiche[]			m_fiches = null;
-		List< Fiche >	m_tags = new List<Fiche>();
-
-		SuggestionForm	m_suggestionForm = new SuggestionForm();
-
-		// The list of edited tags
-		class TagName {
-			public string	m_tag;
-			public int		m_startIndex, m_endIndex;
-
-			public TagName( string _tag, int _startIndex, int _endIndex ) {
-				m_tag = _tag;
-				m_startIndex = _startIndex;
-				m_endIndex = _endIndex;
-			}
-
-			public static string	CleanTagName( string _tagName ) {
-				if ( _tagName == null || _tagName.Length == 0 )
-					return null;
-
-				_tagName = _tagName.ToLower();
-
-				// Remove any start or end quotes
-				_tagName.Trim( '"' );
-
-				// Remove any head #
-				if ( _tagName[0] == '#' )
-					_tagName = _tagName.Substring( 1 );
-
-				return _tagName;
-			}
-		}
-		List< TagName >		m_editedTags = new List<TagName>();
+// 		Fiche[]			m_fiches = null;
+// 		List< Fiche >	m_tags = new List<Fiche>();
+// 
+// 		SuggestionForm	m_suggestionForm = new SuggestionForm();
+// 
+// 		// The list of edited tags
+// 		class TagName {
+// 			public string	m_tag;
+// 			public int		m_startIndex, m_endIndex;
+// 
+// 			public TagName( string _tag, int _startIndex, int _endIndex ) {
+// 				m_tag = _tag;
+// 				m_startIndex = _startIndex;
+// 				m_endIndex = _endIndex;
+// 			}
+// 
+// 			public static string	CleanTagName( string _tagName ) {
+// 				if ( _tagName == null || _tagName.Length == 0 )
+// 					return null;
+// 
+// 				_tagName = _tagName.ToLower();
+// 
+// 				// Remove any start or end quotes
+// 				_tagName.Trim( '"' );
+// 
+// 				// Remove any head #
+// 				if ( _tagName[0] == '#' )
+// 					_tagName = _tagName.Substring( 1 );
+// 
+// 				return _tagName;
+// 			}
+// 		}
+// 		List< TagName >		m_editedTags = new List<TagName>();
 
 		public FastTaggerForm( BrainForm _owner, Fiche[] _fiches ) : base( _owner ) {
 			InitializeComponent();
-			m_fiches = _fiches;
-			m_suggestionForm.SuggestionSelected += suggestionForm_SuggestionSelected;
 
-			// List common tags
-			Dictionary< Fiche, uint >	tag2Count = new Dictionary<Fiche, uint>();
-			foreach ( Fiche F in _fiches )
-				foreach ( Fiche tag in F.Tags )
-					tag2Count[tag]++;
+			this.richTextBoxTags.OwnerForm = _owner;
 
-			string	tagsText = "";
-			foreach ( Fiche F in tag2Count.Keys ) {
-				if ( tag2Count[F] == _fiches.Length ) {
-					// New common tag
-					m_tags.Add( F );
-
-					if ( F.Title.IndexOf( ' ' ) != -1 )
-						tagsText += " \"" + F.Title + "\"";
-					else
-						tagsText += " " + F.Title;
-				}
-			}
-
-			if ( tagsText.Length > 0 )
-				tagsText.Remove( 0, 1 );
-			richTextBoxTags.Text = tagsText;
-			richTextBoxTags.Focus();
+// 			m_fiches = _fiches;
+// 			m_suggestionForm.SuggestionSelected += suggestionForm_SuggestionSelected;
+// 
+// 			// List common tags
+// 			Dictionary< Fiche, uint >	tag2Count = new Dictionary<Fiche, uint>();
+// 			foreach ( Fiche F in _fiches )
+// 				foreach ( Fiche tag in F.Tags )
+// 					tag2Count[tag]++;
+// 
+// 			string	tagsText = "";
+// 			foreach ( Fiche F in tag2Count.Keys ) {
+// 				if ( tag2Count[F] == _fiches.Length ) {
+// 					// New common tag
+// 					m_tags.Add( F );
+// 
+// 					if ( F.Title.IndexOf( ' ' ) != -1 )
+// 						tagsText += " \"" + F.Title + "\"";
+// 					else
+// 						tagsText += " " + F.Title;
+// 				}
+// 			}
+// 
+// 			if ( tagsText.Length > 0 )
+// 				tagsText.Remove( 0, 1 );
+// 			richTextBoxTags.Text = tagsText;
+// 			richTextBoxTags.Focus();
 		}
-
+/*
 		protected override void OnVisibleChanged(EventArgs e) {
 			if ( !Visible )
 				Close();	// For this form, closing is fatal actually...
@@ -193,5 +196,5 @@ namespace Brain2 {
 
 			return _startIndex;
 		}
-	}
+*/	}
 }

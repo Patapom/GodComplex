@@ -425,39 +425,40 @@ namespace Brain2 {
 		/// </summary>
 		/// <param name="_title"></param>
 		/// <returns></returns>
-		public void	FindNearestTagMatches( string _title, List< Fiche > _matches ) {
-			if ( _title == null )
+		public void	FindNearestTagMatches( string _tentativeName, List< Fiche > _matches ) {
+			if ( _tentativeName == null )
 				throw new Exception( "Invalid title!" );
-			_title = _title.ToLower();
+			_tentativeName = _tentativeName.ToLower();
+
+			HashSet< Fiche >	uniqueMatches = new HashSet<Fiche>();
 
 			// List exact matches first
-			List<Fiche>	results = null;
-			switch ( _title.Length ) {
+			List<Fiche>			results = null;
+			switch ( _tentativeName.Length ) {
 				case 0: return;	// Can't process
 				case 1:
-					if ( m_t2Fiches.TryGetValue( _title, out results ) )
-						_matches.AddRange( results );
+					m_t2Fiches.TryGetValue( _tentativeName, out results );
 					break;
 				case 2:
-					if ( m_ti2Fiches.TryGetValue( _title, out results ) )
-						_matches.AddRange( results );
+					m_ti2Fiches.TryGetValue( _tentativeName, out results );
 					break;
 				case 3:
-					if ( m_tit2Fiches.TryGetValue( _title, out results ) )
-						_matches.AddRange( results );
+					m_tit2Fiches.TryGetValue( _tentativeName, out results );
 					break;
-				case 4:
-					if ( m_titl2Fiches.TryGetValue( _title, out results ) )
-						_matches.AddRange( results );
+				default:	// 4 characters and more...
+					m_titl2Fiches.TryGetValue( _tentativeName, out results );
 					break;
 			}
+			foreach ( Fiche result in results )
+				uniqueMatches.Add( result );
 
 			// List approximate results
-			if ( _title.Length > 4 ) {
+			if ( _tentativeName.Length > 4 ) {
 
 			}
 
 			// Sort results by references count so most used tags are listed first
+			_matches.AddRange( uniqueMatches );
 			_matches.Sort( ( Fiche x, Fiche y ) => { return x.ReferencesCount > y.ReferencesCount ? -1 : (x.ReferencesCount < y.ReferencesCount ? 1 : 0); } );
 		}
 

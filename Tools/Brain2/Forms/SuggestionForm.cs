@@ -13,8 +13,19 @@ namespace Brain2 {
 		public event EventHandler	SuggestionSelected;
 		public int					SelectedSuggestionIndex { get { return listBox.SelectedIndex; } }
 
+		public bool	IsSuggesting { get { return Visible && listBox.SelectedItem != null; } }
+
 		public SuggestionForm() {
 			InitializeComponent();
+		}
+
+		public void	AcceptSuggestion() {
+			if ( listBox.SelectedItem == null )
+				return;
+
+			Hide();
+			if ( SuggestionSelected != null )
+				SuggestionSelected( this, EventArgs.Empty );
 		}
 
 		public void	UpdateList( string[] _suggestions, int _maxResults ) {
@@ -30,21 +41,20 @@ namespace Brain2 {
 
 		protected override void OnKeyDown(KeyEventArgs e) {
 			if ( e.KeyCode == Keys.Escape ) {
-				DialogResult = DialogResult.Cancel;
+//				DialogResult = DialogResult.Cancel;
 				Hide();
 			} else if ( e.KeyCode == Keys.Return ) {
 				if ( listBox.SelectedItem != null )
-					listBox_DoubleClick( listBox, EventArgs.Empty );	// Simulate a selection
+					AcceptSuggestion();
+//					listBox_DoubleClick( listBox, EventArgs.Empty );	// Simulate a selection
 			}
 
 			base.OnKeyDown(e);
 		}
 
 		private void listBox_DoubleClick(object sender, EventArgs e) {
-			DialogResult = DialogResult.OK;
-			Hide();
-			if ( SuggestionSelected != null )
-				SuggestionSelected( this, EventArgs.Empty );
+//			DialogResult = DialogResult.OK;
+			AcceptSuggestion();
 		}
 	}
 }
