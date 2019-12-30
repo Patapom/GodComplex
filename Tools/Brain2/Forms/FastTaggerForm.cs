@@ -53,6 +53,7 @@ namespace Brain2 {
 			InitializeComponent();
 
 			this.richTextBoxTags.OwnerForm = _owner;
+			this.richTextBoxTags.Focus();
 
 // 			m_fiches = _fiches;
 // 			m_suggestionForm.SuggestionSelected += suggestionForm_SuggestionSelected;

@@ -51,7 +51,6 @@
 			this.richTextBoxTags.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
 			this.richTextBoxTags.Size = new System.Drawing.Size(676, 42);
 			this.richTextBoxTags.TabIndex = 0;
-			this.richTextBoxTags.Text = "#Tag";
 			this.richTextBoxTags.WordWrap = false;
 			// 
 			// FastTaggerForm

@@ -449,8 +449,10 @@ namespace Brain2 {
 					m_titl2Fiches.TryGetValue( _tentativeName, out results );
 					break;
 			}
-			foreach ( Fiche result in results )
-				uniqueMatches.Add( result );
+			if ( results != null ) {
+				foreach ( Fiche result in results )
+					uniqueMatches.Add( result );
+			}
 
 			// List approximate results
 			if ( _tentativeName.Length > 4 ) {

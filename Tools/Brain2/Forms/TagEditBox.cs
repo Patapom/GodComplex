@@ -20,11 +20,13 @@ namespace Brain2 {
 
 		#region NESTED TYPES
 
-		[System.Diagnostics.DebuggerDisplay( "{m_tagString}" )]
+		[System.Diagnostics.DebuggerDisplay( "{m_tagString != null ? m_tagString : \"<empty>\"}" )]
 		class EditedTag {
 			public EditedTag	m_previous = null;
 			public EditedTag	m_next = null;
-			public Fiche		m_tag = null;
+
+			private Fiche		m_fiche = null;
+
 			public string		m_tagString = null;
 
 			public EditedTag	First {
@@ -35,27 +37,158 @@ namespace Brain2 {
 				get { return m_next == null ? this : m_next.Last; }
 			}
 
+			public EditedTag	FirstUnRecognized {
+				get {
+					EditedTag	current = this;
+					while ( true ) {
+						if ( current.m_previous == null || current.m_previous.m_fiche != null )
+							return current;
+
+						current = current.m_previous;
+					}
+				}
+			}
+
  			public int			StartIndex {
 				get { return m_previous != null ? m_previous.StartIndex + m_previous.m_tagString.Length : 0; }
 			}
 
-			public EditedTag( Fiche _tag, EditedTag _previousTag ) {
-				m_tag = _tag;
-				m_previous = _previousTag;
-				if ( m_previous != null )
-					m_previous.m_next = this;
+ 			public int			EndIndex {
+				get { return StartIndex + m_tagString.Length; }
+			}
 
-				// Build tag string
-				m_tagString = CleanTagName( m_tag.Title );
-				if ( m_tagString.Length > MAX_TAG_LENGTH )
-					m_tagString = m_tagString.Substring( 0, MAX_TAG_LENGTH ) + "...";
-				if ( m_tagString.IndexOf( ' ' ) != -1 )
-					m_tagString = "\"" + m_tagString + "\"";
-				m_tagString += " ";	// Append end space
+			public Fiche		Fiche {
+				get { return m_fiche; }
+				set {
+					m_fiche = value;
+					if ( m_fiche == null ) {
+						m_tagString = "";
+						return;
+					}
+
+					// Build tag string
+					m_tagString = CleanTagName( m_fiche.Title );
+					if ( m_tagString.Length > MAX_TAG_LENGTH )
+						m_tagString = m_tagString.Substring( 0, MAX_TAG_LENGTH ) + "...";
+					if ( m_tagString.IndexOf( ' ' ) != -1 )
+						m_tagString = "\"" + m_tagString + "\"";
+					m_tagString += " ";	// Append end space
+				}
+			}
+
+			public EditedTag( Fiche _fiche, EditedTag _previousTag ) {
+				if ( _previousTag != null )
+					InsertAfter( _previousTag );
+
+				Fiche = _fiche;
 			}
 
 			public override string ToString() {
 				return m_tagString;
+			}
+
+			/// <summary>
+			/// Inserts THIS after _tag
+			/// </summary>
+			/// <param name="_tag"></param>
+			public void	InsertAfter( EditedTag _tag ) {
+				if ( _tag == null ) {
+					m_next = null;
+					m_previous = null;
+					return;
+				}
+
+				m_previous = _tag;
+				m_next = _tag.m_next;
+				if ( m_next != null )
+					m_next.m_previous = this;
+				if ( m_previous != null )
+					m_previous.m_next = this;
+			}
+
+			/// <summary>
+			/// Inserts THIS before _tag
+			/// </summary>
+			/// <param name="_tag"></param>
+			public void	InsertBefore( EditedTag _tag ) {
+				if ( _tag == null ) {
+					m_next = null;
+					m_previous = null;
+					return;
+				}
+
+				m_next = _tag;
+				m_previous = _tag.m_previous;
+				if ( m_next != null )
+					m_next.m_previous = this;
+				if ( m_previous != null )
+					m_previous.m_next = this;
+			}
+
+			/// <summary>
+			/// Removes this tag from the linked-list
+			/// </summary>
+			public void	Remove() {
+				if ( m_next != null )
+					m_next.m_previous = m_previous;
+				if ( m_previous != null )
+					m_previous.m_next = m_next;
+				m_previous = m_next = null;
+			}
+
+			/// <summary>
+			/// Starts from this tag and collate individual strings forkward until a tag separator is found so we obtain the full name of an unrecognized tag
+			/// </summary>
+			/// <param name="_tagName">The new unrecognized tag name</param>
+			/// <returns>The tag where we ended up the collation</returns>
+			public EditedTag		CollateUnRecognizedTags( out string _tagName ) {
+				_tagName = null;
+
+				bool		isComplexName = false;
+				EditedTag	currentTag = this;
+				while ( currentTag != null ) {
+					if ( currentTag.Fiche != null )
+						break;	// This is a recognized tag, break here...
+
+					// Check for double-quotes that mark either the start or end of a complex tag name
+					if ( currentTag.m_tagString == "\"" ) {
+						currentTag = currentTag.m_next;	// Always skip double quote
+						if ( isComplexName ) {
+							break;					// End marker!
+						} else {
+							isComplexName = true;	// Start marker!
+						}
+					} else {
+						// Check for space separators that mark the end of a simple tag name
+						if ( !isComplexName && (currentTag.m_tagString == " " || currentTag.m_tagString == "\t") ) {
+							// End marker that we need to skip
+							currentTag = currentTag.m_next;
+							break;
+						}
+					}
+
+					// Append tag's string to current tag name and proceed
+					_tagName += currentTag.m_tagString;
+					currentTag = currentTag.m_next;
+				}
+
+				return currentTag;
+			}
+
+			/// <summary>
+			/// Checks if the list from this tag to the provided _endTag contains the _tag tag
+			/// </summary>
+			/// <param name="_endTag">Tag marking the end of the list</param>
+			/// <param name="_tag">The tag to check as part of the linked-list</param>
+			/// <returns></returns>
+			public bool	ContainsTag( EditedTag _endTag, EditedTag _tag ) {
+				EditedTag	currentTag = this;
+				while ( currentTag != null && currentTag != _endTag ) {
+					if ( currentTag == _tag )
+						return true;	// Found it
+					currentTag = currentTag.m_next;
+				}
+				return false;
 			}
 
 			public static string	CleanTagName( string _tagName ) {
@@ -81,14 +214,13 @@ namespace Brain2 {
 
 		BrainForm				m_ownerForm = null;
 
-		List< EditedTag >		m_tags = new List<EditedTag>();		// The current list of tags (recognized or not)
-		EditedTag				m_currentTag = null;				// The currently-selected tag
+		EditedTag				m_selectedTag = null;				// The currently-selected tag
 
 		List< Fiche >			m_matches = new List<Fiche>();		// The list of matches for the currently typed tag
 
 		SuggestionForm			m_suggestionForm = new SuggestionForm();
 
-		bool					m_internalChange = false;			// If true, we won't react to text change events
+		int						m_internalChange = 0;				// If > 0, we won't react to text change events
 
 		#endregion
 
@@ -99,35 +231,69 @@ namespace Brain2 {
 			set { m_ownerForm = value; }
 		}
 
-		public Fiche[]		Tags {
+		/// <summary>
+		/// The list of recognized fiche tags
+		/// </summary>
+		public Fiche[]			RecognizedTags {
 			get {
-				Fiche[]	result = new Fiche[m_tags.Count];
-				for ( int i=0; i < m_tags.Count; i++ )
-					result[i] = m_tags[i].m_tag;
-				return result;
+				if ( m_selectedTag == null )
+					return new Fiche[0];
+
+				List<Fiche>	result = new List<Fiche>();
+				EditedTag	currentTag = m_selectedTag.First;
+				while ( currentTag != null ) {
+					if ( currentTag.Fiche != null )
+						result.Add( currentTag.Fiche );
+					currentTag = currentTag.m_next;
+				}
+				return result.ToArray();
 			}
 			set {
 				if ( value == null )
 					value = new Fiche[0];
 				
-				m_tags.Clear();
+				m_internalChange++;
 
 				EditedTag	previousTag = null;
 				string		text = "";
 				foreach ( Fiche F in value ) {
 					EditedTag	T = new EditedTag( F, previousTag );
-					m_tags.Add( T );
 
-					string	tagName = T.ToString();
-					text += tagName;
+					text += T.ToString();
 
 					previousTag = T;
 				}
 
 				// Update text
-				m_internalChange = true;
 				this.Text = text;
-				m_internalChange = false;
+				m_internalChange--;
+			}
+		}
+
+		/// <summary>
+		/// The list of tags that were typed by the user but are not yet recognized
+		/// </summary>
+		public string[]			UnRecognizedTags {
+			get {
+				if ( m_selectedTag == null )
+					return new string[0];
+
+				List<string>	result = new List<string>();
+				EditedTag		currentTag = m_selectedTag.First;
+				while ( currentTag != null ) {
+					if ( currentTag.Fiche != null ) {
+						currentTag = currentTag.m_next;	// That's a recognized tag...
+						continue;
+					}
+
+					// Collate unrecognized tags until they form a potential new tag name
+					string	unRecognizedTag;
+					currentTag = currentTag.CollateUnRecognizedTags( out unRecognizedTag );
+
+					result.Add( currentTag.m_tagString );
+				}
+
+				return result.ToArray();
 			}
 		}
 
@@ -149,6 +315,7 @@ namespace Brain2 {
 		void	Init() {
 			m_suggestionForm.SuggestionSelected += suggestionForm_SuggestionSelected;
 		}
+
 /*
 		/// <summary>
 		/// Lists all the tag names found in the text box
@@ -200,21 +367,20 @@ namespace Brain2 {
 			return _startIndex;
 		}
 */
-		void	AddTag( EditedTag _tag ) {
+/*		void	AddTag( EditedTag _tag ) {
 			if ( _tag == null )
 				return;
 
 			// Include it
-			m_internalChange = true;
+			m_internalChange++;
 
-			m_tags.Add( _tag );
-			int	tagStartIndex = m_currentTag != null ? m_currentTag.StartIndex : 0;
+			int	tagStartIndex = m_selectedTag != null ? m_selectedTag.StartIndex : 0;
 			this.Text = this.Text.Substring( 0, tagStartIndex ) + _tag.m_tagString + this.Text.Substring( tagStartIndex );
 
 			// Link tag in
-			if ( m_currentTag != null ) {
-				_tag.m_previous = m_currentTag.m_previous;
-				_tag.m_next = m_currentTag;
+			if ( m_selectedTag != null ) {
+				_tag.m_previous = m_selectedTag.m_previous;
+				_tag.m_next = m_selectedTag;
 			}
 			if ( _tag.m_previous != null )
 				_tag.m_previous.m_next = _tag;
@@ -223,45 +389,57 @@ namespace Brain2 {
 
 			SelectTag( _tag );
 
-			m_internalChange = false;
+			Invalidate();
+			m_internalChange--;
 		}
-
+*/
 		void	DeleteTag( EditedTag _tag ) {
 			if ( _tag == null )
 				return;
 
-			m_internalChange = true;
+			m_internalChange++;
 
 			// Link over tag
-			if ( _tag.m_next != null ) {
-				_tag.m_next.m_previous = _tag.m_previous;
-				SelectTag( _tag.m_next );
+			if ( m_selectedTag == _tag ) {
+				SelectTag( _tag.m_previous != null ? _tag.m_previous : _tag.m_next );
 			}
-			if ( _tag.m_previous != null ) {
-				_tag.m_previous.m_next = _tag.m_next;
-				SelectTag( _tag.m_previous );
-			}
+			_tag.Remove();
 
 			// Remove it
-			m_tags.Remove( _tag );
 			this.Text = this.Text.Remove( _tag.StartIndex, _tag.m_tagString.Length );
 
-			m_internalChange = false;
+			Invalidate();
+			m_internalChange--;
 		}
 
 		void	SelectTag( EditedTag _tag ) {
 			if ( _tag == null )
 				return;
 
-			m_internalChange = true;
+			m_internalChange++;
 			this.SelectionStart = _tag.StartIndex;
-			m_currentTag = _tag;
-			m_internalChange = false;
+			m_selectedTag = _tag;
+			Invalidate();
+			m_internalChange--;
 		}
 
 		#endregion
 
 		#region EVENTS
+
+		protected override void OnPaintBackground(PaintEventArgs pevent) {
+//			base.OnPaintBackground(pevent);
+			pevent.Graphics.FillRectangle( Brushes.Black, pevent.ClipRectangle );
+		}
+
+		protected override void OnPaint(PaintEventArgs e) {
+
+// @TODO:
+//	• Render tags with background color depending on recognition
+//	• Render suggested text as light gray
+
+//			base.OnPaint(e);
+		}
 
 		protected override bool ProcessKeyMessage(ref Message m) {
 
@@ -273,36 +451,41 @@ namespace Brain2 {
 							return base.ProcessKeyMessage(ref m);	// Feed to parent to close the form
 
 						case Keys.Back:
-							if ( m_currentTag != null ) {
-								EditedTag	tagToDelete = this.SelectionStart > m_currentTag.StartIndex ? m_currentTag.m_previous : m_currentTag;
+							if ( m_selectedTag != null ) {
+								EditedTag	tagToDelete = m_selectedTag.m_previous != null ? m_selectedTag.m_previous : m_selectedTag;
+								if ( m_selectedTag.m_next == null ) {
+									// Special care must be used for last tag in case the actual selection is beyond last tag, even though that's the last tag that's selected: we must delete the selected tag!
+									if ( this.SelectionStart >= m_selectedTag.EndIndex )
+										tagToDelete = m_selectedTag;
+								}
 								DeleteTag( tagToDelete );
 							}
 							return true;
 
 						case Keys.Delete:
-							if ( m_currentTag != null ) {
-								DeleteTag( m_currentTag );
+							if ( m_selectedTag != null ) {
+								DeleteTag( m_selectedTag );
 							}
 							return true;
 
 						case Keys.Left:
-							if ( m_currentTag != null )
-								SelectTag( m_currentTag.m_previous );
+							if ( m_selectedTag != null )
+								SelectTag( m_selectedTag.m_previous );
 							return true;
 
 						case Keys.Right:
-							if ( m_currentTag != null )
-								SelectTag( m_currentTag.m_next );
+							if ( m_selectedTag != null )
+								SelectTag( m_selectedTag.m_next );
 							return true;
 
 						case Keys.Home:
-							if ( m_currentTag != null )
-								SelectTag( m_currentTag.First );
+							if ( m_selectedTag != null )
+								SelectTag( m_selectedTag.First );
 							return true;
 
 						case Keys.End:
-							if ( m_currentTag != null )
-								SelectTag( m_currentTag.Last );
+							if ( m_selectedTag != null )
+								SelectTag( m_selectedTag.Last );
 							return true;
 
 						case Keys.Down:
@@ -317,6 +500,43 @@ namespace Brain2 {
 
 						default:
 							// Handle any other key as a possible new tag to auto-complete using the suggestion form
+							char	C = Message2CharANSI( key );
+ 							if ( C == '\0' )
+ 								break;	// Unsupported...
+
+							// Create a brand new edited tag that will host the text typed in by the user
+							m_selectedTag = new EditedTag( null, m_selectedTag );
+							m_selectedTag.m_tagString += C;
+
+							// Retrieve the currently unrecognized tag for the character we just typed
+							string		unRecognizedTagName = null;
+							EditedTag	firstUnRecognizedTag = null;
+							EditedTag	lastUnRecognizedTag	= m_selectedTag.FirstUnRecognized;
+							do {
+								firstUnRecognizedTag = lastUnRecognizedTag;
+								lastUnRecognizedTag	= firstUnRecognizedTag.CollateUnRecognizedTags( out unRecognizedTagName );
+							} while ( !firstUnRecognizedTag.ContainsTag( lastUnRecognizedTag, m_selectedTag ) );
+
+							// Handle auto-completion
+							m_matches.Clear();
+ 							m_ownerForm.Database.FindNearestTagMatches( unRecognizedTagName, m_matches );
+							if ( m_matches.Count == 0 ) {
+								// No match...
+								if ( m_suggestionForm.Visible )
+									m_suggestionForm.Hide();
+								break;
+							}
+
+							// Show potential matches
+							string[]	matchStrings = new string[Math.Min( MAX_MATCHES, m_matches.Count )];
+							for ( int matchIndex=0; matchIndex < matchStrings.Length; matchIndex++ )
+								matchStrings[matchIndex] = m_matches[matchIndex].Title;
+
+							m_suggestionForm.UpdateList( matchStrings, 10 );
+
+							if ( !m_suggestionForm.Visible )
+								m_suggestionForm.Show( this );
+
 							break;
 					}
 
@@ -324,6 +544,27 @@ namespace Brain2 {
 			}
 
 			return base.ProcessKeyMessage(ref m);
+		}
+
+		KeysConverter	kc = new KeysConverter();
+		char	Message2CharANSI( Keys _key ) {
+			int		keyValue = (int) _key;
+					keyValue &= 0x7F;	// Ignore culture-specific characters
+			if ( keyValue < 32 )
+				return '\0';	// Unsupported...
+
+			Keys	rawKey = (Keys) keyValue;
+			string	C = kc.ConvertToString( rawKey );
+			if ( C.Length != 1 )
+				return '\0';	// Unsupported...
+
+//			if ( (_key & Keys.Shift) != 0 )
+			if ( Control.ModifierKeys == Keys.Shift )
+				C = C.ToUpper();
+			else
+				C = C.ToLower();
+
+			return C[0];
 		}
 
 // 		protected override void OnKeyDown(KeyEventArgs e) {
@@ -334,34 +575,36 @@ namespace Brain2 {
 // 		}
 
 		protected override void OnSelectionChanged(EventArgs e) {
-			if ( m_internalChange )
+			if ( m_internalChange > 0 || m_selectedTag == null )
 				return;
 
-			foreach ( EditedTag tag in m_tags ) {
-				int	startIndex = tag.StartIndex;
-				if ( SelectionStart > startIndex && SelectionStart < startIndex + tag.m_tagString.Length ) {
+			EditedTag	currentTag = m_selectedTag.First;
+			while ( currentTag != null ) {
+				int	startIndex = currentTag.StartIndex;
+				if ( SelectionStart > startIndex && SelectionStart < startIndex + currentTag.m_tagString.Length ) {
 					// Select new tag
-					SelectTag( tag );
+					SelectTag( currentTag );
 					break;
 				}
+				currentTag = currentTag.m_next;
 			}
 
 			base.OnSelectionChanged(e);
 		}
-
+/*
 		protected override void OnTextChanged(EventArgs e) {
 			base.OnTextChanged(e);
-/*			if ( m_internalChange )
+			if ( m_internalChange )
 				return;
 
 			// Retrieve the tag we're currently modifying
-			m_currentTag = ListEditedTagNames( this.Text, this.SelectionStart );
-			if ( m_currentTag == null )
+			m_selectedTag = ListEditedTagNames( this.Text, this.SelectionStart );
+			if ( m_selectedTag == null )
 				return;
 
 			// Handle auto-completion
 			m_matches.Clear();
- 			m_database.FindNearestTagMatches( m_currentTag.m_tag, m_matches );
+ 			m_database.FindNearestTagMatches( m_selectedTag.m_tag, m_matches );
 			if ( m_matches.Count == 0 ) {
 				// No match...
 				if ( m_suggestionForm.Visible )
@@ -382,16 +625,16 @@ namespace Brain2 {
 			// Update location
 			OnLocationChanged( e );
 			this.Focus();
-*/
 		}
+*/
 
 		protected override void OnLocationChanged(EventArgs e) {
 			base.OnLocationChanged(e);
-			if ( !m_suggestionForm.Visible || m_currentTag == null )
+			if ( !m_suggestionForm.Visible || m_selectedTag == null )
 				return;
 
 			// Locate either above or below the edit box depending on screen position
-			string	textUntilTag = this.Text.Substring( 0, m_currentTag.StartIndex );
+			string	textUntilTag = this.Text.Substring( 0, m_selectedTag.StartIndex );
 			Size	textSizeUntilTag = TextRenderer.MeasureText( textUntilTag, this.Font );
 
 			Point	screenBottomLeft = this.PointToScreen( this.Location );
@@ -406,13 +649,14 @@ namespace Brain2 {
 
 		private void suggestionForm_SuggestionSelected(object sender, EventArgs e) {
 			Fiche		suggestedFiche = m_matches[m_suggestionForm.SelectedSuggestionIndex];
-			EditedTag	newTag = new EditedTag( suggestedFiche, m_currentTag );
-
-			AddTag( newTag );
+			m_selectedTag.Fiche = suggestedFiche;
+			Invalidate();
+// 			EditedTag	newTag = new EditedTag( suggestedFiche, m_selectedTag );
+// 			AddTag( newTag );
 		}
 
 		private void toolTipTag_Popup(object sender, PopupEventArgs e) {
-			toolTipTag.ToolTipTitle = m_currentTag != null ? m_currentTag.m_tag.Title : "";
+			toolTipTag.ToolTipTitle = m_selectedTag != null && m_selectedTag.Fiche != null ? m_selectedTag.Fiche.Title : null;
 		}
 
 		#endregion
