@@ -14,7 +14,7 @@
 				components.Dispose();
 			}
 
-			m_suggestionForm.Dispose();
+			this.InternalDispose();
 
 			base.Dispose(disposing);
 		}
@@ -32,6 +32,7 @@
 			// 
 			// toolTipTag
 			// 
+			this.TabStop = true;
 			this.toolTipTag.Popup += new System.Windows.Forms.PopupEventHandler(this.toolTipTag_Popup);
 			this.ResumeLayout(false);
 

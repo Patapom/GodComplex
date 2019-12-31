@@ -42,16 +42,12 @@
 			this.richTextBoxTags.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.richTextBoxTags.DetectUrls = false;
 			this.richTextBoxTags.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F);
 			this.richTextBoxTags.Location = new System.Drawing.Point(12, 25);
 			this.richTextBoxTags.Margin = new System.Windows.Forms.Padding(8);
-			this.richTextBoxTags.Multiline = false;
 			this.richTextBoxTags.Name = "richTextBoxTags";
-			this.richTextBoxTags.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
 			this.richTextBoxTags.Size = new System.Drawing.Size(676, 42);
 			this.richTextBoxTags.TabIndex = 0;
-			this.richTextBoxTags.WordWrap = false;
 			// 
 			// FastTaggerForm
 			// 

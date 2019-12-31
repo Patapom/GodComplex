@@ -11,7 +11,16 @@ using System.Windows.Forms;
 namespace Brain2 {
 	public partial class SuggestionForm : Form {
 		public event EventHandler	SuggestionSelected;
-		public int					SelectedSuggestionIndex { get { return listBox.SelectedIndex; } }
+		public event EventHandler	SuggestionIndexChanged;
+		public int					SelectedSuggestionIndex { get { return listBox.SelectedIndex; }
+			set {
+				if ( value >= listBox.Items.Count )
+					value = listBox.Items.Count-1;
+				if ( value < 0 )
+					value = 0;
+				listBox.SelectedIndex = value;
+			}
+		}
 
 		public bool	IsSuggesting { get { return Visible && listBox.SelectedItem != null; } }
 
@@ -50,6 +59,15 @@ namespace Brain2 {
 			}
 
 			base.OnKeyDown(e);
+		}
+
+		private void ListBox_SelectedIndexChanged(object sender, System.EventArgs e) {
+			if ( SuggestionIndexChanged != null )
+				SuggestionIndexChanged( this, e );
+		}
+
+		private void ListBox_Click(object sender, System.EventArgs e) {
+			AcceptSuggestion();
 		}
 
 		private void listBox_DoubleClick(object sender, EventArgs e) {

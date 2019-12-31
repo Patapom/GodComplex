@@ -36,6 +36,8 @@
 			this.listBox.Size = new System.Drawing.Size(193, 253);
 			this.listBox.TabIndex = 0;
 			this.listBox.DoubleClick += new System.EventHandler(this.listBox_DoubleClick);
+			this.listBox.Click += ListBox_Click;
+			this.listBox.SelectedIndexChanged += ListBox_SelectedIndexChanged;
 			// 
 			// SuggestionForm
 			// 
