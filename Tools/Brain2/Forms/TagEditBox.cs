@@ -363,6 +363,7 @@ namespace Brain2 {
 
 			this.Select();
 		}
+
 		void	InternalDispose() {
 			m_brushBack.Dispose();
 			m_brushTag.Dispose();
@@ -446,8 +447,10 @@ namespace Brain2 {
 				}
 			}
 
-			if ( !m_suggestionForm.Visible &&  m_matches.Count > 0 )
+			if ( !m_suggestionForm.Visible &&  m_matches.Count > 0 ) {
 				m_suggestionForm.Show( this );
+				this.Focus();	// We must keep the focus!
+			}
 			m_suggestionForm.Visible = m_matches.Count > 0;
 		}
 
@@ -687,10 +690,15 @@ namespace Brain2 {
 			m_cursorIndex = m_renderedRectangles.Length;
 		}
 
-		protected override void OnLostFocus(EventArgs e) {
-			base.OnLostFocus(e);
-			if ( !m_suggestionForm.Focused )
-				m_suggestionForm.Visible = false;	// Form doesn't have focus either so hide...
+// 		protected override void OnLostFocus(EventArgs e) {
+// 			base.OnLostFocus(e);
+// // 			if ( !m_suggestionForm.Focused )
+// // 				m_suggestionForm.Visible = false;	// Form doesn't have focus either so hide...
+// 		}
+
+		protected override void OnVisibleChanged(EventArgs e) {
+			base.OnVisibleChanged(e);
+			m_suggestionForm.Visible = false;
 		}
 
 		private void suggestionForm_SuggestionSelected(object sender, EventArgs e) {

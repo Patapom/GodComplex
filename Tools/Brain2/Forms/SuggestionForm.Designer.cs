@@ -36,8 +36,6 @@
 			this.listBox.Size = new System.Drawing.Size(193, 253);
 			this.listBox.TabIndex = 0;
 			this.listBox.DoubleClick += new System.EventHandler(this.listBox_DoubleClick);
-			this.listBox.Click += ListBox_Click;
-			this.listBox.SelectedIndexChanged += ListBox_SelectedIndexChanged;
 			// 
 			// SuggestionForm
 			// 
@@ -46,7 +44,6 @@
 			this.ClientSize = new System.Drawing.Size(193, 253);
 			this.Controls.Add(this.listBox);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-			this.KeyPreview = true;
 			this.Name = "SuggestionForm";
 			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;

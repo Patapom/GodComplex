@@ -32,8 +32,12 @@
 			// 
 			// toolTipTag
 			// 
-			this.TabStop = true;
 			this.toolTipTag.Popup += new System.Windows.Forms.PopupEventHandler(this.toolTipTag_Popup);
+			// 
+			// TagEditBox
+			// 
+			this.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.TabStop = true;
 			this.ResumeLayout(false);
 
 		}

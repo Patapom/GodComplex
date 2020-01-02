@@ -27,6 +27,7 @@ namespace Brain2 {
 		#region PROPERTIES
 
 		protected override bool Sizeable => true;
+		protected override bool CloseOnEscape => false;
 		public override Keys SHORTCUT_KEY => Keys.F5;
 
 		public Fiche		EditedFiche {

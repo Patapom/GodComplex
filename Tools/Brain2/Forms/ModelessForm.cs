@@ -32,6 +32,7 @@ namespace Brain2 {
 		#region PROPERTIES
 
 		protected abstract bool	Sizeable { get; }
+		protected abstract bool	CloseOnEscape { get; }
 		public abstract Keys	SHORTCUT_KEY { get; }
 
 		#endregion
@@ -121,7 +122,12 @@ namespace Brain2 {
 		}
 
 		protected override void OnKeyDown(KeyEventArgs e) {
-			if ( e.KeyCode == Keys.Escape || e.KeyCode == SHORTCUT_KEY ) {
+			if ( e.KeyCode == Keys.Escape ) {
+				if ( CloseOnEscape )
+					Close();
+				else
+					Hide();
+			} else if ( e.KeyCode == SHORTCUT_KEY ) {
 				Hide();
 			}
 

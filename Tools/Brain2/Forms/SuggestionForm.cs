@@ -50,18 +50,18 @@ namespace Brain2 {
 //			this.Height = (int) (Math.Min( _maxResults, _suggestions.Length ) * Math.Ceiling( 16*listBox.Font.Size + 1 ));
 		}
 
-		protected override void OnKeyDown(KeyEventArgs e) {
-			if ( e.KeyCode == Keys.Escape ) {
-//				DialogResult = DialogResult.Cancel;
-				Hide();
-			} else if ( e.KeyCode == Keys.Return ) {
-				if ( listBox.SelectedItem != null )
-					AcceptSuggestion();
-//					listBox_DoubleClick( listBox, EventArgs.Empty );	// Simulate a selection
-			}
-
-			base.OnKeyDown(e);
-		}
+// 		protected override void OnKeyDown(KeyEventArgs e) {
+// 			if ( e.KeyCode == Keys.Escape ) {
+// //				DialogResult = DialogResult.Cancel;
+// 				Hide();
+// 			} else if ( e.KeyCode == Keys.Return ) {
+// 				if ( listBox.SelectedItem != null )
+// 					AcceptSuggestion();
+// //					listBox_DoubleClick( listBox, EventArgs.Empty );	// Simulate a selection
+// 			}
+// 
+// 			base.OnKeyDown(e);
+// 		}
 
 		private void ListBox_SelectedIndexChanged(object sender, System.EventArgs e) {
 			if ( SuggestionIndexChanged != null )

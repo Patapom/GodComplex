@@ -13,6 +13,7 @@ namespace Brain2 {
 //	public partial class FastTaggerForm : Form {
 
 		protected override bool Sizeable => true;
+		protected override bool CloseOnEscape => true;
 		public override Keys	SHORTCUT_KEY => Keys.None;
 
 // 		Fiche[]			m_fiches = null;
@@ -53,7 +54,6 @@ namespace Brain2 {
 			InitializeComponent();
 
 			this.richTextBoxTags.OwnerForm = _owner;
-			this.richTextBoxTags.Focus();
 
 // 			m_fiches = _fiches;
 // 			m_suggestionForm.SuggestionSelected += suggestionForm_SuggestionSelected;
