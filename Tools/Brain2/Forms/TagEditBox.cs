@@ -10,7 +10,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 
 namespace Brain2 {
-	public partial class TagEditBox : UserControl {
+	public partial class TagEditBox : Panel {
 
 		#region CONSTANTS
 
@@ -40,6 +40,9 @@ namespace Brain2 {
 
 			public EditedTag	FirstUnRecognized {
 				get {
+					if ( m_fiche != null )
+						return null;	// We are a recognized tag!
+
 					EditedTag	current = this;
 					while ( true ) {
 						if ( current.m_previous == null || current.m_previous.m_fiche != null )
@@ -249,7 +252,10 @@ namespace Brain2 {
 
 		public BrainForm		OwnerForm {
 			get { return m_ownerForm; }
-			set { m_ownerForm = value; }
+			set {
+				m_ownerForm = value;
+				m_suggestionForm.Owner = m_ownerForm;
+			}
 		}
 
 		/// <summary>
@@ -342,14 +348,18 @@ namespace Brain2 {
 
 		void	Init() {
 			m_suggestionForm.SuggestionSelected += suggestionForm_SuggestionSelected;
+
 			m_brushBack = new SolidBrush( this.BackColor );
 			m_brushTag = new SolidBrush( Color.IndianRed );
 			m_brushTagSelected = new SolidBrush( Color.RosyBrown );
+
+			m_stringFormat.FormatFlags |= StringFormatFlags.MeasureTrailingSpaces;
 
 			SetStyle( ControlStyles.AllPaintingInWmPaint, true );
 			SetStyle( ControlStyles.Selectable, true );
 			SetStyle( ControlStyles.ResizeRedraw, true );
 			SetStyle( ControlStyles.EnableNotifyMessage, true );
+			SetStyle( ControlStyles.ContainerControl, false );
 
 			this.Select();
 		}
@@ -367,29 +377,78 @@ namespace Brain2 {
 			m_internalChange++;
 
 			// Link over tag
-			if ( m_selectedTag == _tag ) {
-				SelectTag( _tag.m_previous != null ? _tag.m_previous : _tag.m_next );
-			}
-			_tag.Remove();
-
 			if ( m_cursorIndex >= _tag.Index )
 				m_cursorIndex--;
+
+			if ( m_selectedTag == _tag ) {
+//				SelectTag( _tag.m_previous != null ? _tag.m_previous : _tag.m_next );
+				m_selectedTag = _tag.m_previous != null ? _tag.m_previous : _tag.m_next;
+			}
+
+			_tag.Remove();
 
 			m_internalChange--;
 
 			Invalidate();
+
+			UpdateSuggestionForm();
 		}
 
 		void	SelectTag( EditedTag _tag ) {
-			if ( _tag == null || _tag == m_selectedTag )
+			if ( _tag == m_selectedTag )
 				return;
 
 			m_internalChange++;
 			m_selectedTag = _tag;
-			m_cursorIndex = _tag.Index;
+			m_cursorIndex = m_selectedTag != null ? m_selectedTag.Index : 0;
 			m_internalChange--;
 
 			Invalidate();
+
+			UpdateSuggestionForm();
+		}
+
+		/// <summary>
+		/// Attempts to update the suggestion form with the currently entered string
+		/// </summary>
+		void	UpdateSuggestionForm() {
+			if ( m_selectedTag == null ) {
+				m_suggestionForm.Visible = false;
+				return;
+			}
+
+			// Retrieve the currently unrecognized tag for the character we just typed
+			m_firstUnRecognizedTag = null;
+			m_lastUnRecognizedTag = m_selectedTag.FirstUnRecognized;
+			if ( m_lastUnRecognizedTag == null ) {
+				m_suggestionForm.Visible = false;
+				return;
+			}
+
+			string		unRecognizedTagName = null;
+			do {
+				m_firstUnRecognizedTag = m_lastUnRecognizedTag;
+				m_lastUnRecognizedTag = m_firstUnRecognizedTag.CollateUnRecognizedTags( out unRecognizedTagName );
+			} while ( !m_firstUnRecognizedTag.ContainsTag( m_lastUnRecognizedTag, m_selectedTag ) );
+
+			m_matches.Clear();
+			if ( unRecognizedTagName != null ) {
+				// Handle auto-completion
+ 				m_ownerForm.Database.FindNearestTagMatches( unRecognizedTagName, m_matches );
+				if ( m_matches.Count > 0 ) {
+					// Show potential matches
+					string[]	matchStrings = new string[Math.Min( MAX_MATCHES, m_matches.Count )];
+					for ( int matchIndex=0; matchIndex < matchStrings.Length; matchIndex++ ) {
+						matchStrings[matchIndex] = m_matches[matchIndex].Title;
+					}
+
+					m_suggestionForm.UpdateList( matchStrings, 10 );
+				}
+			}
+
+			if ( !m_suggestionForm.Visible &&  m_matches.Count > 0 )
+				m_suggestionForm.Show( this );
+			m_suggestionForm.Visible = m_matches.Count > 0;
 		}
 
 		#endregion
@@ -457,11 +516,31 @@ namespace Brain2 {
 			EditedTag	currentTag = m_selectedTag.First;
 			while ( currentTag != null ) {
 				RectangleF	R = m_renderedRectangles[tagIndex++];
-				e.Graphics.DrawString( currentTag.m_tagString, this.Font, Brushes.Black, R.Location );
+				e.Graphics.DrawString( currentTag.m_tagString, this.Font, Brushes.Black, R, m_stringFormat );
 				currentTag = currentTag.m_next;
 			}
 
 //			base.OnPaint(e);
+			if ( !m_suggestionForm.Visible || m_firstUnRecognizedTag == null || m_firstUnRecognizedTag.Index >= m_renderedRectangles.Length )
+				return;
+
+			// Locate either above or below the edit box depending on screen position
+// 			string	textUntilTag = this.Text.Substring( 0, m_selectedTag.StartIndex );
+// 			Size	textSizeUntilTag = TextRenderer.MeasureText( textUntilTag, this.Font );
+// 
+// 			Point	screenBottomLeft = this.PointToScreen( this.Location );
+// 					screenBottomLeft.Y += this.Height;				// Bottom
+// 					screenBottomLeft.X += textSizeUntilTag.Width;	// Advance to current edition position
+
+// 			Point	screenBottomLeft = this.PointToScreen( this.Location );
+ 			Point	screenBottomLeft = this.PointToScreen( Point.Empty );
+ 					screenBottomLeft.Y += this.Height;				// Bottom
+ 					screenBottomLeft.X += (int) m_renderedRectangles[m_firstUnRecognizedTag.Index].X;	// Advance to current edition position
+
+			if ( screenBottomLeft.Y + m_suggestionForm.Height > m_ownerForm.Bottom ) {
+				screenBottomLeft.Y -= this.Height - m_suggestionForm.Height;	// Make the form pop above the text box instead, otherwise it will go too low
+			}
+			m_suggestionForm.Location = screenBottomLeft;
 		}
 
 		protected override bool ProcessKeyMessage(ref Message m) {
@@ -516,14 +595,12 @@ namespace Brain2 {
 
 						case Keys.Down:
 							if ( m_suggestionForm.IsSuggesting ) {
-//								m_suggestionForm.Focus();
 								m_suggestionForm.SelectedSuggestionIndex++;
 							}
 							return true;
 
 						case Keys.Up:
 							if ( m_suggestionForm.IsSuggesting ) {
-//								m_suggestionForm.Focus();
 								m_suggestionForm.SelectedSuggestionIndex--;
 							}
 							return true;
@@ -545,37 +622,6 @@ namespace Brain2 {
 										newTag.m_tagString += C;
 							SelectTag( newTag );
 							m_cursorIndex++;	// Always place cursor AFTER entered character
-
-							// Retrieve the currently unrecognized tag for the character we just typed
-							string		unRecognizedTagName = null;
-							m_firstUnRecognizedTag = null;
-							m_lastUnRecognizedTag	= m_selectedTag.FirstUnRecognized;
-							do {
-								m_firstUnRecognizedTag = m_lastUnRecognizedTag;
-								m_lastUnRecognizedTag	= m_firstUnRecognizedTag.CollateUnRecognizedTags( out unRecognizedTagName );
-							} while ( !m_firstUnRecognizedTag.ContainsTag( m_lastUnRecognizedTag, m_selectedTag ) );
-
-							// Handle auto-completion
-							m_matches.Clear();
- 							m_ownerForm.Database.FindNearestTagMatches( unRecognizedTagName, m_matches );
-							if ( m_matches.Count == 0 ) {
-								// No match...
-								if ( m_suggestionForm.Visible )
-									m_suggestionForm.Hide();
-								break;
-							}
-
-							// Show potential matches
-							string[]	matchStrings = new string[Math.Min( MAX_MATCHES, m_matches.Count )];
-							for ( int matchIndex=0; matchIndex < matchStrings.Length; matchIndex++ ) {
-								matchStrings[matchIndex] = m_matches[matchIndex].Title;
-							}
-
-							m_suggestionForm.UpdateList( matchStrings, 10 );
-
-							if ( !m_suggestionForm.Visible )
-								m_suggestionForm.Show( this );
-
 							break;
 					}
 
@@ -592,7 +638,15 @@ namespace Brain2 {
 			if ( keyValue < 32 )
 				return '\0';	// Unsupported...
 
+			if ( _key == Keys.Shift )
+				return '\0';
+
+//			if ( keyValue > 127 )
+
 			Keys	rawKey = (Keys) keyValue;
+			if ( rawKey == Keys.Space )
+				return ' ';
+
 			string	C = kc.ConvertToString( rawKey );
 			if ( C.Length != 1 )
 				return '\0';	// Unsupported...
@@ -620,6 +674,9 @@ namespace Brain2 {
 				RectangleF	R = m_renderedRectangles[tagIndex];
 				if ( R.Contains( e.Location ) ) {
 					// Found the selected tag!
+					float	clickRatio = (float) (e.X - R.Left) / R.Width;
+					if ( currentTag.m_next != null && clickRatio > 0.66f )
+						currentTag = currentTag.m_next;	// If the user clicks too far on the right then select next tag instead...
 					SelectTag( currentTag );
 					return;
 				}
@@ -630,58 +687,28 @@ namespace Brain2 {
 			m_cursorIndex = m_renderedRectangles.Length;
 		}
 
-// 		protected override void OnSelectionChanged(EventArgs e) {
-// 			if ( m_internalChange > 0 || m_selectedTag == null )
-// 				return;
-// 
-// 			EditedTag	currentTag = m_selectedTag.First;
-// 			while ( currentTag != null ) {
-// 				int	startIndex = currentTag.StartIndex;
-// 				if ( SelectionStart > startIndex && SelectionStart < startIndex + currentTag.m_tagString.Length ) {
-// 					// Select new tag
-// 					SelectTag( currentTag );
-// 					break;
-// 				}
-// 				currentTag = currentTag.m_next;
-// 			}
-// 
-// 			base.OnSelectionChanged(e);
-// 		}
-
-		protected override void OnLocationChanged(EventArgs e) {
-			base.OnLocationChanged(e);
-			if ( !m_suggestionForm.Visible || m_selectedTag == null )
-				return;
-
-			// Locate either above or below the edit box depending on screen position
-// 			string	textUntilTag = this.Text.Substring( 0, m_selectedTag.StartIndex );
-// 			Size	textSizeUntilTag = TextRenderer.MeasureText( textUntilTag, this.Font );
-// 
-// 			Point	screenBottomLeft = this.PointToScreen( this.Location );
-// 					screenBottomLeft.Y += this.Height;				// Bottom
-// 					screenBottomLeft.X += textSizeUntilTag.Width;	// Advance to current edition position
-
- 			Point	screenBottomLeft = this.PointToScreen( this.Location );
- 					screenBottomLeft.Y += this.Height;				// Bottom
- 					screenBottomLeft.X += (int) m_renderedRectangles[m_selectedTag.Index].X;	// Advance to current edition position
-
-			if ( screenBottomLeft.Y + m_suggestionForm.Height > m_ownerForm.Bottom ) {
-				screenBottomLeft.Y -= this.Height - m_suggestionForm.Height;	// Make the form pop above the text box instead, otherwise it will go too low
-			}
-			m_suggestionForm.Location = screenBottomLeft;
+		protected override void OnLostFocus(EventArgs e) {
+			base.OnLostFocus(e);
+			if ( !m_suggestionForm.Focused )
+				m_suggestionForm.Visible = false;	// Form doesn't have focus either so hide...
 		}
 
 		private void suggestionForm_SuggestionSelected(object sender, EventArgs e) {
 			m_internalChange++;
 
+			// Keep a copy of the matched selection as it will get treashed by the Select/Remove operations that follow
+			EditedTag	firstMatchedTag = m_firstUnRecognizedTag;
+			EditedTag	lastMatchedTag = m_lastUnRecognizedTag;
+
 			// Select the first tag used for the match & assign the fiche
-			SelectTag( m_firstUnRecognizedTag );
-			m_selectedTag.Fiche = m_matches[m_suggestionForm.SelectedSuggestionIndex];
+			firstMatchedTag.Fiche = m_matches[m_suggestionForm.SelectedSuggestionIndex];
+
+			SelectTag( firstMatchedTag );
 
 			// Remove orphan tags that were part of the match
-			if ( m_firstUnRecognizedTag != m_lastUnRecognizedTag ) {
-				EditedTag	currentTag = m_firstUnRecognizedTag.m_next;
-				while ( currentTag != m_lastUnRecognizedTag ) {
+			if ( firstMatchedTag != lastMatchedTag ) {
+				EditedTag	currentTag = firstMatchedTag.m_next;
+				while ( currentTag != lastMatchedTag ) {
 					EditedTag	tagToRemove = currentTag;
 					currentTag = currentTag.m_next;
 					DeleteTag( tagToRemove );

@@ -41,6 +41,8 @@ namespace Brain2 {
 			listBox.SuspendLayout();
 			listBox.Items.Clear();
 			listBox.Items.AddRange( _suggestions );
+			if ( _suggestions.Length > 0 )
+				listBox.SelectedIndex = 0;
 			listBox.ResumeLayout();
 
 			float	fontSizePixels = 4 * listBox.Font.SizeInPoints / 3;

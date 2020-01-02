@@ -203,8 +203,8 @@ this.TopMost = false;
 				m_preferenceForm.RootDBFolderChanged += preferenceForm_RootDBFolderChanged;
 				m_preferenceForm.Visible = false;
 
-				m_ficheEditorForm = new FicheEditorForm( this );
-				m_ficheEditorForm.Visible = false;
+// 				m_ficheEditorForm = new FicheEditorForm( this );
+// 				m_ficheEditorForm.Visible = false;
 
 				// Parse fiches and load database
 				DirectoryInfo	rootDBFolder = new DirectoryInfo( m_preferenceForm.RootDBFolder );
@@ -542,9 +542,9 @@ F.Show( this );
 //F.Location = this.Location + this.Size - F.Size;	// Bottom-right of the screen
 F.CenterOnPoint( Control.MousePosition );			// Center on mouse
 
-								// Make it the last edited fiche
- 								m_ficheEditorForm.EditedFiche = fiche;
- 
+//								// Make it the last edited fiche
+//								m_ficheEditorForm.EditedFiche = fiche;
+//  
 // 								// Show both the application & the fiche editor
 // 								m_showEditorFormOnShowMain = true;
 // 								Show();
@@ -744,7 +744,7 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 
 			if ( e.KeyCode == m_preferenceForm.SHORTCUT_KEY ) {
 				ToggleShowPreferences();
-			} else if ( e.KeyCode == m_ficheEditorForm.SHORTCUT_KEY ) {
+			} else if ( m_ficheEditorForm != null && e.KeyCode == m_ficheEditorForm.SHORTCUT_KEY ) {
 				ToggleShowFicheEditor();
 			}
 
