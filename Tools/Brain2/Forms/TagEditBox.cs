@@ -96,9 +96,13 @@ namespace Brain2 {
 				}
 			}
 
-			public EditedTag( Fiche _fiche, EditedTag _previousTag ) {
-				if ( _previousTag != null )
-					InsertAfter( _previousTag );
+			public EditedTag( Fiche _fiche, EditedTag _previousTag, bool _insertAfter ) {
+				if ( _previousTag != null ) {
+					if ( _insertAfter )
+						InsertAfter( _previousTag );
+					else
+						InsertBefore( _previousTag );
+				}
 
 				Fiche = _fiche;
 			}
@@ -232,7 +236,8 @@ namespace Brain2 {
 
 		#region FIELDS
 
-		BrainForm				m_ownerForm = null;
+		BrainForm				m_applicationForm = null;
+		Form					m_ownerForm = null;
 
 		EditedTag				m_selectedTag = null;				// The currently-selected tag
 
@@ -250,12 +255,30 @@ namespace Brain2 {
 
 		#region PROPERTIES
 
-		public BrainForm		OwnerForm {
+		public BrainForm		ApplicationForm {
+			get { return m_applicationForm; }
+			set {
+				m_applicationForm = value;
+				m_suggestionForm.Owner = m_applicationForm;
+			}
+		}
+
+		public Form				OwnerForm {
 			get { return m_ownerForm; }
 			set {
+				if ( value == m_ownerForm )
+					return;
+
+				if ( m_ownerForm != null )
+					m_ownerForm.LocationChanged -= ownerForm_LocationChanged;
 				m_ownerForm = value;
-				m_suggestionForm.Owner = m_ownerForm;
+				if ( m_ownerForm != null )
+					m_ownerForm.LocationChanged += ownerForm_LocationChanged;
 			}
+		}
+
+		private void ownerForm_LocationChanged(object sender, EventArgs e) {
+			Invalidate();	// Makes the suggestion form move along with the parent form
 		}
 
 		/// <summary>
@@ -284,7 +307,7 @@ namespace Brain2 {
 				EditedTag	previousTag = null;
 				string		text = "";
 				foreach ( Fiche F in value ) {
-					EditedTag	T = new EditedTag( F, previousTag );
+					EditedTag	T = new EditedTag( F, previousTag, true );
 
 					text += T.ToString();
 
@@ -371,7 +394,7 @@ namespace Brain2 {
 			m_suggestionForm.Dispose();
 		}
 
-		void	DeleteTag( EditedTag _tag ) {
+		void	DeleteTag( EditedTag _tag, bool _selectPrevious ) {
 			if ( _tag == null )
 				return;
 
@@ -383,7 +406,8 @@ namespace Brain2 {
 
 			if ( m_selectedTag == _tag ) {
 //				SelectTag( _tag.m_previous != null ? _tag.m_previous : _tag.m_next );
-				m_selectedTag = _tag.m_previous != null ? _tag.m_previous : _tag.m_next;
+				m_selectedTag = _selectPrevious ? (_tag.m_previous != null ? _tag.m_previous : _tag.m_next)
+												: (_tag.m_next != null ? _tag.m_next : _tag.m_previous);
 			}
 
 			_tag.Remove();
@@ -435,7 +459,7 @@ namespace Brain2 {
 			m_matches.Clear();
 			if ( unRecognizedTagName != null ) {
 				// Handle auto-completion
- 				m_ownerForm.Database.FindNearestTagMatches( unRecognizedTagName, m_matches );
+ 				m_applicationForm.Database.FindNearestTagMatches( unRecognizedTagName, m_matches );
 				if ( m_matches.Count > 0 ) {
 					// Show potential matches
 					string[]	matchStrings = new string[Math.Min( MAX_MATCHES, m_matches.Count )];
@@ -508,8 +532,10 @@ namespace Brain2 {
 		protected override void OnPaint(PaintEventArgs e) {
 			if ( m_internalChange > 0 )
 				return;
+
+//			base.OnPaint(e);
+
 // @TODO:
-//	• Render tags with background color depending on recognition
 //	• Render suggested text as light gray
 
 			if ( m_selectedTag == null )
@@ -523,27 +549,34 @@ namespace Brain2 {
 				currentTag = currentTag.m_next;
 			}
 
-//			base.OnPaint(e);
 			if ( !m_suggestionForm.Visible || m_firstUnRecognizedTag == null || m_firstUnRecognizedTag.Index >= m_renderedRectangles.Length )
 				return;
 
 			// Locate either above or below the edit box depending on screen position
-// 			string	textUntilTag = this.Text.Substring( 0, m_selectedTag.StartIndex );
-// 			Size	textSizeUntilTag = TextRenderer.MeasureText( textUntilTag, this.Font );
-// 
-// 			Point	screenBottomLeft = this.PointToScreen( this.Location );
-// 					screenBottomLeft.Y += this.Height;				// Bottom
-// 					screenBottomLeft.X += textSizeUntilTag.Width;	// Advance to current edition position
-
-// 			Point	screenBottomLeft = this.PointToScreen( this.Location );
  			Point	screenBottomLeft = this.PointToScreen( Point.Empty );
  					screenBottomLeft.Y += this.Height;				// Bottom
  					screenBottomLeft.X += (int) m_renderedRectangles[m_firstUnRecognizedTag.Index].X;	// Advance to current edition position
 
-			if ( screenBottomLeft.Y + m_suggestionForm.Height > m_ownerForm.Bottom ) {
+			if ( screenBottomLeft.Y + m_suggestionForm.Height > m_applicationForm.Bottom ) {
 				screenBottomLeft.Y -= this.Height - m_suggestionForm.Height;	// Make the form pop above the text box instead, otherwise it will go too low
 			}
 			m_suggestionForm.Location = screenBottomLeft;
+		}
+
+		// https://stackoverflow.com/questions/3562235/panel-not-getting-focus
+		protected override bool IsInputKey(Keys keyData) {
+			if ( keyData == Keys.Up		|| keyData == Keys.Down ) return true;
+			if ( keyData == Keys.Left	|| keyData == Keys.Right ) return true;
+			if ( keyData == Keys.Tab ) return true;
+			return base.IsInputKey(keyData);
+		}
+		protected override void OnEnter(EventArgs e) {
+			this.Invalidate();
+			base.OnEnter(e);
+		}
+		protected override void OnLeave(EventArgs e) {
+			this.Invalidate();
+			base.OnLeave(e);
 		}
 
 		protected override bool ProcessKeyMessage(ref Message m) {
@@ -559,26 +592,46 @@ namespace Brain2 {
 								EditedTag	tagToDelete = m_selectedTag.m_previous != null ? m_selectedTag.m_previous : m_selectedTag;
 								if ( m_selectedTag.m_next == null ) {
 									// Special care must be used for last tag in case the actual selection is beyond last tag, even though that's the last tag that's selected: we must delete the selected tag!
-									if ( m_cursorIndex >= m_selectedTag.Index )
+									if ( m_cursorIndex > m_selectedTag.Index )
 										tagToDelete = m_selectedTag;
 								}
-								DeleteTag( tagToDelete );
+								DeleteTag( tagToDelete, true );
 							}
 							return true;
 
 						case Keys.Delete:
-							if ( m_selectedTag != null )
-								DeleteTag( m_selectedTag );
+							if ( m_selectedTag != null ) {
+								if ( m_selectedTag.m_next == null && m_cursorIndex > m_selectedTag.Index )
+									break;	// Nothing to delete when cursor is after last tag
+
+								DeleteTag( m_selectedTag, false );
+							}
 							return true;
 
 						case Keys.Left:
-							if ( m_selectedTag != null )
-								SelectTag( m_selectedTag.m_previous );
+							if ( m_selectedTag != null ) {
+								if ( m_selectedTag.m_next == null && m_cursorIndex > m_selectedTag.Index ) {
+									// If cursor is after the last tag, just move it...
+									m_cursorIndex--;
+									Invalidate();
+								} else if ( m_selectedTag.m_previous != null ) {
+									SelectTag( m_selectedTag.m_previous );
+								}
+							}
 							return true;
 
 						case Keys.Right:
-							if ( m_selectedTag != null )
-								SelectTag( m_selectedTag.m_next );
+							if ( m_selectedTag != null ) {
+								if ( m_selectedTag.m_next == null ) {
+									if ( m_cursorIndex <= m_selectedTag.Index ) {
+										// Just advance cursor after last tag...
+										m_cursorIndex++;
+										Invalidate();
+									}
+								} else {
+									SelectTag( m_selectedTag.m_next );
+								}
+							}
 							return true;
 
 						case Keys.Home:
@@ -621,7 +674,7 @@ namespace Brain2 {
  								break;	// Unsupported...
 
 							// Create a brand new edited tag that will host the text typed in by the user
-							EditedTag	newTag = new EditedTag( null, m_selectedTag );
+							EditedTag	newTag = new EditedTag( null, m_selectedTag, m_selectedTag == null || m_cursorIndex > m_selectedTag.Index );
 										newTag.m_tagString += C;
 							SelectTag( newTag );
 							m_cursorIndex++;	// Always place cursor AFTER entered character
@@ -719,7 +772,7 @@ namespace Brain2 {
 				while ( currentTag != lastMatchedTag ) {
 					EditedTag	tagToRemove = currentTag;
 					currentTag = currentTag.m_next;
-					DeleteTag( tagToRemove );
+					DeleteTag( tagToRemove, true );
 				}
 			}
 

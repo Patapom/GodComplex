@@ -53,7 +53,8 @@ namespace Brain2 {
 		public FastTaggerForm( BrainForm _owner, Fiche[] _fiches ) : base( _owner ) {
 			InitializeComponent();
 
-			this.richTextBoxTags.OwnerForm = _owner;
+			this.richTextBoxTags.ApplicationForm = _owner;
+			this.richTextBoxTags.OwnerForm = this;
 
 // 			m_fiches = _fiches;
 // 			m_suggestionForm.SuggestionSelected += suggestionForm_SuggestionSelected;
