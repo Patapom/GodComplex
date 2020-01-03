@@ -425,12 +425,18 @@ namespace Brain2 {
 		/// </summary>
 		/// <param name="_title"></param>
 		/// <returns></returns>
-		public void	FindNearestTagMatches( string _tentativeName, List< Fiche > _matches ) {
+		public void	FindNearestTagMatches( string _tentativeName, Fiche[] _excludedTags, List< Fiche > _matches ) {
 			if ( _tentativeName == null )
 				throw new Exception( "Invalid title!" );
 			_tentativeName = _tentativeName.ToLower();
 
 			HashSet< Fiche >	uniqueMatches = new HashSet<Fiche>();
+			HashSet< Fiche >	excludedTags = new HashSet<Fiche>();
+			if ( _excludedTags != null ) {
+				foreach ( Fiche excludedTag in _excludedTags ) {
+					excludedTags.Add( excludedTag );
+				}
+			}
 
 			// List exact matches first
 			List<Fiche>			results = null;
@@ -450,8 +456,11 @@ namespace Brain2 {
 					break;
 			}
 			if ( results != null ) {
-				foreach ( Fiche result in results )
-					uniqueMatches.Add( result );
+				foreach ( Fiche result in results ) {
+					if ( !excludedTags.Contains( result ) ) {
+						uniqueMatches.Add( result );
+					}
+				}
 			}
 
 			// List approximate results

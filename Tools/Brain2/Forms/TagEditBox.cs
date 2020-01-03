@@ -464,7 +464,7 @@ namespace Brain2 {
 			m_matches.Clear();
 			if ( unRecognizedTagName != null ) {
 				// Handle auto-completion
- 				m_applicationForm.Database.FindNearestTagMatches( unRecognizedTagName, m_matches );
+ 				m_applicationForm.Database.FindNearestTagMatches( unRecognizedTagName, RecognizedTags, m_matches );
 				if ( m_matches.Count > 0 ) {
 					// Show potential matches
 					string[]	matchStrings = new string[Math.Min( MAX_MATCHES, m_matches.Count )];
