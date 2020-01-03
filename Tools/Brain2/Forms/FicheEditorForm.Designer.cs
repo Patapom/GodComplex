@@ -28,7 +28,7 @@
 			this.richTextBoxTitle = new System.Windows.Forms.RichTextBox();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
-			this.richTextBoxTags = new System.Windows.Forms.RichTextBox();
+			this.richTextBoxTags = new TagEditBox();
 			this.webEditor = new ZetaHtmlEditControl.Pom.WebEditor();
 			this.richTextBoxURL = new System.Windows.Forms.RichTextBox();
 			this.SuspendLayout();
@@ -81,11 +81,9 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.richTextBoxTags.Enabled = false;
 			this.richTextBoxTags.Location = new System.Drawing.Point(52, 64);
-			this.richTextBoxTags.Multiline = false;
 			this.richTextBoxTags.Name = "richTextBoxTags";
 			this.richTextBoxTags.Size = new System.Drawing.Size(960, 26);
 			this.richTextBoxTags.TabIndex = 1;
-			this.richTextBoxTags.Text = "";
 			// 
 			// webEditor
 			// 
@@ -150,7 +148,7 @@
 		private System.Windows.Forms.Label label2;
 		private ZetaHtmlEditControl.Pom.WebEditor webEditor;
 		private System.Windows.Forms.Label label3;
-		private System.Windows.Forms.RichTextBox richTextBoxTags;
+		private TagEditBox richTextBoxTags;
 		private System.Windows.Forms.RichTextBox richTextBoxURL;
 	}
 }

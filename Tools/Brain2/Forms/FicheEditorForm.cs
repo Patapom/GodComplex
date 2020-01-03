@@ -47,7 +47,7 @@ namespace Brain2 {
 				richTextBoxURL.Text = enable && m_fiche.URL != null ? m_fiche.URL.ToString() : "";
 
 				richTextBoxTags.Enabled = enable;
-				richTextBoxTags.Text = enable ? "@TODO: handle parents as tags" : "";
+				richTextBoxTags.RecognizedTags = enable ? m_fiche.Tags : null;
 
 				if ( enable ) {
 					if ( m_fiche.HTMLContent != null ) {
@@ -73,6 +73,9 @@ namespace Brain2 {
 
 		public FicheEditorForm( BrainForm _owner ) : base( _owner ) {
 			InitializeComponent();
+
+			richTextBoxTags.ApplicationForm = m_owner;
+			richTextBoxTags.OwnerForm = this;
 
 			webEditor.DocumentUpdated += WebEditor_DocumentUpdated;
 		}
