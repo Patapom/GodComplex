@@ -388,8 +388,7 @@ namespace Brain2 {
 			SetStyle( ControlStyles.ResizeRedraw, true );
 			SetStyle( ControlStyles.EnableNotifyMessage, true );
 			SetStyle( ControlStyles.ContainerControl, false );
-//			SetStyle( ControlStyles.AllPaintingInWmPaint, true );
-//			SetStyle( ControlStyles., false );
+			this.DoubleBuffered = true;
 
 			// Create the end tag (not editable, not deletable, can't go past it)
 			m_selectedTag = new EditedTag( null, null );
@@ -502,8 +501,6 @@ namespace Brain2 {
 			if ( m_selectedTag == null )
 				return;	// Nothing to paint...
 
-BrainForm.Debug( "PaintBackground!" );
-
 			List< RectangleF >	renderedRectangles = new List<RectangleF>();
 
 			float		X = this.Margin.Left;
@@ -567,19 +564,6 @@ BrainForm.Debug( "PaintBackground!" );
 			}
 			m_suggestionForm.Location = screenBottomLeft;
 		}
-
-		// https://stackoverflow.com/questions/3562235/panel-not-getting-focus
-		protected override bool IsInputKey(Keys keyData) {
-			switch ( keyData ) {
-				case Keys.Up:
-				case Keys.Down:
-				case Keys.Left:
-				case Keys.Right:
-				case Keys.Tab:
-					return true;
-			}
-			return base.IsInputKey(keyData);
-		}
 		protected override void OnEnter(EventArgs e) {
 			this.Invalidate();
 			base.OnEnter(e);
@@ -636,112 +620,135 @@ BrainForm.Debug( "PaintBackground!" );
 			m_suggestionForm.Visible = false;
 		}
 
-		protected override bool ProcessKeyMessage(ref Message m) {
-			switch ( m.Msg ) {
-				case Interop.WM_KEYDOWN:
-					Keys	key = (Keys) m.WParam;
-					switch ( key ) {
-						case Keys.Escape:
-							return base.ProcessKeyMessage(ref m);	// Feed to parent to close the form
+		// https://stackoverflow.com/questions/3562235/panel-not-getting-focus
+		protected override bool IsInputKey(Keys keyData) {
+			switch ( keyData ) {
+				case Keys.Up:
+				case Keys.Down:
+				case Keys.Left:
+				case Keys.Right:
+				case Keys.Tab:
+					return true;
+			}
+			return base.IsInputKey(keyData);
+		}
 
-						case Keys.Back:
-							if ( m_selectedTag.m_previous != null ) {
-								DeleteTag( m_selectedTag.m_previous, false );
-							}
-							return true;
+// 		protected override bool ProcessKeyMessage(ref Message m) {
+// 			switch ( m.Msg ) {
+// 				case Interop.WM_KEYDOWN:
+// 					Keys	key = (Keys) m.WParam;
+// 					switch ( key ) {
+// 						case Keys.Escape:
+// 							return base.ProcessKeyMessage(ref m);	// Feed to parent to close the form
+//  					}
+//  					break;
+// 			}
+// 
+// 			return base.ProcessKeyMessage(ref m);
+// 		}
 
-						case Keys.Delete:
-							if ( m_selectedTag.m_next != null ) {
-								DeleteTag( m_selectedTag, false );
-							}
-							return true;
+		protected override void OnKeyDown(KeyEventArgs e) {
+			e.SuppressKeyPress = true;
 
-						case Keys.Left:
-							if ( m_selectedTag.m_previous != null ) {
-								SelectTag( m_selectedTag.m_previous );
-							}
-							return true;
-
-						case Keys.Right:
-							if ( m_selectedTag.m_next != null ) {
-								SelectTag( m_selectedTag.m_next );
-							}
-							return true;
-
-						case Keys.Home:
-							SelectTag( m_selectedTag.First );
-							return true;
-
-						case Keys.End:
-							SelectTag( m_selectedTag.Last );
-							return true;
-
-						case Keys.Down:
-							if ( m_suggestionForm.IsSuggesting ) {
-								m_suggestionForm.SelectedSuggestionIndex++;
-							}
-							return true;
-
-						case Keys.Up:
-							if ( m_suggestionForm.IsSuggesting ) {
-								m_suggestionForm.SelectedSuggestionIndex--;
-							}
-							return true;
-
-						case Keys.Return:
-						case Keys.Tab:
-							if ( m_suggestionForm.IsSuggesting )
-								m_suggestionForm.AcceptSuggestion();
-							return true;
-
-						default:
-							// Handle any other key as a possible new tag to auto-complete using the suggestion form
-							char	C = Message2CharANSI( key );
- 							if ( C == '\0' )
- 								break;	// Unsupported...
-
-							// Create a brand new edited tag that will host the text typed in by the user
-							EditedTag	newTag = new EditedTag( null, m_selectedTag );
-										newTag.m_tagString += C;
-							UpdateSuggestionForm();
-							Invalidate();
-							break;
+			switch ( e.KeyCode ) {
+				case Keys.Back:
+					if ( m_selectedTag.m_previous != null ) {
+						DeleteTag( m_selectedTag.m_previous, false );
 					}
-
 					break;
+
+				case Keys.Delete:
+					if ( m_selectedTag.m_next != null ) {
+						DeleteTag( m_selectedTag, false );
+					}
+					break;
+
+				case Keys.Left:
+					if ( m_selectedTag.m_previous != null ) {
+						SelectTag( m_selectedTag.m_previous );
+					}
+					break;
+
+				case Keys.Right:
+					if ( m_selectedTag.m_next != null ) {
+						SelectTag( m_selectedTag.m_next );
+					}
+					break;
+
+				case Keys.Home:
+					SelectTag( m_selectedTag.First );
+					break;
+
+				case Keys.End:
+					SelectTag( m_selectedTag.Last );
+					break;
+
+				case Keys.Down:
+					if ( m_suggestionForm.IsSuggesting ) {
+						m_suggestionForm.SelectedSuggestionIndex++;
+					}
+					break;
+
+				case Keys.Up:
+					if ( m_suggestionForm.IsSuggesting ) {
+						m_suggestionForm.SelectedSuggestionIndex--;
+					}
+					break;
+
+				case Keys.Return:
+				case Keys.Tab:
+					if ( m_suggestionForm.IsSuggesting )
+						m_suggestionForm.AcceptSuggestion();
+					break;
+
+ 				default:
+					e.SuppressKeyPress = false;
+ 					break;
 			}
 
-			return base.ProcessKeyMessage(ref m);
+			base.OnKeyDown(e);
 		}
 
-		KeysConverter	kc = new KeysConverter();
-		char	Message2CharANSI( Keys _key ) {
-			int		keyValue = (int) _key;
-					keyValue &= 0x7F;	// Ignore culture-specific characters
-			if ( keyValue < 32 )
-				return '\0';	// Unsupported...
+		protected override void OnKeyPress(KeyPressEventArgs e) {
+			base.OnKeyPress(e);
 
-			if ( _key == Keys.Shift )
-				return '\0';
+// BrainForm.Debug( "KeyPress => " + (((int) e.KeyChar) >= 32	? e.KeyChar.ToString()
+// 															: ("0x" + ((int) e.KeyChar).ToString( "X2" )))
+// 				);
 
-//			if ( keyValue > 127 )
-
-			Keys	rawKey = (Keys) keyValue;
-			if ( rawKey == Keys.Space )
-				return ' ';
-
-			string	C = kc.ConvertToString( rawKey );
-			if ( C.Length != 1 )
-				return '\0';	// Unsupported...
-
-//			if ( (_key & Keys.Shift) != 0 )
-			if ( Control.ModifierKeys == Keys.Shift )
-				C = C.ToUpper();
-			else
-				C = C.ToLower();
-
-			return C[0];
+			// Create a brand new edited tag that will host the text typed in by the user
+			EditedTag	newTag = new EditedTag( null, m_selectedTag );
+						newTag.m_tagString = e.KeyChar.ToString();
+			UpdateSuggestionForm();
+			Invalidate();
 		}
+
+// 		KeysConverter	kc = new KeysConverter();
+// 		char	Message2CharANSI( Keys _key ) {
+// 			int		keyValue = (int) _key;
+// 					keyValue &= 0x7F;	// Ignore culture-specific characters
+// 			if ( keyValue < 32 )
+// 				return '\0';	// Unsupported...
+// 
+// 			if ( _key == Keys.Shift )
+// 				return '\0';
+// 
+// 			Keys	rawKey = (Keys) keyValue;
+// 			if ( rawKey == Keys.Space )
+// 				return ' ';
+// 
+// 			string	C = kc.ConvertToString( rawKey );
+// 			if ( C.Length != 1 )
+// 				return '\0';	// Unsupported...
+// 
+// //			if ( (_key & Keys.Shift) != 0 )
+// 			if ( Control.ModifierKeys == Keys.Shift )
+// 				C = C.ToUpper();
+// 			else
+// 				C = C.ToLower();
+// 
+// 			return C[0];
+// 		}
 
 		private void suggestionForm_SuggestionSelected(object sender, EventArgs e) {
 			m_internalChange++;
@@ -768,8 +775,6 @@ BrainForm.Debug( "PaintBackground!" );
 			m_internalChange--;
 
 			Invalidate();
-
-BrainForm.Debug( "Caillou!" );
 		}
 
 		private void toolTipTag_Popup(object sender, PopupEventArgs e) {
