@@ -15,7 +15,7 @@ namespace Brain2 {
 		#region CONSTANTS
 
 		const int	MAX_MATCHES = 10;		// Max display matches
-		const int	MAX_TAG_LENGTH = 10;	// Max tag length
+		const int	MAX_TAG_LENGTH = 10;	// Max tag string length
 
 		#endregion
 
@@ -29,6 +29,7 @@ namespace Brain2 {
 			private Fiche		m_fiche = null;
 
 			public string		m_tagString = null;
+			public bool			m_ellipsed = false;
 
 			public EditedTag	First {
 				get { return m_previous == null ? this : m_previous.First; }
@@ -88,22 +89,20 @@ namespace Brain2 {
 
 					// Build tag string
 					m_tagString = CleanTagName( m_fiche.Title );
-					if ( m_tagString.Length > MAX_TAG_LENGTH )
+					if ( m_tagString.Length > MAX_TAG_LENGTH ) {
 						m_tagString = m_tagString.Substring( 0, MAX_TAG_LENGTH ) + "...";
+						m_ellipsed = true;
+					} else {
+						m_ellipsed = false;
+					}
 					if ( m_tagString.IndexOf( ' ' ) != -1 )
 						m_tagString = "\"" + m_tagString + "\"";
 					m_tagString += " ";	// Append end space
 				}
 			}
 
-			public EditedTag( Fiche _fiche, EditedTag _previousTag, bool _insertAfter ) {
-				if ( _previousTag != null ) {
-					if ( _insertAfter )
-						InsertAfter( _previousTag );
-					else
-						InsertBefore( _previousTag );
-				}
-
+			public EditedTag( Fiche _fiche, EditedTag _nextTag ) {
+				InsertBefore( _nextTag );
 				Fiche = _fiche;
 			}
 
@@ -239,7 +238,8 @@ namespace Brain2 {
 		BrainForm				m_applicationForm = null;
 		Form					m_ownerForm = null;
 
-		EditedTag				m_selectedTag = null;				// The currently-selected tag
+		EditedTag				m_selectedTag = null;				// The currently selected tag
+		EditedTag				m_hoveredTag = null;				// The tag currently hovered with the mouse
 
 		EditedTag				m_firstUnRecognizedTag = null;
 		EditedTag				m_lastUnRecognizedTag = null;
@@ -248,7 +248,6 @@ namespace Brain2 {
 		SuggestionForm			m_suggestionForm = new SuggestionForm();
 
 		int						m_internalChange = 0;				// If > 0, we won't react to text change events
-		int						m_cursorIndex = 0;
 		RectangleF[]			m_renderedRectangles = new RectangleF[0];
 
 		#endregion
@@ -286,9 +285,6 @@ namespace Brain2 {
 		/// </summary>
 		public Fiche[]			RecognizedTags {
 			get {
-				if ( m_selectedTag == null )
-					return new Fiche[0];
-
 				List<Fiche>	result = new List<Fiche>();
 				EditedTag	currentTag = m_selectedTag.First;
 				while ( currentTag != null ) {
@@ -304,19 +300,14 @@ namespace Brain2 {
 				
 				m_internalChange++;
 
-				EditedTag	previousTag = null;
-				string		text = "";
+				m_selectedTag = new EditedTag( null, null );	// Default end tag
 				foreach ( Fiche F in value ) {
-					EditedTag	T = new EditedTag( F, previousTag, true );
-
-					text += T.ToString();
-
-					previousTag = T;
+					new EditedTag( F, m_selectedTag );
 				}
 
-				// Update text
-				this.Text = text;
 				m_internalChange--;
+
+				Invalidate();
 			}
 		}
 
@@ -325,9 +316,6 @@ namespace Brain2 {
 		/// </summary>
 		public string[]			UnRecognizedTags {
 			get {
-				if ( m_selectedTag == null )
-					return new string[0];
-
 				List<string>	result = new List<string>();
 				EditedTag		currentTag = m_selectedTag.First;
 				while ( currentTag != null ) {
@@ -344,6 +332,24 @@ namespace Brain2 {
 				}
 
 				return result.ToArray();
+			}
+		}
+
+		/// <summary>
+		/// Sets the currently hovered tag and possibily popup a tooltip if the full title is not visible
+		/// </summary>
+		private EditedTag		HoveredTag {
+			get { return m_hoveredTag; }
+			set {
+				if ( value == m_hoveredTag )
+					return;
+
+				m_hoveredTag = value;
+				if ( m_hoveredTag != null && m_hoveredTag.Fiche != null && m_hoveredTag.m_ellipsed ) {
+					toolTipTag.Show( m_hoveredTag.Fiche.Title, this );
+				} else {
+					toolTipTag.Hide( this );
+				}
 			}
 		}
 
@@ -378,11 +384,15 @@ namespace Brain2 {
 
 			m_stringFormat.FormatFlags |= StringFormatFlags.MeasureTrailingSpaces;
 
-			SetStyle( ControlStyles.AllPaintingInWmPaint, true );
 			SetStyle( ControlStyles.Selectable, true );
 			SetStyle( ControlStyles.ResizeRedraw, true );
 			SetStyle( ControlStyles.EnableNotifyMessage, true );
 			SetStyle( ControlStyles.ContainerControl, false );
+//			SetStyle( ControlStyles.AllPaintingInWmPaint, true );
+//			SetStyle( ControlStyles., false );
+
+			// Create the end tag (not editable, not deletable, can't go past it)
+			m_selectedTag = new EditedTag( null, null );
 
 			this.Select();
 		}
@@ -397,13 +407,12 @@ namespace Brain2 {
 		void	DeleteTag( EditedTag _tag, bool _selectPrevious ) {
 			if ( _tag == null )
 				return;
+			if ( _tag.m_next == null )
+				throw new Exception( "Can't delete end tag!" );
 
 			m_internalChange++;
 
 			// Link over tag
-			if ( m_cursorIndex >= _tag.Index )
-				m_cursorIndex--;
-
 			if ( m_selectedTag == _tag ) {
 //				SelectTag( _tag.m_previous != null ? _tag.m_previous : _tag.m_next );
 				m_selectedTag = _selectPrevious ? (_tag.m_previous != null ? _tag.m_previous : _tag.m_next)
@@ -423,10 +432,7 @@ namespace Brain2 {
 			if ( _tag == m_selectedTag )
 				return;
 
-			m_internalChange++;
 			m_selectedTag = _tag;
-			m_cursorIndex = m_selectedTag != null ? m_selectedTag.Index : 0;
-			m_internalChange--;
 
 			Invalidate();
 
@@ -450,7 +456,7 @@ namespace Brain2 {
 				return;
 			}
 
-			string		unRecognizedTagName = null;
+			string	unRecognizedTagName = null;
 			do {
 				m_firstUnRecognizedTag = m_lastUnRecognizedTag;
 				m_lastUnRecognizedTag = m_firstUnRecognizedTag.CollateUnRecognizedTags( out unRecognizedTagName );
@@ -496,9 +502,11 @@ namespace Brain2 {
 			if ( m_selectedTag == null )
 				return;	// Nothing to paint...
 
+BrainForm.Debug( "PaintBackground!" );
+
 			List< RectangleF >	renderedRectangles = new List<RectangleF>();
 
-			float		X = 0;
+			float		X = this.Margin.Left;
 			float		Y = this.Margin.Top;
 			int			tagIndex = 0;
 			EditedTag	currentTag = m_selectedTag.First;
@@ -506,24 +514,27 @@ namespace Brain2 {
 
 				SizeF		textSize = e.Graphics.MeasureString( currentTag.m_tagString, this.Font, this.Width, m_stringFormat );
 				RectangleF	R = new RectangleF( X, Y, textSize.Width, textSize.Height );
-				renderedRectangles.Add( R );
 
 				if ( currentTag.Fiche != null ) {
-					e.Graphics.FillRectangle( currentTag == m_selectedTag ? m_brushTagSelected : m_brushTag, R );
+					R.X += 4;	// Include a little margin for tags
+					RectangleF	backgroundR = R;
+					backgroundR.X -= 2;
+					backgroundR.Y -= 2;
+					backgroundR.Width += 4;
+					backgroundR.Height += 4;
+
+					textSize.Width += 8;
+					e.Graphics.FillRectangle( currentTag == m_selectedTag ? m_brushTagSelected : m_brushTag, backgroundR );
 				}
 
-				if ( m_cursorIndex == tagIndex ) {
+				if ( currentTag == m_selectedTag ) {
 					e.Graphics.DrawLine( Pens.Black, X, this.Margin.Top-1, X, Height - this.Margin.Bottom-1 );
 				}
 
+				renderedRectangles.Add( R );
 				X += textSize.Width;
 				currentTag = currentTag.m_next;
 				tagIndex++;
-			}
-
-			// Special case when cursor is pointing after last tag
-			if ( m_cursorIndex == tagIndex ) {
-				e.Graphics.DrawLine( Pens.Black, X, this.Margin.Top-1, X, Height - this.Margin.Bottom-1 );
 			}
 
 			m_renderedRectangles = renderedRectangles.ToArray();
@@ -534,12 +545,6 @@ namespace Brain2 {
 				return;
 
 //			base.OnPaint(e);
-
-// @TODO:
-//	• Render suggested text as light gray
-
-			if ( m_selectedTag == null )
-				return;	// Nothing to paint...
 
 			int			tagIndex = 0;
 			EditedTag	currentTag = m_selectedTag.First;
@@ -565,9 +570,14 @@ namespace Brain2 {
 
 		// https://stackoverflow.com/questions/3562235/panel-not-getting-focus
 		protected override bool IsInputKey(Keys keyData) {
-			if ( keyData == Keys.Up		|| keyData == Keys.Down ) return true;
-			if ( keyData == Keys.Left	|| keyData == Keys.Right ) return true;
-			if ( keyData == Keys.Tab ) return true;
+			switch ( keyData ) {
+				case Keys.Up:
+				case Keys.Down:
+				case Keys.Left:
+				case Keys.Right:
+				case Keys.Tab:
+					return true;
+			}
 			return base.IsInputKey(keyData);
 		}
 		protected override void OnEnter(EventArgs e) {
@@ -575,8 +585,55 @@ namespace Brain2 {
 			base.OnEnter(e);
 		}
 		protected override void OnLeave(EventArgs e) {
+			HoveredTag = null;
 			this.Invalidate();
 			base.OnLeave(e);
+		}
+		protected override void OnMouseDown(MouseEventArgs e) {
+			Invalidate();
+
+			// Select the proper tag according to where they were drawn last
+			EditedTag	currentTag = m_selectedTag.First;
+			for ( int tagIndex=0; tagIndex < m_renderedRectangles.Length; tagIndex++ ) {
+				RectangleF	R = m_renderedRectangles[tagIndex];
+				if ( R.Contains( e.Location ) ) {
+					// Found the selected tag!
+					float	clickRatio = (float) (e.X - R.Left) / R.Width;
+					if ( currentTag.m_next != null && clickRatio > 0.66f )
+						currentTag = currentTag.m_next;	// If the user clicks too far on the right then select next tag instead...
+					SelectTag( currentTag );
+					return;
+				}
+				currentTag = currentTag.m_next;
+			}
+
+			// Select "after last tag" if none was found
+			SelectTag( m_selectedTag.Last );
+
+			base.OnMouseDown(e);
+		}
+		protected override void OnMouseMove(MouseEventArgs e) {
+			base.OnMouseMove(e);
+			if ( m_internalChange > 0 )
+				return;
+
+			int			tagIndex = 0;
+			EditedTag	currentTag = m_selectedTag.First;
+			while ( currentTag != null && tagIndex < m_renderedRectangles.Length ) {
+				RectangleF	R = m_renderedRectangles[tagIndex++];
+				if ( R.Contains( e.Location) ) {
+					HoveredTag = currentTag;
+					return;
+				}
+				currentTag = currentTag.m_next;
+			}
+
+			HoveredTag = null;
+		}
+
+		protected override void OnVisibleChanged(EventArgs e) {
+			base.OnVisibleChanged(e);
+			m_suggestionForm.Visible = false;
 		}
 
 		protected override bool ProcessKeyMessage(ref Message m) {
@@ -588,65 +645,35 @@ namespace Brain2 {
 							return base.ProcessKeyMessage(ref m);	// Feed to parent to close the form
 
 						case Keys.Back:
-							if ( m_selectedTag != null ) {
-								EditedTag	tagToDelete = m_selectedTag.m_previous != null ? m_selectedTag.m_previous : m_selectedTag;
-								if ( m_selectedTag.m_next == null ) {
-									// Special care must be used for last tag in case the actual selection is beyond last tag, even though that's the last tag that's selected: we must delete the selected tag!
-									if ( m_cursorIndex > m_selectedTag.Index )
-										tagToDelete = m_selectedTag;
-								}
-								DeleteTag( tagToDelete, true );
+							if ( m_selectedTag.m_previous != null ) {
+								DeleteTag( m_selectedTag.m_previous, false );
 							}
 							return true;
 
 						case Keys.Delete:
-							if ( m_selectedTag != null ) {
-								if ( m_selectedTag.m_next == null && m_cursorIndex > m_selectedTag.Index )
-									break;	// Nothing to delete when cursor is after last tag
-
+							if ( m_selectedTag.m_next != null ) {
 								DeleteTag( m_selectedTag, false );
 							}
 							return true;
 
 						case Keys.Left:
-							if ( m_selectedTag != null ) {
-								if ( m_selectedTag.m_next == null && m_cursorIndex > m_selectedTag.Index ) {
-									// If cursor is after the last tag, just move it...
-									m_cursorIndex--;
-									Invalidate();
-								} else if ( m_selectedTag.m_previous != null ) {
-									SelectTag( m_selectedTag.m_previous );
-								}
+							if ( m_selectedTag.m_previous != null ) {
+								SelectTag( m_selectedTag.m_previous );
 							}
 							return true;
 
 						case Keys.Right:
-							if ( m_selectedTag != null ) {
-								if ( m_selectedTag.m_next == null ) {
-									if ( m_cursorIndex <= m_selectedTag.Index ) {
-										// Just advance cursor after last tag...
-										m_cursorIndex++;
-										Invalidate();
-									}
-								} else {
-									SelectTag( m_selectedTag.m_next );
-								}
+							if ( m_selectedTag.m_next != null ) {
+								SelectTag( m_selectedTag.m_next );
 							}
 							return true;
 
 						case Keys.Home:
-							if ( m_selectedTag != null )
-								SelectTag( m_selectedTag.First );
+							SelectTag( m_selectedTag.First );
 							return true;
 
 						case Keys.End:
-							if ( m_selectedTag != null ) {
-								m_internalChange++;
-								SelectTag( m_selectedTag.Last );
-								m_cursorIndex++;	// Always select AFTER last tag
-								m_internalChange--;
-								Invalidate();
-							}
+							SelectTag( m_selectedTag.Last );
 							return true;
 
 						case Keys.Down:
@@ -674,10 +701,10 @@ namespace Brain2 {
  								break;	// Unsupported...
 
 							// Create a brand new edited tag that will host the text typed in by the user
-							EditedTag	newTag = new EditedTag( null, m_selectedTag, m_selectedTag == null || m_cursorIndex > m_selectedTag.Index );
+							EditedTag	newTag = new EditedTag( null, m_selectedTag );
 										newTag.m_tagString += C;
-							SelectTag( newTag );
-							m_cursorIndex++;	// Always place cursor AFTER entered character
+							UpdateSuggestionForm();
+							Invalidate();
 							break;
 					}
 
@@ -716,44 +743,6 @@ namespace Brain2 {
 			return C[0];
 		}
 
-		protected override void OnMouseDown(MouseEventArgs e) {
-			base.OnMouseDown(e);
-
-			if ( m_selectedTag == null )
-				return;
-
-			Invalidate();
-
-			// Select the proper tag according to where they were drawn last
-			EditedTag	currentTag = m_selectedTag.First;
-			for ( int tagIndex=0; tagIndex < m_renderedRectangles.Length; tagIndex++ ) {
-				RectangleF	R = m_renderedRectangles[tagIndex];
-				if ( R.Contains( e.Location ) ) {
-					// Found the selected tag!
-					float	clickRatio = (float) (e.X - R.Left) / R.Width;
-					if ( currentTag.m_next != null && clickRatio > 0.66f )
-						currentTag = currentTag.m_next;	// If the user clicks too far on the right then select next tag instead...
-					SelectTag( currentTag );
-					return;
-				}
-				currentTag = currentTag.m_next;
-			}
-
-			// Select "after last tag" if none was found
-			m_cursorIndex = m_renderedRectangles.Length;
-		}
-
-// 		protected override void OnLostFocus(EventArgs e) {
-// 			base.OnLostFocus(e);
-// // 			if ( !m_suggestionForm.Focused )
-// // 				m_suggestionForm.Visible = false;	// Form doesn't have focus either so hide...
-// 		}
-
-		protected override void OnVisibleChanged(EventArgs e) {
-			base.OnVisibleChanged(e);
-			m_suggestionForm.Visible = false;
-		}
-
 		private void suggestionForm_SuggestionSelected(object sender, EventArgs e) {
 			m_internalChange++;
 
@@ -764,25 +753,27 @@ namespace Brain2 {
 			// Select the first tag used for the match & assign the fiche
 			firstMatchedTag.Fiche = m_matches[m_suggestionForm.SelectedSuggestionIndex];
 
-			SelectTag( firstMatchedTag );
-
 			// Remove orphan tags that were part of the match
 			if ( firstMatchedTag != lastMatchedTag ) {
 				EditedTag	currentTag = firstMatchedTag.m_next;
-				while ( currentTag != lastMatchedTag ) {
+				while ( currentTag != lastMatchedTag && currentTag.m_next != null ) {
 					EditedTag	tagToRemove = currentTag;
 					currentTag = currentTag.m_next;
 					DeleteTag( tagToRemove, true );
 				}
 			}
 
+			SelectTag( firstMatchedTag.m_next );
+
 			m_internalChange--;
 
 			Invalidate();
+
+BrainForm.Debug( "Caillou!" );
 		}
 
 		private void toolTipTag_Popup(object sender, PopupEventArgs e) {
-			toolTipTag.ToolTipTitle = m_selectedTag != null && m_selectedTag.Fiche != null ? m_selectedTag.Fiche.Title : null;
+//			toolTipTag.ToolTipTitle = m_selectedTag != null && m_selectedTag.Fiche != null ? m_selectedTag.Fiche.Title : null;
 		}
 
 		#endregion

@@ -32,6 +32,9 @@
 			// 
 			// toolTipTag
 			// 
+			this.toolTipTag.AutoPopDelay = 5000;
+			this.toolTipTag.InitialDelay = 100;
+			this.toolTipTag.ReshowDelay = 100;
 			this.toolTipTag.Popup += new System.Windows.Forms.PopupEventHandler(this.toolTipTag_Popup);
 			// 
 			// TagEditBox
