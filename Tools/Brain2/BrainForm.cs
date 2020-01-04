@@ -76,8 +76,12 @@ namespace Brain2 {
 		// Modeless forms
 		bool						m_showPreferenceFormOnShowMain = false;
 		PreferencesForm				m_preferenceForm = null;
+
 		bool						m_showEditorFormOnShowMain = false;
-		FicheEditorForm				m_ficheEditorForm = null;
+		FicheWebPageEditorForm		m_ficheWebPageEditorForm = null;
+
+		bool						m_showAnnotatorFormOnShowMain = false;
+		FicheWebPageAnnotatorForm	m_ficheWebPageAnnotatorForm = null;
 
 		#endregion
 
@@ -166,11 +170,20 @@ Debug( "_____________________________" );
 				Fiche	fiche = m_database.CreateFicheFromClipboard( _data );
 
 				// Start edition
-				m_ficheEditorForm.EditedFiche = fiche;
+				switch ( fiche.Type ) {
+					case Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE:
+					case Fiche.TYPE.LOCAL_FILE:
+						m_ficheWebPageEditorForm.EditedFiche = fiche;
+						m_ficheWebPageEditorForm.Show( this );
+						break;
+
+					case Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE:
+						m_ficheWebPageAnnotatorForm.EditedFiche = fiche;
+						m_ficheWebPageAnnotatorForm.Show( this );
+						break;
+				}
 
 //Show();
-
-				m_ficheEditorForm.Show( this );
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while creating fiche!", _e );
@@ -275,8 +288,6 @@ this.TopMost = false;
 			if( disposing && components != null ) {
 				components.Dispose();
 			}
-			
-			Interop.UnregisterHotKey( Handle, 0 );
 
 			m_primitiveCube.Dispose();
 
@@ -286,6 +297,12 @@ this.TopMost = false;
 			m_CB_camera.Dispose();
 
 			m_device.Dispose();
+
+			// Forms disposal
+			m_preferenceForm.Dispose();
+			m_ficheWebPageEditorForm.Dispose();
+			m_ficheWebPageAnnotatorForm.Dispose();
+			HTMLPageRenderer.HTMLPageControl.ExitChromium();
 
 			base.Dispose(disposing);
 		}
@@ -424,7 +441,12 @@ this.TopMost = false;
 
 			if ( m_showEditorFormOnShowMain ) {
 				m_showEditorFormOnShowMain = false;
-				m_ficheEditorForm.Show();
+				m_ficheWebPageEditorForm.Show();
+			}
+
+			if ( m_showAnnotatorFormOnShowMain ) {
+				m_showAnnotatorFormOnShowMain = false;
+				m_ficheWebPageAnnotatorForm.Show();
 			}
 
 			base.Show();
@@ -439,8 +461,11 @@ this.TopMost = false;
 			m_showPreferenceFormOnShowMain = m_preferenceForm.Visible;
 			m_preferenceForm.Hide();
 
-			m_showEditorFormOnShowMain = m_ficheEditorForm.Visible;
-			m_ficheEditorForm.Hide();
+			m_showEditorFormOnShowMain = m_ficheWebPageEditorForm.Visible;
+			m_ficheWebPageEditorForm.Hide();
+
+			m_showAnnotatorFormOnShowMain = m_ficheWebPageAnnotatorForm.Visible;
+			m_ficheWebPageAnnotatorForm.Hide();
 
 //			Capture = false;
 			base.Hide();
@@ -524,7 +549,15 @@ this.TopMost = false;
 												F.Show( this );
 
 								// Make it the last edited fiche
-								m_ficheEditorForm.EditedFiche = fiche;
+								switch ( fiche.Type ) {
+									case Fiche.TYPE.LOCAL_FILE:
+									case Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE:
+										m_ficheWebPageEditorForm.EditedFiche = fiche;
+										break;
+									case Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE:
+										m_ficheWebPageAnnotatorForm.EditedFiche = fiche;
+										break;
+								}
 
 							} catch ( Exception _e ) {
 // @TODO => Show an error dialog!
@@ -537,17 +570,17 @@ this.TopMost = false;
 							try {
  								Fiche	fiche = m_database.SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, "New Fiche", null, null, null );
 
-FastTaggerForm	F = new FastTaggerForm( this, new Fiche[] { fiche } );
-F.Show( this );
-//F.Location = this.Location + this.Size - F.Size;	// Bottom-right of the screen
-F.CenterOnPoint( Control.MousePosition );			// Center on mouse
+// FastTaggerForm	F = new FastTaggerForm( this, new Fiche[] { fiche } );
+// F.Show( this );
+// //F.Location = this.Location + this.Size - F.Size;	// Bottom-right of the screen
+// F.CenterOnPoint( Control.MousePosition );			// Center on mouse
 
-//								// Make it the last edited fiche
-//								m_ficheEditorForm.EditedFiche = fiche;
-//  
-// 								// Show both the application & the fiche editor
-// 								m_showEditorFormOnShowMain = true;
-// 								Show();
+								// Make it the last edited fiche
+								m_ficheWebPageEditorForm.EditedFiche = fiche;
+ 
+								// Show both the application & the fiche editor
+								m_showEditorFormOnShowMain = true;
+								Show();
 
 							} catch ( Exception _e ) {
 // @TODO => Show an error dialog!
@@ -651,10 +684,17 @@ F.CenterOnPoint( Control.MousePosition );			// Center on mouse
 		}
 
 		void	ToggleShowFicheEditor() {
-			if ( m_ficheEditorForm.Visible )
-				m_ficheEditorForm.Hide();
+			if ( m_ficheWebPageEditorForm.Visible )
+				m_ficheWebPageEditorForm.Hide();
 			else
-				m_ficheEditorForm.Show( this );
+				m_ficheWebPageEditorForm.Show( this );
+		}
+
+		void	ToggleShowFicheAnnotator() {
+			if ( m_ficheWebPageAnnotatorForm.Visible )
+				m_ficheWebPageAnnotatorForm.Hide();
+			else
+				m_ficheWebPageAnnotatorForm.Show( this );
 		}
 
 		#endregion
@@ -744,8 +784,10 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 
 			if ( e.KeyCode == m_preferenceForm.SHORTCUT_KEY ) {
 				ToggleShowPreferences();
-			} else if ( m_ficheEditorForm != null && e.KeyCode == m_ficheEditorForm.SHORTCUT_KEY ) {
-				ToggleShowFicheEditor();
+ 			} else if ( m_ficheWebPageEditorForm != null && e.KeyCode == m_ficheWebPageEditorForm.SHORTCUT_KEY ) {
+ 				ToggleShowFicheEditor();
+ 			} else if ( e.KeyCode == m_ficheWebPageAnnotatorForm.SHORTCUT_KEY ) {
+ 				ToggleShowFicheAnnotator();
 			}
 
 //Debug( e.KeyCode.ToString() );

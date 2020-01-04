@@ -71,13 +71,18 @@ namespace Brain2 {
 			LocateBookmarks();
 		}
 
+		protected override void InternalDispose() {
+			UnRegisterHotKeys();
+		}
+
 		#region Shortcuts Management
 
 		public class Shortcut {
 			public enum SHORTCUT {
-				TOGGLE,
-				PASTE,
-				NEW,
+				TOGGLE,	// Toggle the application
+				PASTE,	// Global paste of clipboard content
+				NEW,	// Create a new manual fiche
+				WEBCAM,	// Create a new webcam screenshot fiche
 			}
 
 			public SHORTCUT						m_type;
@@ -129,6 +134,7 @@ namespace Brain2 {
 			new Shortcut() { m_type = Shortcut.SHORTCUT.TOGGLE,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.X },
 			new Shortcut() { m_type = Shortcut.SHORTCUT.PASTE,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.V },
 			new Shortcut() { m_type = Shortcut.SHORTCUT.NEW,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.N },
+			new Shortcut() { m_type = Shortcut.SHORTCUT.WEBCAM,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.W },
 		};
 
 		public void	RegisterHotKeys() {
@@ -825,6 +831,10 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 
 		private void labelShortcutNew_Click(object sender, EventArgs e) {
 			SetCurrentlyEditingShortcut( m_shortcuts[2], sender as Label );
+		}
+
+		private void labelShortcutWebcam_Click(object sender, EventArgs e) {
+			SetCurrentlyEditingShortcut( m_shortcuts[3], sender as Label );
 		}
 
 		#endregion

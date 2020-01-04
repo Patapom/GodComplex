@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define EDIT_MODE
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -11,7 +13,11 @@ using System.IO;
 
 namespace Brain2 {
 
+#if EDIT_MODE
+	public partial class ModelessForm : Form {
+#else
 	public abstract partial class ModelessForm : Form {
+#endif
 
 		#region CONSTANTS
 
@@ -31,13 +37,22 @@ namespace Brain2 {
 
 		#region PROPERTIES
 
+	#if EDIT_MODE
+		protected virtual bool	Sizeable { get => true; }
+		protected virtual bool	CloseOnEscape { get => true; }
+		public virtual Keys	SHORTCUT_KEY { get => Keys.None; }
+	#else
 		protected abstract bool	Sizeable { get; }
 		protected abstract bool	CloseOnEscape { get; }
 		public abstract Keys	SHORTCUT_KEY { get; }
+	#endif
 
 		#endregion
 
 		#region METHODS
+
+		public ModelessForm() {
+		}
 
 		public ModelessForm( BrainForm _owner ) {
 			m_owner = _owner;
@@ -45,6 +60,12 @@ namespace Brain2 {
 			InitializeComponent();
 			KeyPreview = true;
 		}
+
+	#if EDIT_MODE
+		protected virtual void	InternalDispose() {}
+	#else
+		protected abstract void	InternalDispose();
+	#endif
 
 		/// <summary>
 		/// Centers the form on the specified screen position, ensuring the form rectangle doesn't crosse screen boundaries

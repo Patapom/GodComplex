@@ -38,6 +38,8 @@ namespace Brain2 {
 			LOCAL_FILE,					// Link to a local file with tracking
 		}
 
+		public delegate void	FicheEventHandler( Fiche _sender );
+
 		public abstract class ChunkBase : IDisposable {
 
 			protected Fiche				m_owner;
@@ -466,14 +468,37 @@ namespace Brain2 {
 		public int					ReferencesCount { get { return m_references.Count; } }
 
 		/// <summary>
+		/// Returns the captured web page image if the chunk exists
+		/// </summary>
+		/// <remarks>Will launch an asynchronous loading of the image and return a placeholder whenever the image is actually loaded and ready.
+		/// You should subscribe to the WebPageImageChanged event to update the image once it's available</remarks>
+		public ImageFile			WebPageImage {
+			get {
+				ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
+				return chunk != null ? chunk.Content as ImageFile : null;
+			}
+		}
+
+		/// <summary>
+		/// Returns the thumbnail for the captured web page image if the chunk exists
+		/// </summary>
+		/// <remarks>Will launch an asynchronous loading of the image and return a placeholder whenever the image is actually loaded and ready</remarks>
+		public ImageFile			ThumbnailImage {
+			get {
+				ChunkThumbnail	chunk = FindChunkByType<ChunkThumbnail>();
+				return chunk != null ? chunk.Content as ImageFile : null;
+			}
+		}
+
+		/// <summary>
 		/// Raised whenever the web page image changed
 		/// </summary>
-		public event EventHandler	WebPageImageChanged;
+		public event FicheEventHandler	WebPageImageChanged;
 
 		/// <summary>
 		/// Raised whenever the thumbnail changed
 		/// </summary>
-		public event EventHandler	ThumbnailChanged;
+		public event FicheEventHandler	ThumbnailChanged;
 
 		#endregion
 
@@ -796,12 +821,12 @@ namespace Brain2 {
 
 		private void	NotifyWebPageImageChanged( ChunkWebPageSnapshot _caller ) {
 			if ( WebPageImageChanged != null )
-				WebPageImageChanged( _caller, EventArgs.Empty );
+				WebPageImageChanged( _caller.OwnerFiche );
 		}
 
 		private void	NotifyThumbnailChanged( ChunkThumbnail _caller ) {
 			if ( ThumbnailChanged != null )
-				ThumbnailChanged( _caller, EventArgs.Empty );
+				ThumbnailChanged( _caller.OwnerFiche );
 		}
 
 		#endregion

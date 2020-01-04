@@ -40,6 +40,8 @@
 			this.labelShortcutPaste = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
 			this.labelShortcutNew = new System.Windows.Forms.Label();
+			this.label7 = new System.Windows.Forms.Label();
+			this.labelShortcutWebcam = new System.Windows.Forms.Label();
 			this.groupBoxImport.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -97,7 +99,7 @@
 			// 
 			this.labelShortcutToggle.BackColor = System.Drawing.SystemColors.ControlLightLight;
 			this.labelShortcutToggle.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelShortcutToggle.Location = new System.Drawing.Point(131, 70);
+			this.labelShortcutToggle.Location = new System.Drawing.Point(146, 70);
 			this.labelShortcutToggle.Name = "labelShortcutToggle";
 			this.labelShortcutToggle.Size = new System.Drawing.Size(100, 23);
 			this.labelShortcutToggle.TabIndex = 4;
@@ -145,9 +147,9 @@
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(496, 30);
 			this.label4.TabIndex = 6;
-			this.label4.Text = "Brain 2 can import bookmarks from well known web browsers and automatically creat" +
-    "e fiches for each one.The following bookmarks have been located on your machine:" +
-    "";
+			this.label4.Text = "JollyFiche can import bookmarks from well known web browsers and automatically cr" +
+    "eate fiches for each one.The following bookmarks have been located on your machi" +
+    "ne:";
 			// 
 			// folderBrowserDialogBookmarks
 			// 
@@ -172,7 +174,7 @@
 			// 
 			this.labelShortcutPaste.BackColor = System.Drawing.SystemColors.ControlLightLight;
 			this.labelShortcutPaste.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelShortcutPaste.Location = new System.Drawing.Point(131, 98);
+			this.labelShortcutPaste.Location = new System.Drawing.Point(146, 98);
 			this.labelShortcutPaste.Name = "labelShortcutPaste";
 			this.labelShortcutPaste.Size = new System.Drawing.Size(100, 23);
 			this.labelShortcutPaste.TabIndex = 4;
@@ -193,7 +195,7 @@
 			// 
 			this.labelShortcutNew.BackColor = System.Drawing.SystemColors.ControlLightLight;
 			this.labelShortcutNew.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelShortcutNew.Location = new System.Drawing.Point(131, 126);
+			this.labelShortcutNew.Location = new System.Drawing.Point(146, 126);
 			this.labelShortcutNew.Name = "labelShortcutNew";
 			this.labelShortcutNew.Size = new System.Drawing.Size(100, 23);
 			this.labelShortcutNew.TabIndex = 4;
@@ -201,16 +203,39 @@
 			this.labelShortcutNew.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			this.labelShortcutNew.Click += new System.EventHandler(this.labelShortcutNew_Click);
 			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(14, 159);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(126, 13);
+			this.label7.TabIndex = 1;
+			this.label7.Text = "Global Shortcut Webcam";
+			// 
+			// labelShortcutWebcam
+			// 
+			this.labelShortcutWebcam.BackColor = System.Drawing.SystemColors.ControlLightLight;
+			this.labelShortcutWebcam.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelShortcutWebcam.Location = new System.Drawing.Point(146, 154);
+			this.labelShortcutWebcam.Name = "labelShortcutWebcam";
+			this.labelShortcutWebcam.Size = new System.Drawing.Size(100, 23);
+			this.labelShortcutWebcam.TabIndex = 4;
+			this.labelShortcutWebcam.Text = "Win+W";
+			this.labelShortcutWebcam.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.labelShortcutWebcam.Click += new System.EventHandler(this.labelShortcutWebcam_Click);
+			// 
 			// PreferencesForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(541, 449);
 			this.Controls.Add(this.groupBoxImport);
+			this.Controls.Add(this.labelShortcutWebcam);
 			this.Controls.Add(this.labelShortcutNew);
 			this.Controls.Add(this.labelShortcutPaste);
 			this.Controls.Add(this.labelShortcutToggle);
 			this.Controls.Add(this.buttonSelectRootDBFolder);
+			this.Controls.Add(this.label7);
 			this.Controls.Add(this.textBoxDatabaseRoot);
 			this.Controls.Add(this.label6);
 			this.Controls.Add(this.label5);
@@ -248,5 +273,7 @@
 		private System.Windows.Forms.Label labelShortcutPaste;
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.Label labelShortcutNew;
+		private System.Windows.Forms.Label label7;
+		private System.Windows.Forms.Label labelShortcutWebcam;
 	}
 }

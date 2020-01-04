@@ -83,6 +83,12 @@
       <DependentUpon>WebEditor_COMError.cs</DependentUpon>
     </None>
     <Compile Include="Fiches\Fiche.cs" />
+    <Compile Include="Forms\FicheWebPageAnnotatorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FicheWebPageAnnotatorForm.Designer.cs">
+      <DependentUpon>FicheWebPageAnnotatorForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\ValidateUnRecognizedTagsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -101,11 +107,11 @@
     <Compile Include="Forms\ComplexTagNamesForm.Designer.cs">
       <DependentUpon>ComplexTagNamesForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\FicheEditorForm.cs">
+    <Compile Include="Forms\FicheWebPageEditorForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FicheEditorForm.Designer.cs">
-      <DependentUpon>FicheEditorForm.cs</DependentUpon>
+    <Compile Include="Forms\FicheWebPageEditorForm.Designer.cs">
+      <DependentUpon>FicheWebPageEditorForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\ModelessForm.cs">
       <SubType>Form</SubType>
@@ -140,6 +146,9 @@
       <DependentUpon>BrainForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FicheWebPageAnnotatorForm.resx">
+      <DependentUpon>FicheWebPageAnnotatorForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\ValidateUnRecognizedTagsForm.resx">
       <DependentUpon>ValidateUnRecognizedTagsForm.cs</DependentUpon>
       <SubType>Designer</SubType>
@@ -152,8 +161,8 @@
       <DependentUpon>ComplexTagNamesForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\FicheEditorForm.resx">
-      <DependentUpon>FicheEditorForm.cs</DependentUpon>
+    <EmbeddedResource Include="Forms\FicheWebPageEditorForm.resx">
+      <DependentUpon>FicheWebPageEditorForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\ModelessForm.resx">
       <DependentUpon>ModelessForm.cs</DependentUpon>
@@ -197,6 +206,10 @@
     <ProjectReference Include="..\..\Packages\Everything\Everything.vcxproj">
       <Project>{ca85f8f3-ad1b-42a8-8121-f7e941078392}</Project>
       <Name>Everything</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Packages\HTMLPageRenderer\HTMLPageRenderer.csproj">
+      <Project>{11bb1f51-29e3-44a7-a5a8-2242684deb62}</Project>
+      <Name>HTMLPageRenderer</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Packages\ImageUtility\ImageUtility.vcxproj">
       <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>

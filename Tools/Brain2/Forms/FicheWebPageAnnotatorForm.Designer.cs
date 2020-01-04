@@ -1,5 +1,5 @@
 ﻿namespace Brain2 {
-	partial class FicheEditorForm {
+	partial class FicheWebPageAnnotatorForm {
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -23,14 +23,14 @@
 		/// the contents of this method with the code editor.
 		/// </summary>
 		private void InitializeComponent() {
-			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FicheEditorForm));
+			this.components = new System.ComponentModel.Container();
 			this.label1 = new System.Windows.Forms.Label();
 			this.richTextBoxTitle = new System.Windows.Forms.RichTextBox();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
-			this.richTextBoxTags = new TagEditBox();
-			this.webEditor = new ZetaHtmlEditControl.Pom.WebEditor();
+			this.tagEditBox = new Brain2.TagEditBox(this.components);
 			this.richTextBoxURL = new System.Windows.Forms.RichTextBox();
+			this.panelWebPage = new System.Windows.Forms.Panel();
 			this.SuspendLayout();
 			// 
 			// label1
@@ -75,28 +75,20 @@
 			this.label3.TabIndex = 0;
 			this.label3.Text = "Tags";
 			// 
-			// richTextBoxTags
+			// tagEditBox
 			// 
-			this.richTextBoxTags.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+			this.tagEditBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.richTextBoxTags.Enabled = false;
-			this.richTextBoxTags.Location = new System.Drawing.Point(52, 64);
-			this.richTextBoxTags.Name = "richTextBoxTags";
-			this.richTextBoxTags.Size = new System.Drawing.Size(960, 26);
-			this.richTextBoxTags.TabIndex = 1;
-			// 
-			// webEditor
-			// 
-			this.webEditor.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.webEditor.Enabled = false;
-			this.webEditor.Location = new System.Drawing.Point(12, 96);
-			this.webEditor.Name = "webEditor";
-			this.webEditor.Size = new System.Drawing.Size(1000, 614);
-			this.webEditor.TabIndex = 2;
-			this.webEditor.TempImagesFolder = ((System.IO.DirectoryInfo)(resources.GetObject("webEditor.TempImagesFolder")));
-			this.webEditor.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.webEditor_PreviewKeyDown);
+			this.tagEditBox.ApplicationForm = null;
+			this.tagEditBox.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.tagEditBox.Enabled = false;
+			this.tagEditBox.Location = new System.Drawing.Point(52, 64);
+			this.tagEditBox.Name = "tagEditBox";
+			this.tagEditBox.OwnerForm = null;
+			this.tagEditBox.RecognizedTags = new Brain2.Fiche[0];
+			this.tagEditBox.Size = new System.Drawing.Size(960, 26);
+			this.tagEditBox.TabIndex = 1;
+			this.tagEditBox.TabStop = true;
 			// 
 			// richTextBoxURL
 			// 
@@ -114,15 +106,25 @@
 			this.richTextBoxURL.WordWrap = false;
 			this.richTextBoxURL.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.richTextBoxURL_LinkClicked);
 			// 
-			// FicheEditorForm
+			// panelWebPage
+			// 
+			this.panelWebPage.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelWebPage.Location = new System.Drawing.Point(7, 96);
+			this.panelWebPage.Name = "panelWebPage";
+			this.panelWebPage.Size = new System.Drawing.Size(1011, 615);
+			this.panelWebPage.TabIndex = 2;
+			// 
+			// FicheAnnotatorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.Gainsboro;
 			this.ClientSize = new System.Drawing.Size(1024, 720);
-			this.Controls.Add(this.webEditor);
+			this.Controls.Add(this.panelWebPage);
 			this.Controls.Add(this.richTextBoxURL);
-			this.Controls.Add(this.richTextBoxTags);
+			this.Controls.Add(this.tagEditBox);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.richTextBoxTitle);
 			this.Controls.Add(this.label2);
@@ -130,7 +132,7 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
 			this.KeyPreview = true;
 			this.MinimumSize = new System.Drawing.Size(1024, 720);
-			this.Name = "FicheEditorForm";
+			this.Name = "FicheAnnotatorForm";
 			this.ShowInTaskbar = false;
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
@@ -146,9 +148,9 @@
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.RichTextBox richTextBoxTitle;
 		private System.Windows.Forms.Label label2;
-		private ZetaHtmlEditControl.Pom.WebEditor webEditor;
 		private System.Windows.Forms.Label label3;
-		private TagEditBox richTextBoxTags;
+		private TagEditBox tagEditBox;
 		private System.Windows.Forms.RichTextBox richTextBoxURL;
+		private System.Windows.Forms.Panel panelWebPage;
 	}
 }
