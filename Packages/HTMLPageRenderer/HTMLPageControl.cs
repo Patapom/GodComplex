@@ -9,9 +9,12 @@ using CefSharp;
 using CefSharp.OffScreen;
 
 namespace HTMLPageRenderer {
-	public class HTMLPageControl : IDisposable {
 
-		#region Static Browser
+	/// <summary>
+	/// Class wrapping CEF Sharp (Chromium Embedded Framework, .Net wrapper version) to render web pages in an offscreen bitmap
+	/// https://github.com/cefsharp/CefSharp/wiki/General-Usage
+	/// </summary>
+	public class HTMLPageControl : IDisposable {
 
 		private ChromiumWebBrowser	m_browser = null;
 
@@ -22,13 +25,14 @@ namespace HTMLPageRenderer {
 // 		private KeyboardHandler kHandler;
 // 		private RequestHandler rHandler;
 
-		public HTMLPageControl( string _url ) {
+		public HTMLPageControl( string _url, int _pageWidth ) {
 
-//			CefSettings	settings = new CefSettings();
-//			BrowserSettings	settings 
+			if ( !Cef.IsInitialized ) {
+				InitChromium();
+			}
 
-// 			Cef.Initialize(settings);
-// 
+			BrowserSettings	browserSettings = new BrowserSettings();
+
 // 			dHandler = new DownloadHandler(this);
 // 			lHandler = new LifeSpanHandler(this);
 // 			mHandler = new ContextMenuHandler(this);
@@ -39,11 +43,35 @@ namespace HTMLPageRenderer {
 // 
 // 			host = new HostHandler(this);
 
-			m_browser = new ChromiumWebBrowser( _url );
+			m_browser = new ChromiumWebBrowser( "", browserSettings );
+			m_browser.LoadingStateChanged += browser_LoadingStateChanged;
+
+			m_browser.Size = new System.Drawing.Size( _pageWidth, _pageWidth * 9 / 16 );
+			m_browser.Load( _url );
+		}
+
+		private void browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e) {
+			throw new NotImplementedException();
 		}
 
 		public void Dispose() {
 			m_browser.Dispose();
+		}
+
+		#region Static CEF Init/Exit
+
+		// https://github.com/cefsharp/CefSharp/wiki/General-Usage#initialize-and-shutdown
+
+		public static void	InitChromium() {
+			// We're going to manually call Cef.Shutdown
+            CefSharpSettings.ShutdownOnExit = false;
+
+			CefSettings	settings = new CefSettings();
+ 			Cef.Initialize( settings );
+		}
+
+		public static void	ExitChromium() {
+			Cef.Shutdown();
 		}
 
 		#endregion

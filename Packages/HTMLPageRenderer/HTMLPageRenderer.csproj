@@ -1,5 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\CefSharp.OffScreen.75.1.143\build\CefSharp.OffScreen.props" Condition="Exists('..\CefSharp.OffScreen.75.1.143\build\CefSharp.OffScreen.props')" />
+  <Import Project="..\CefSharp.Common.75.1.143\build\CefSharp.Common.props" Condition="Exists('..\CefSharp.Common.75.1.143\build\CefSharp.Common.props')" />
+  <Import Project="..\cef.redist.x86.75.1.14\build\cef.redist.x86.props" Condition="Exists('..\cef.redist.x86.75.1.14\build\cef.redist.x86.props')" />
+  <Import Project="..\cef.redist.x64.75.1.14\build\cef.redist.x64.props" Condition="Exists('..\cef.redist.x64.75.1.14\build\cef.redist.x64.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -12,6 +16,8 @@
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -69,6 +75,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -78,9 +85,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
     <Compile Include="HTMLPageControl.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\cef.redist.x64.75.1.14\build\cef.redist.x64.props')" Text="$([System.String]::Format('$(ErrorText)', '..\cef.redist.x64.75.1.14\build\cef.redist.x64.props'))" />
+    <Error Condition="!Exists('..\cef.redist.x86.75.1.14\build\cef.redist.x86.props')" Text="$([System.String]::Format('$(ErrorText)', '..\cef.redist.x86.75.1.14\build\cef.redist.x86.props'))" />
+    <Error Condition="!Exists('..\CefSharp.Common.75.1.143\build\CefSharp.Common.props')" Text="$([System.String]::Format('$(ErrorText)', '..\CefSharp.Common.75.1.143\build\CefSharp.Common.props'))" />
+    <Error Condition="!Exists('..\CefSharp.Common.75.1.143\build\CefSharp.Common.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\CefSharp.Common.75.1.143\build\CefSharp.Common.targets'))" />
+    <Error Condition="!Exists('..\CefSharp.OffScreen.75.1.143\build\CefSharp.OffScreen.props')" Text="$([System.String]::Format('$(ErrorText)', '..\CefSharp.OffScreen.75.1.143\build\CefSharp.OffScreen.props'))" />
+    <Error Condition="!Exists('..\CefSharp.OffScreen.75.1.143\build\CefSharp.OffScreen.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\CefSharp.OffScreen.75.1.143\build\CefSharp.OffScreen.targets'))" />
+  </Target>
+  <Import Project="..\CefSharp.Common.75.1.143\build\CefSharp.Common.targets" Condition="Exists('..\CefSharp.Common.75.1.143\build\CefSharp.Common.targets')" />
+  <Import Project="..\CefSharp.OffScreen.75.1.143\build\CefSharp.OffScreen.targets" Condition="Exists('..\CefSharp.OffScreen.75.1.143\build\CefSharp.OffScreen.targets')" />
 </Project>
