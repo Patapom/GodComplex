@@ -133,6 +133,21 @@ namespace Brain2 {
 		/// </summary>
 		/// <param name="_URL"></param>
 		public static void	LoadWebPage( Uri _URL, WebPageRendered _onSuccess, WebPageError _onError ) {
+			HTMLPageRenderer.HTMLPageControl	pageRenderer = new HTMLPageRenderer.HTMLPageControl(
+				_URL.ToString(),
+				(int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH,
+				( string _HTMLContent, ImageUtility.ImageFile _imageWebPage ) => {
+					_onSuccess( _HTMLContent, _imageWebPage );
+					},
+				( int _errorCode, string _errorText ) => {
+					WEB_ERROR_TYPE	type = WEB_ERROR_TYPE.UNKNOWN;
+					// TODO: Resolve known errors from Cef errors...
+					_onError( type, (int) _errorCode, _errorText );
+					}
+			);
+		}
+
+		public static void	DummyLoadWebPage( Uri _URL, WebPageRendered _onSuccess, WebPageError _onError ) {
 
 //				string	content = "DUMMY CONTENT!";
 

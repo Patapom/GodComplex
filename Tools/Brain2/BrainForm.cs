@@ -219,6 +219,9 @@ this.TopMost = false;
 // 				m_ficheEditorForm = new FicheEditorForm( this );
 // 				m_ficheEditorForm.Visible = false;
 
+				m_ficheWebPageAnnotatorForm = new FicheWebPageAnnotatorForm( this );
+				m_ficheWebPageAnnotatorForm.Visible = false;
+
 				// Parse fiches and load database
 				DirectoryInfo	rootDBFolder = new DirectoryInfo( m_preferenceForm.RootDBFolder );
 				if ( !rootDBFolder.Exists ) {
