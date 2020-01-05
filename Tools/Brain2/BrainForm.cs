@@ -83,6 +83,9 @@ namespace Brain2 {
 		bool						m_showAnnotatorFormOnShowMain = false;
 		FicheWebPageAnnotatorForm	m_ficheWebPageAnnotatorForm = null;
 
+		// Helper forms
+		NotificationForm			m_notificationForm = null;
+
 		#endregion
 
 		#region PROPERTIES
@@ -99,9 +102,20 @@ namespace Brain2 {
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
 		private void Application_Idle(object sender, EventArgs e) {
-			if ( !Visible || m_device == null )
+			if ( m_device == null )
 				return;
 
+			//////////////////////////////////////////////////////////////////////////
+			// Update database & UI
+			m_database.OnIdle();
+			m_notificationForm.Animate();
+
+			if ( !Visible )
+				return;	// Don't render 3D stuff
+
+			//////////////////////////////////////////////////////////////////////////
+			// Render 3D stuff
+			//
 			DateTime	frameTime = DateTime.Now;
 			float		totalTime = (float) (frameTime - m_startTime).TotalSeconds;
 			float		deltaTime = (float) (frameTime - m_lastFrameTime).TotalSeconds;
@@ -131,10 +145,6 @@ namespace Brain2 {
 			}
 
 			m_device.Present( false );
-
-			//////////////////////////////////////////////////////////////////////////
-			// Update database
-			m_database.OnIdle();
 		}
 
 		void	SetCamera( float3 _wsPosition, float3 _wsTargetPosition, float3 _wsUp, float _FOV ) {
@@ -209,6 +219,9 @@ this.TopMost = false;
 
 			try {
 				m_database = new FichesDB();
+				m_database.FicheSuccessOccurred += database_FicheSuccessOccurred;
+				m_database.FicheWarningOccurred += database_FicheWarningOccurred;
+				m_database.FicheErrorOccurred += database_FicheErrorOccurred;
 				m_database.ErrorOccurred += database_ErrorOccurred;
 
 				// Create the modeless forms
@@ -221,6 +234,9 @@ this.TopMost = false;
 
 				m_ficheWebPageAnnotatorForm = new FicheWebPageAnnotatorForm( this );
 				m_ficheWebPageAnnotatorForm.Visible = false;
+
+				m_notificationForm = new NotificationForm( this );
+				m_notificationForm.Visible = false;
 
 				// Parse fiches and load database
 				DirectoryInfo	rootDBFolder = new DirectoryInfo( m_preferenceForm.RootDBFolder );
@@ -302,6 +318,7 @@ this.TopMost = false;
 			m_device.Dispose();
 
 			// Forms disposal
+			m_notificationForm.Dispose();
 			m_preferenceForm.Dispose();
 			m_ficheWebPageEditorForm.Dispose();
 			m_ficheWebPageAnnotatorForm.Dispose();
@@ -744,6 +761,18 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 		#endregion
 
 		#region EVENTS
+
+		private void database_FicheWarningOccurred(Fiche _fiche, string _errorOrWarning) {
+			m_notificationForm.NotifyFiche( _fiche, NotificationForm.NOTIFICATION_TYPE.SUCCESS );
+		}
+
+		private void database_FicheSuccessOccurred(Fiche _fiche) {
+			m_notificationForm.NotifyFiche( _fiche, NotificationForm.NOTIFICATION_TYPE.WARNING );
+		}
+
+		private void database_FicheErrorOccurred(Fiche _fiche, string _error) {
+			m_notificationForm.NotifyFiche( _fiche, NotificationForm.NOTIFICATION_TYPE.ERROR );
+		}
 
 		private void database_ErrorOccurred( string _error ) {
 			LogError( new Exception( _error ) );

@@ -641,7 +641,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 									m_fiche.CreationTime = m_dateAdded;
 
 									// Save whenever possible
-									m_database.AsyncSaveFiche( m_fiche, true );
+									m_database.AsyncSaveFiche( m_fiche, true, false );
 
 									// Register new tag
 									ms_tags.Add( m_fiche );

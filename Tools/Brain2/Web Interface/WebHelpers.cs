@@ -135,15 +135,19 @@ namespace Brain2 {
 		public static void	LoadWebPage( Uri _URL, WebPageRendered _onSuccess, WebPageError _onError ) {
 			HTMLPageRenderer.HTMLPageControl	pageRenderer = new HTMLPageRenderer.HTMLPageControl(
 				_URL.ToString(),
-				(int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH,
+				(int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH, 0,
+
+				// Occurs whenever the web page was successfully loaded
 				( string _HTMLContent, ImageUtility.ImageFile _imageWebPage ) => {
 					_onSuccess( _HTMLContent, _imageWebPage );
-					},
+				},
+
+				// Occurs whenever the web pge failed to load
 				( int _errorCode, string _errorText ) => {
 					WEB_ERROR_TYPE	type = WEB_ERROR_TYPE.UNKNOWN;
 					// TODO: Resolve known errors from Cef errors...
 					_onError( type, (int) _errorCode, _errorText );
-					}
+				}
 			);
 		}
 

@@ -48,7 +48,7 @@ namespace Brain2 {
 				string	title = text;	// Do better?
 				string	HTML = WebHelpers.BuildHTMLDocument( title, text );
 				Fiche	F = _database.SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, text, null, null, HTML );
-				_database.AsyncSaveFiche( F, true );
+				_database.AsyncSaveFiche( F, true, true );
 				return F;
 			}
 		}
@@ -180,12 +180,13 @@ namespace Brain2 {
 								m_fiche.CreateThumbnailChunkFromImage( _imageWebPage );
 
 								// Request to save the fiche now that it's complete...
-								m_owner.AsyncSaveFiche( m_fiche, m_unloadContentAfterSave );
+								m_owner.AsyncSaveFiche( m_fiche, m_unloadContentAfterSave, true );
 							} );
 						},
+
 						// On error => Log error? Todo?
 						( WebHelpers.WEB_ERROR_TYPE _error, int _errorCode, string _message ) => {
-							throw new Exception( "Handle web errors!" );
+							m_owner.SyncReportFicheStatus( m_fiche, FICHE_REPORT_STATUS.ERROR, "Page failed to load and returned error code " + _errorCode + " with message \"" + _message + "\"!" );
 						} );
 				}
 			}
@@ -222,9 +223,10 @@ namespace Brain2 {
 			public class		JobSaveFiche : JobBase {
 				public Fiche		m_caller;
 				public bool			m_unloadContentAfterSave;
-				public JobSaveFiche( FichesDB _owner, Fiche _caller, bool _unloadContentAfterSave ) : base( _owner ) { m_caller = _caller; m_unloadContentAfterSave = _unloadContentAfterSave; }
+				public bool			m_notifyAfterSave;
+				public JobSaveFiche( FichesDB _owner, Fiche _caller, bool _unloadContentAfterSave, bool _notifyAfterSave ) : base( _owner ) { m_caller = _caller; m_unloadContentAfterSave = _unloadContentAfterSave; m_notifyAfterSave = _notifyAfterSave; }
 				public override void	Run() {
-					m_owner.SyncSaveFiche( m_caller, m_unloadContentAfterSave );
+					m_owner.SyncSaveFiche( m_caller, m_unloadContentAfterSave, m_notifyAfterSave );
 				}
 			}
 
@@ -240,8 +242,27 @@ namespace Brain2 {
 				public string	m_error;
 				public JobReportError( FichesDB _owner, string _error ) : base( _owner ) { m_error = _error; }
 				public override void	Run() {
-					if ( m_owner.ErrorOccurred != null )
-						m_owner.ErrorOccurred( m_error );
+					m_owner.ErrorOccurred?.Invoke( m_error );
+				}
+			}
+
+			public class		JobReportFicheStatus : JobBase {
+				public Fiche				m_fiche;
+				public FICHE_REPORT_STATUS	m_status;
+				public string				m_errorOrWarning;
+				public JobReportFicheStatus( FichesDB _owner, Fiche _fiche, FICHE_REPORT_STATUS _status, string _errorOrWarning ) : base( _owner ) { m_fiche = _fiche; m_status = _status; m_errorOrWarning = _errorOrWarning; }
+				public override void	Run() {
+					switch ( m_status ) {
+						case FICHE_REPORT_STATUS.SUCCESS:
+							m_owner.FicheSuccessOccurred?.Invoke( m_fiche );
+							break;
+						case FICHE_REPORT_STATUS.WARNING:
+							m_owner.FicheWarningOccurred?.Invoke( m_fiche, m_errorOrWarning );
+							break;
+						case FICHE_REPORT_STATUS.ERROR:
+							m_owner.FicheErrorOccurred?.Invoke( m_fiche, m_errorOrWarning );
+							break;
+					}
 				}
 			}
 
@@ -298,6 +319,12 @@ namespace Brain2 {
 
 		#endregion
 
+		public enum FICHE_REPORT_STATUS {
+			SUCCESS,
+			WARNING,
+			ERROR,
+		}
+
 		/// <summary>
 		/// Whenever a fiche is modified, it should call FicheDB.SyncNotifyFicheModifiedAndNeedsSaving() so a timer is started and the fiche gets automatically saved when the timer expires
 		/// </summary>
@@ -316,7 +343,9 @@ namespace Brain2 {
 			}
 		}
 
-		public delegate void	ErrorHandler( string _error );
+		public delegate void	FicheEventHandler( Fiche _fiche );
+		public delegate void	FicheErrorOrWarningHandler( Fiche _fiche, string _errorOrWarning );
+		public delegate void	DatabaseErrorHandler( string _error );
 
 		#endregion
 
@@ -353,7 +382,11 @@ namespace Brain2 {
 
 		#region PROPERTIES
 
-		public event ErrorHandler		ErrorOccurred;
+		public event DatabaseErrorHandler		ErrorOccurred;		// Occurs whenever an internal database error occurred
+
+		public event FicheEventHandler			FicheSuccessOccurred;	// Occurs whenever a fiche success occurred
+		public event FicheErrorOrWarningHandler	FicheWarningOccurred;	// Occurs whenever a fiche warning occurred
+		public event FicheErrorOrWarningHandler	FicheErrorOccurred;		// Occurs whenever a fiche error occurred and fiche should be deleted
 
 		#endregion
 
@@ -381,7 +414,7 @@ namespace Brain2 {
 			// Save remaining modified fiches now
 			lock ( m_fiche2NeedToSave ) {
 				foreach ( FicheUpdatedNeedsSaving value in m_fiche2NeedToSave.Values ) {
-					SyncSaveFiche( value.m_fiche, false );
+					SyncSaveFiche( value.m_fiche, false, false );
 				}
 			}
 
@@ -592,7 +625,7 @@ throw new Exception( "TODO!" );
 					if ( timeSinceLastModification > DEFAULT_DELAY_BEFORE_SAVE_SECONDS ) {
 						// Okay, enough time has passed, we can asynchronously save the fiche now...
 						m_fiche2NeedToSave.Remove( value.m_fiche );
-						AsyncSaveFiche( value.m_fiche, true );
+						AsyncSaveFiche( value.m_fiche, true, false );
 					}
 				}
 			}
@@ -678,9 +711,9 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_caller"></param>
 		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
-		internal void	AsyncSaveFiche( Fiche _fiche, bool _unloadContentAfterSave ) {
+		internal void	AsyncSaveFiche( Fiche _fiche, bool _unloadContentAfterSave, bool _notifyAfterSave ) {
 			// Create a new job and let the threads handle it
-			WorkingThread.JobSaveFiche	job = new WorkingThread.JobSaveFiche( this, _fiche, _unloadContentAfterSave );
+			WorkingThread.JobSaveFiche	job = new WorkingThread.JobSaveFiche( this, _fiche, _unloadContentAfterSave, _notifyAfterSave );
 			lock ( m_threadedJobs )
 				m_threadedJobs.Enqueue( job );
 		}
@@ -766,7 +799,8 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_fiche"></param>
 		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
-		internal void	SyncSaveFiche( Fiche _fiche, bool _unloadContentAfterSave ) {
+		/// <param name="_notifyAfterSave">True to send a success notification after the fiche is saved</param>
+		internal void	SyncSaveFiche( Fiche _fiche, bool _unloadContentAfterSave, bool _notifyAfterSave ) {
 			using ( Stream S = SyncRequestFicheStream( _fiche, false ) ) {
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
 					// Ensure the fiche is ready so it can be saved
@@ -779,6 +813,10 @@ throw new Exception( "TODO!" );
 						// Unload heavy content if requested...
 						if ( _unloadContentAfterSave )
 							_fiche.UnloadImageChunk();
+
+						// Optional notification
+						if ( _notifyAfterSave )
+							SyncReportFicheStatus( _fiche, FICHE_REPORT_STATUS.SUCCESS, null );
 					} );
 				}
 			}
@@ -796,10 +834,25 @@ throw new Exception( "TODO!" );
 
 		/// <summary>
 		/// Ask the main thread to report our error
+		/// Use this to report internal errors relative to the software, not errors concerning fiche content (use SyncReportFicheError instead)
 		/// </summary>
 		/// <param name="_error"></param>
 		internal void	SyncReportError( string _error ) {
 			WorkingThread.JobReportError	job = new WorkingThread.JobReportError( this, _error );
+			lock ( m_mainThreadJobs )
+				m_mainThreadJobs.Enqueue( job );
+		}
+
+		/// <summary>
+		/// Ask the main thread to report a fiche success (probably after a save)
+		/// Use this to report status regarding fiche content that the user needs to know about, e.g.
+		///		• The fiche was successfully created and saved
+		///		• The web page failed to load and the fiche should probably be deleted
+		/// </summary>
+		/// <param name="_fiche">The fiche for which the error occurred</param>
+		/// <param name="_error"></param>
+		internal void	SyncReportFicheStatus( Fiche _fiche, FICHE_REPORT_STATUS _status, string _errorOrWarning ) {
+			WorkingThread.JobReportFicheStatus	job = new WorkingThread.JobReportFicheStatus( this, _fiche, _status, _errorOrWarning );
 			lock ( m_mainThreadJobs )
 				m_mainThreadJobs.Enqueue( job );
 		}

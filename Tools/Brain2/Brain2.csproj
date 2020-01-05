@@ -89,6 +89,12 @@
     <Compile Include="Forms\FicheWebPageAnnotatorForm.Designer.cs">
       <DependentUpon>FicheWebPageAnnotatorForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\NotificationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\NotificationForm.Designer.cs">
+      <DependentUpon>NotificationForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\ValidateUnRecognizedTagsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -148,6 +154,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FicheWebPageAnnotatorForm.resx">
       <DependentUpon>FicheWebPageAnnotatorForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\NotificationForm.resx">
+      <DependentUpon>NotificationForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\ValidateUnRecognizedTagsForm.resx">
       <DependentUpon>ValidateUnRecognizedTagsForm.cs</DependentUpon>
@@ -230,6 +239,12 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <None Include="Data\Images\Error256.png" />
+    <None Include="Data\Images\Error512.png" />
+    <None Include="Data\Images\OK256.png" />
+    <None Include="Data\Images\OK512.png" />
+    <None Include="Data\Images\Warning256.png" />
+    <None Include="Data\Images\Warning512.png" />
     <Content Include="Shaders\DisplayCube.hlsl" />
     <Content Include="Shaders\Global.hlsl" />
   </ItemGroup>
