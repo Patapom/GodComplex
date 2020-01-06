@@ -74,6 +74,8 @@ namespace Brain2 {
 		
 			public ChunkBase( Fiche _owner, ulong _offset, uint _size ) {
 				m_owner = _owner;
+				m_owner.m_chunks.Add( this );
+
 				m_offset = _offset;
 				m_size = _size;
 			}
@@ -81,6 +83,8 @@ namespace Brain2 {
 			public void Dispose() {
 				lock ( this )
 					InternalDispose();
+
+				m_owner.m_chunks.Remove( this );
 			}
 
 			/// <summary>
@@ -774,7 +778,6 @@ namespace Brain2 {
 			ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
 			if ( chunk == null ) {
 				chunk = new ChunkWebPageSnapshot( this, _imageWebPage );
-				m_chunks.Add( chunk );
 			} else {
 				chunk.UpdateImage( _imageWebPage );
 			}
@@ -785,7 +788,6 @@ namespace Brain2 {
 			ChunkThumbnail	chunk = FindChunkByType<ChunkThumbnail>();
 			if ( chunk == null ) {
 				chunk = new ChunkThumbnail( this, _imageWebPage );
-				m_chunks.Add( chunk );
 			} else {
 				chunk.UpdateFromWebPageImage( _imageWebPage );
 			}
@@ -820,13 +822,11 @@ namespace Brain2 {
 		}
 
 		private void	NotifyWebPageImageChanged( ChunkWebPageSnapshot _caller ) {
-			if ( WebPageImageChanged != null )
-				WebPageImageChanged( _caller.OwnerFiche );
+			WebPageImageChanged?.Invoke( _caller.OwnerFiche );
 		}
 
 		private void	NotifyThumbnailChanged( ChunkThumbnail _caller ) {
-			if ( ThumbnailChanged != null )
-				ThumbnailChanged( _caller.OwnerFiche );
+			ThumbnailChanged?.Invoke( _caller.OwnerFiche );
 		}
 
 		#endregion
