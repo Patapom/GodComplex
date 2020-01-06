@@ -57,6 +57,9 @@ namespace HTMLPageRenderer {
 		private WebPageErrorOccurred	m_pageError;
 
 		public HTMLPageControl( string _url, int _browserViewportWidth, int _maxPageHeight, WebPageRendered _pageRendered, WebPageErrorOccurred _pageError ) {
+
+//Main( null );
+
 			m_URL = _url;
 			m_pageRendered = _pageRendered;
 			m_pageError = _pageError;
@@ -134,17 +137,22 @@ System.Diagnostics.Debug.WriteLine( "browser_LoadingStateChanged" );
 		}
 
 		bool	m_contentQueried = false;
-		private void timer_Tick(object sender, EventArgs e) {
+		private async void timer_Tick(object sender, EventArgs e) {
 			m_timer.Enabled = false;	// Prevent any further tick
+
+			m_browser.LoadError -= browser_LoadError;
+			m_browser.LoadingStateChanged -= browser_LoadingStateChanged;
+			m_browser.FrameLoadEnd -= browser_FrameLoadEnd;
 
 			if ( m_contentQueried )
 				return;
 
 			m_contentQueried = true;	// Don't re-enter!
-			QueryContent();
+
+			await QueryContent();
 		}
 
-		async Task<int>	QueryContent() {
+		async Task	QueryContent() {
 			try {
 System.Diagnostics.Debug.WriteLine( "QueryContent for " + m_URL );
 
@@ -179,8 +187,6 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
 			} catch ( Exception _e ) {
 				m_pageError( -1, "An error occurred while attempting to retrieve HTML source and page screenshot!\r\n" + _e.Message );
 			}
-
-			return 0;
 		}
 
 		class HTMLSourceReader : CefSharp.IStringVisitor {
@@ -208,7 +214,7 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
             CefSharpSettings.ShutdownOnExit = false;
 
 			CefSettings	settings = new CefSettings();
- 			Cef.Initialize( settings );
+ 			Cef.Initialize( settings, performDependencyCheck: true, browserProcessHandler: null );
 		}
 
 		public static void	ExitChromium() {
@@ -216,5 +222,96 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
 		}
 
 		#endregion
+
+		#region Minimal Offscreen Rendering Example (working!)
+
+		// Source from https://github.com/cefsharp/CefSharp.MinimalExample/blob/master/CefSharp.MinimalExample.OffScreen/Program.cs
+
+		private static ChromiumWebBrowser browser;
+
+		public static void Main(string[] args)
+		{
+			const string testUrl = "https://www.patapom.com/";
+
+			Console.WriteLine("This example application will load {0}, take a screenshot, and save it to your desktop.", testUrl);
+			Console.WriteLine("You may see Chromium debugging output, please wait...");
+			Console.WriteLine();
+
+			var settings = new CefSettings()
+			{
+				//By default CefSharp will use an in-memory cache, you need to specify a Cache Folder to persist data
+				CachePath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CefSharp\\Cache")
+			};
+
+			//Perform dependency check to make sure all relevant resources are in our output directory.
+			Cef.Initialize(settings, performDependencyCheck: true, browserProcessHandler: null);
+
+			// Create the offscreen Chromium browser.
+			browser = new ChromiumWebBrowser(testUrl);
+
+			// An event that is fired when the first page is finished loading.
+			// This returns to us from another thread.
+			browser.LoadingStateChanged += BrowserLoadingStateChanged;
+
+			// We have to wait for something, otherwise the process will exit too soon.
+//			Console.ReadKey();
+			System.Threading.Thread.Sleep( 30000 );
+
+			// Clean up Chromium objects.  You need to call this in your application otherwise
+			// you will get a crash when closing.
+			Cef.Shutdown();
+		}
+
+		private static void BrowserLoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
+		{
+			// Check to see if loading is complete - this event is called twice, one when loading starts
+			// second time when it's finished
+			// (rather than an iframe within the main frame).
+			if (!e.IsLoading)
+			{
+				// Remove the load event handler, because we only want one snapshot of the initial page.
+				browser.LoadingStateChanged -= BrowserLoadingStateChanged;
+
+				var scriptTask = browser.EvaluateScriptAsync("document.getElementById('lst-ib').value = 'CefSharp Was Here!'");
+
+				scriptTask.ContinueWith(t =>
+				{
+					//Give the browser a little time to render
+					System.Threading.Thread.Sleep(500);
+					// Wait for the screenshot to be taken.
+					var task = browser.ScreenshotAsync();
+					task.ContinueWith(x =>
+					{
+						// Make a file to save it to (e.g. C:\Users\jan\Desktop\CefSharp screenshot.png)
+						var screenshotPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "CefSharp screenshot.png");
+
+						Console.WriteLine();
+						Console.WriteLine("Screenshot ready. Saving to {0}", screenshotPath);
+
+						// Save the Bitmap to the path.
+						// The image type is auto-detected via the ".png" extension.
+						task.Result.Save(screenshotPath);
+
+						// We no longer need the Bitmap.
+						// Dispose it to avoid keeping the memory alive.  Especially important in 32-bit applications.
+						task.Result.Dispose();
+
+						Console.WriteLine("Screenshot saved.  Launching your default image viewer...");
+
+						// Tell Windows to launch the saved image.
+						System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(screenshotPath)
+						{
+							// UseShellExecute is false by default on .NET Core.
+							UseShellExecute = true
+						});
+
+						Console.WriteLine("Image viewer launched.  Press any key to exit.");
+					}, TaskScheduler.Default);
+				});
+			}
+		}
+
+		#endregion
+
 	}
 }
