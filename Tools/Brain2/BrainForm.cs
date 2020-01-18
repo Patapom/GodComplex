@@ -322,7 +322,7 @@ this.TopMost = false;
 			m_preferenceForm.Dispose();
 			m_ficheWebPageEditorForm.Dispose();
 			m_ficheWebPageAnnotatorForm.Dispose();
-			HTMLPageRenderer.HTMLPageControl.ExitChromium();
+			HTMLPageRenderer.Renderer.ExitChromium();
 
 			base.Dispose(disposing);
 		}
@@ -481,8 +481,8 @@ this.TopMost = false;
 			m_showPreferenceFormOnShowMain = m_preferenceForm.Visible;
 			m_preferenceForm.Hide();
 
-			m_showEditorFormOnShowMain = m_ficheWebPageEditorForm.Visible;
-			m_ficheWebPageEditorForm.Hide();
+// 			m_showEditorFormOnShowMain = m_ficheWebPageEditorForm.Visible;
+// 			m_ficheWebPageEditorForm.Hide();
 
 			m_showAnnotatorFormOnShowMain = m_ficheWebPageAnnotatorForm.Visible;
 			m_ficheWebPageAnnotatorForm.Hide();
@@ -762,11 +762,11 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 
 		#region EVENTS
 
-		private void database_FicheWarningOccurred(Fiche _fiche, string _errorOrWarning) {
+		private void database_FicheSuccessOccurred(Fiche _fiche) {
 			m_notificationForm.NotifyFiche( _fiche, NotificationForm.NOTIFICATION_TYPE.SUCCESS );
 		}
 
-		private void database_FicheSuccessOccurred(Fiche _fiche) {
+		private void database_FicheWarningOccurred(Fiche _fiche, string _errorOrWarning) {
 			m_notificationForm.NotifyFiche( _fiche, NotificationForm.NOTIFICATION_TYPE.WARNING );
 		}
 

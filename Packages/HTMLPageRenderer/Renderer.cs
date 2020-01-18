@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml;
 
 using CefSharp;
 using CefSharp.OffScreen;
@@ -19,7 +20,9 @@ namespace HTMLPageRenderer {
 	/// Class wrapping CEF Sharp (Chromium Embedded Framework, .Net wrapper version) to render web pages in an offscreen bitmap
 	/// https://github.com/cefsharp/CefSharp/wiki/General-Usage
 	/// </summary>
-	public class HTMLPageControl : IDisposable {
+	public class Renderer : IDisposable {
+
+		#region NESTED TYPES
 
 		class LifeSpanHandler : ILifeSpanHandler {
 			public bool DoClose(IWebBrowser chromiumWebBrowser, IBrowser browser) {
@@ -39,8 +42,44 @@ namespace HTMLPageRenderer {
 			}
 		}
 
-		public delegate void	WebPageRendered( string _HTMLContent, ImageUtility.ImageFile _imageWebPage );
+// 		class HTMLSourceReader : CefSharp.IStringVisitor {
+// 			public string	m_HTMLContent = null;
+// 			public HTMLSourceReader() {
+// 			}
+// 			public void Visit( string _str ) {
+// 				m_HTMLContent = _str;
+// 			}
+// 
+// 			public void Dispose() {
+// 			}
+// 		}
+
+		/// <summary>
+		/// Used to notify the HTML source is available
+		/// </summary>
+		/// <param name="_HTMLContent">HTML source</param>
+		/// <param name="_DOMElements">The XML document describing the DOM elements present in the returned web page</param>
+		public delegate void	WebPageSourceAvailable( string _HTMLContent, XmlDocument _DOMElements );
+
+		/// <summary>
+		/// Used to notify a new piece of the web page is available in the form of a rendering
+		/// </summary>
+		/// <param name="_imageIndex">Index of the piece of image that is available</param>
+		/// <param name="_imageWebPage">The piece of rendering of the web page</param>
+		public delegate void	WebPageRendered( uint _imageIndex, ImageUtility.ImageFile _imageWebPage );
+
+		/// <summary>
+		/// Used to notify of an error in rendering
+		/// </summary>
+		/// <param name="_errorCode"></param>
+		/// <param name="_errorText"></param>
 		public delegate void	WebPageErrorOccurred( int _errorCode, string _errorText );
+
+		#endregion
+
+		#region FIELDS
+
+		private int					m_timeOut_ms = 30000;	// Default timeout after 30s
 
 		private ChromiumWebBrowser	m_browser = null;
 		public Timer				m_timer = new Timer() { Enabled = false, Interval = 1000 };
@@ -53,14 +92,23 @@ namespace HTMLPageRenderer {
 // 		private RequestHandler rHandler;
 
 		private string					m_URL;
+		private int						m_scrollsCount;
+
+		private WebPageSourceAvailable	m_pageSourceAvailable;
 		private WebPageRendered			m_pageRendered;
 		private WebPageErrorOccurred	m_pageError;
 
-		public HTMLPageControl( string _url, int _browserViewportWidth, int _maxPageHeight, WebPageRendered _pageRendered, WebPageErrorOccurred _pageError ) {
+		#endregion
+
+		#region
+
+		public Renderer( string _URL, int _browserViewportWidth, int _browserViewportHeight, int _scrollsCount, WebPageSourceAvailable _pageSourceAvailable, WebPageRendered _pageRendered, WebPageErrorOccurred _pageError ) {
 
 //Main( null );
 
-			m_URL = _url;
+			m_URL = _URL;
+			m_scrollsCount = _scrollsCount;
+			m_pageSourceAvailable = _pageSourceAvailable;
 			m_pageRendered = _pageRendered;
 			m_pageError = _pageError;
 
@@ -91,10 +139,10 @@ namespace HTMLPageRenderer {
 
 			m_timer.Tick += timer_Tick;
 
-			if ( _maxPageHeight == 0 )
-				_maxPageHeight = _browserViewportWidth * 9 / 16;
+ 			if ( _browserViewportHeight == 0 )
+ 				_browserViewportHeight = (int) (_browserViewportWidth * 1.6180339887498948482045868343656);
 
-			m_browser.Size = new System.Drawing.Size( _browserViewportWidth, _maxPageHeight );
+			m_browser.Size = new System.Drawing.Size( _browserViewportWidth, _browserViewportHeight );
 
 			m_browser.BrowserInitialized += browser_BrowserInitialized;
 		}
@@ -149,16 +197,27 @@ System.Diagnostics.Debug.WriteLine( "browser_LoadingStateChanged" );
 
 			m_contentQueried = true;	// Don't re-enter!
 
+			// First query the HTML source code and DOM content
 			await QueryContent();
+
+			// Ask for the page's height (not always reliable, especially on infinite scrolling feeds like facebook or twitter!)
+            Task<JavascriptResponse>	task = m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( "(function() { var body = document.body, html = document.documentElement; return Math.max( body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight ); } )();", null );
+            task.Wait();
+            int	scrollHeight = (int) task.Result.Result;
+
+			// Perform as many screenshots as necessary to capture the entire page
+			int	screenshotsCount = (int) Math.Ceiling( (scrollHeight + m_browser.Size.Height-1) / m_browser.Size.Height );
+
+			await DoScreenshots( screenshotsCount );
 		}
 
+		/// <summary>
+		/// Reads back HTML content and do a screenshot
+		/// </summary>
+		/// <returns></returns>
 		async Task	QueryContent() {
 			try {
 System.Diagnostics.Debug.WriteLine( "QueryContent for " + m_URL );
-
-				// Read back HTML content and do a screenshot
-// 				HTMLSourceReader	sourceReader = new HTMLSourceReader();
-// 				m_browser.GetBrowser().MainFrame.GetSource( sourceReader );
 
 				// From Line 162 https://github.com/WildGenie/OSIRTv2/blob/3e60d3ce908a1d25a7b4633dc9afdd53256cbb4f/OSIRT/Browser/MainBrowser.cs#L300
 				string	source = await m_browser.GetBrowser().MainFrame.GetSourceAsync();
@@ -167,6 +226,42 @@ System.Diagnostics.Debug.WriteLine( "QueryContent for " + m_URL );
 
 System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved HTML code " + (source.Length < 100 ? source : source.Remove( 100 )) );
 
+				m_pageSourceAvailable( source, null );
+
+			} catch ( Exception _e ) {
+				m_pageError( -1, "An error occurred while attempting to retrieve HTML source for URL \"" + m_URL + "\": \r\n" + _e.Message );
+			}
+		}
+
+		/// <summary>
+		/// Do multiple screenshots
+		/// </summary>
+		/// <returns></returns>
+		async Task	DoScreenshots( int _scrollsCount ) {
+			_scrollsCount = Math.Min( m_scrollsCount, _scrollsCount );
+
+			try {
+#if true
+				// Handle success or timeout (code from https://stackoverflow.com/questions/4238345/asynchronously-wait-for-taskt-to-complete-with-timeout)
+//				Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync( true, PopupBlending.Main );
+				Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync();
+				if ( (await Task.WhenAny( task, Task.Delay( m_timeOut_ms ) )) == task ) {
+System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image" );
+
+					try {
+						ImageUtility.ImageFile image = new ImageUtility.ImageFile( task.Result, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+						m_pageRendered( source, image );
+					} catch ( Exception _e ) {
+						throw new Exception( "Failed to create image from web page bitmap: \r\n" + _e.Message, _e );
+					} finally {
+						task.Result.Dispose();	// Always dispose of the bitmap anyway!
+					}
+
+				} else {
+System.Diagnostics.Debug.WriteLine( "QueryContent() => TIMEOUT!" );
+					throw new Exception( "Page rendering timed out" );
+				}
+#else
 				ImageUtility.ImageFile	image = null;
 //				using ( System.Drawing.Bitmap B = m_browser.ScreenshotOrNull( PopupBlending.Main ) ) {
 				using ( System.Drawing.Bitmap B = await m_browser.ScreenshotAsync( true, PopupBlending.Main ) ) {
@@ -183,21 +278,10 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
 				} finally {
 					image.Dispose();
 				}
+#endif
 
 			} catch ( Exception _e ) {
-				m_pageError( -1, "An error occurred while attempting to retrieve HTML source and page screenshot!\r\n" + _e.Message );
-			}
-		}
-
-		class HTMLSourceReader : CefSharp.IStringVisitor {
-			public string	m_HTMLContent = null;
-			public HTMLSourceReader() {
-			}
-			public void Visit( string _str ) {
-				m_HTMLContent = _str;
-			}
-
-			public void Dispose() {
+				m_pageError( -1, "An error occurred while attempting to render a page screenshot for URL \"" + m_URL + "\": \r\n" + _e.Message );
 			}
 		}
 
@@ -313,5 +397,6 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
 
 		#endregion
 
+		#endregion
 	}
 }

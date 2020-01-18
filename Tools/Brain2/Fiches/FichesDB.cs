@@ -55,17 +55,23 @@ namespace Brain2 {
 				public override void	Run() {
 					// Request the content asynchronously
 					m_owner.AsyncRenderWebPage( m_fiche.URL,
+
 						// On success => update content
-						( string _HTMLContent, ImageUtility.ImageFile _imageWebPage ) => {
+						( string _HTMLContent ) => {
+
+						// On success => update content
+						( uint _imageIndex, ImageUtility.ImageFile _imageWebPage ) => {
 							m_fiche.Lock( Fiche.STATUS.UPDATING, () => {
 
 								m_fiche.HTMLContent = _HTMLContent;
 
 								// Create image chunk
-								m_fiche.CreateImageChunk( _imageWebPage );
+								m_fiche.CreateImageChunk( _imageIndex, new ImageUtility.ImageFile[] { _imageWebPage }, ImageUtility.ImageFile.FILE_FORMAT.JPEG );
 
 								// Create thumbnail
-								m_fiche.CreateThumbnailChunkFromImage( _imageWebPage );
+								if ( _imageIndex == 0 ) {
+									m_fiche.CreateThumbnailChunkFromImage( _imageWebPage );
+								}
 
 								// Request to save the fiche now that it's complete...
 								m_owner.AsyncSaveFiche( m_fiche, m_unloadContentAfterSave, true );
@@ -81,12 +87,18 @@ namespace Brain2 {
 
 			public class		JobLoadChunk : JobBase {
 				public Fiche.ChunkBase	m_caller;
-				public JobLoadChunk( FichesDB _owner, Fiche.ChunkBase _caller ) : base( _owner ) { m_caller = _caller; }
+				public Action			m_delegate;
+				public JobLoadChunk( FichesDB _owner, Fiche.ChunkBase _caller, Action _delegate ) : base( _owner ) { m_caller = _caller; m_delegate = _delegate; }
 				public override void	Run() {
 					using ( Stream S = m_owner.SyncRequestFicheStream( m_caller.OwnerFiche, true ) ) {
-						m_caller.OwnerFiche.Lock( Fiche.STATUS.LOADING, () => {
-							m_caller.Threaded_LoadContent( S );
-						} );
+						S.Position = (long) m_caller.Offset;	// Jump to the chunk's start position
+
+						using ( BinaryReader R = new BinaryReader( S ) ) {
+							m_caller.OwnerFiche.Lock( Fiche.STATUS.LOADING, () => {
+								m_caller.Threaded_LoadContent( R );
+								m_delegate();	// Notify
+							} );
+						}
 					}
 				}
 			}
@@ -610,9 +622,10 @@ throw new Exception( "TODO!" );
 		/// Ask a thread to perform the load asynchronously (we'll be notified on the main thread when the content is available)
 		/// </summary>
 		/// <param name="_caller"></param>
-		internal void	AsyncLoadChunk( Fiche.ChunkBase _caller ) {
+		/// <param name="_delegate">Called once the chunk has been loaded</param>
+		internal void	AsyncLoadChunk( Fiche.ChunkBase _caller, Action _delegate ) {
 			// Create a new job and let the loading threads handle it
-			WorkingThread.JobLoadChunk	job = new WorkingThread.JobLoadChunk( this, _caller );
+			WorkingThread.JobLoadChunk	job = new WorkingThread.JobLoadChunk( this, _caller, _delegate );
 			lock ( m_threadedJobs )
 				m_threadedJobs.Enqueue( job );
 		}
@@ -673,11 +686,12 @@ throw new Exception( "TODO!" );
 		/// The idea is to notify often, but save only once the fiche is left alone for some time...
 		/// </summary>
 		/// <param name="_fiche"></param>
-		internal void	SyncNotifyFicheModifiedAndNeedsSaving( Fiche _fiche ) {
+		internal void	SyncNotifyFicheModifiedAndNeedsAsyncSaving( Fiche _fiche ) {
 			lock ( m_fiche2NeedToSave ) {
 				FicheUpdatedNeedsSaving	saveTimer = null;
 				if ( !m_fiche2NeedToSave.TryGetValue( _fiche, out saveTimer ) )
 					m_fiche2NeedToSave.Add( _fiche, saveTimer = new FicheUpdatedNeedsSaving( _fiche ) );
+
 				saveTimer.m_timeLastModified = DateTime.Now;	// Reset timer
 			}
 		}
@@ -689,6 +703,17 @@ throw new Exception( "TODO!" );
 		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
 		/// <param name="_notifyAfterSave">True to send a success notification after the fiche is saved</param>
 		internal void	SyncSaveFiche( Fiche _fiche, bool _unloadContentAfterSave, bool _notifyAfterSave ) {
+
+			// If the file already exists then notify the fiche it's its last chance to read data from the old file before it's overwritten!
+			if ( SyncFicheStreamAlreadyExists( _fiche ) ) {
+				using ( Stream S = SyncRequestFicheStream( _fiche, true ) ) {
+					using ( BinaryReader R = new BinaryReader( S ) ) {
+						_fiche.LastChanceReadBeforeWrite( R );
+					}
+				}
+			}
+
+			// Now we can save the fiche peacefully
 			using ( Stream S = SyncRequestFicheStream( _fiche, false ) ) {
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
 					// Ensure the fiche is ready so it can be saved
@@ -703,8 +728,9 @@ throw new Exception( "TODO!" );
 							_fiche.UnloadImageChunk();
 
 						// Optional notification
-						if ( _notifyAfterSave )
+						if ( _notifyAfterSave ) {
 							SyncReportFicheStatus( _fiche, FICHE_REPORT_STATUS.SUCCESS, null );
+						}
 					} );
 				}
 			}
@@ -722,7 +748,7 @@ throw new Exception( "TODO!" );
 
 		/// <summary>
 		/// Ask the main thread to report our error
-		/// Use this to report internal errors relative to the software, not errors concerning fiche content (use SyncReportFicheError instead)
+		/// Use this to report internal errors relative to the software, not errors concerning fiche content (use SyncReportFicheStatus instead)
 		/// </summary>
 		/// <param name="_error"></param>
 		internal void	SyncReportError( string _error ) {
@@ -746,19 +772,40 @@ throw new Exception( "TODO!" );
 		}
 
 		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="_fiche">The fiche to create a file stream for</param>
+		/// <returns></returns>
+		private FileInfo	SyncGetFicheFileName( Fiche _fiche ) {
+			FileInfo	ficheFileName = new FileInfo( Path.Combine( m_rootFolder.FullName, _fiche.FileName ) );
+			return ficheFileName;
+		}
+
+		/// <summary>
+		/// Tells if the fiche stream already exists
+		/// </summary>
+		/// <param name="_fiche">The fiche to check stream existence for</param>
+		/// <returns>True if the stream is already available, false if the fiche needs to be created</returns>
+		internal bool	SyncFicheStreamAlreadyExists( Fiche _fiche ) {
+			FileInfo	ficheFileName = SyncGetFicheFileName( _fiche );
+			return ficheFileName.Exists;
+		}
+
+		/// <summary>
 		/// Internal stream abstraction
 		/// At the moment the fiches come from individual files but it could be moved to an actual database or remote server if needed...
 		/// NOTE: The caller need to dispose of the stream eventually!
 		/// </summary>
-		/// <param name="_fiche"></param>
-		/// <param name="_readOnly"></param>
+		/// <param name="_fiche">The fiche to create a file stream for</param>
+		/// <param name="_read">True for a read operation, false for a write operation</param>
 		/// <returns></returns>
-		internal Stream	SyncRequestFicheStream( Fiche _fiche, bool _readOnly ) {
-			FileInfo	ficheFileName = new FileInfo( Path.Combine( m_rootFolder.FullName, _fiche.FileName ) );
-			if ( _readOnly )
+		internal Stream	SyncRequestFicheStream( Fiche _fiche, bool _read ) {
+			FileInfo	ficheFileName = SyncGetFicheFileName( _fiche );
+			if ( _read ) {
 				return ficheFileName.OpenRead();
-			else
+			} else {
 				return ficheFileName.Create();
+			}
 		}
 
 		#endregion

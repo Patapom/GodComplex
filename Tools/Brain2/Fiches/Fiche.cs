@@ -49,6 +49,23 @@ namespace Brain2 {
 			public Fiche				OwnerFiche	{ get { return m_owner; } }
 
 			/// <summary>
+			/// Gets the chunk's offset in the stream
+			/// </summary>
+			/// <remarks>An offset of ~0UL indicates the chunk has not been serialized to a stream yet</remarks>
+			public ulong				Offset	{ get { return m_offset; } }
+
+			/// <summary>
+			/// Gets the chunk's size
+			/// </summary>
+			/// <remarks>A size of 0 indicates the chunk has not been serialized to a stream yet</remarks>
+			public uint					Size	{ get { return m_size; } }
+
+			/// <summary>
+			/// Tells if the content is FULLY available (i.e. Content has been called and is ready) or the chunk is still incomplete
+			/// </summary>
+			public abstract bool		IsContentAvailable	{ get; }
+
+			/// <summary>
 			/// Returns the chunk's content
 			/// </summary>
 			/// <remarks>Should always return a valid placeholder while content is not available</remarks>
@@ -66,6 +83,12 @@ namespace Brain2 {
 			/// <param name="_reader"></param>
 			public abstract void		Read( BinaryReader _reader );
 
+// 			/// <summary>
+// 			/// Last chance to reads the chunk from the existing binary stream before it's saved again
+// 			/// </summary>
+// 			/// <param name="_reader"></param>
+// 			public abstract void		LastChanceReadBeforeWrite( BinaryReader _reader );
+
 			/// <summary>
 			/// Writes the chunk to a binary stream
 			/// </summary>
@@ -74,7 +97,8 @@ namespace Brain2 {
 		
 			public ChunkBase( Fiche _owner, ulong _offset, uint _size ) {
 				m_owner = _owner;
-				m_owner.m_chunks.Add( this );
+				if ( m_owner != null )
+					m_owner.m_chunks.Add( this );
 
 				m_offset = _offset;
 				m_size = _size;
@@ -84,15 +108,18 @@ namespace Brain2 {
 				lock ( this )
 					InternalDispose();
 
-				m_owner.m_chunks.Remove( this );
+				if ( m_owner != null )
+					m_owner.m_chunks.Remove( this );
 			}
 
 			/// <summary>
 			/// Override this to load the content.
 			/// </summary>
-			/// <param name="_content"></param>
-			/// <remarks>This method is called from another thread</remarks>
-			internal abstract void		Threaded_LoadContent( Stream _S );
+			/// <param name="_reader">Stream reader</param>
+			/// <param name="_prepareContent">True to prepare data relevant for content display, false if the load is only internal and you only need to completely load the chunk so it's ready to be saved again</param>
+			/// <remarks>This method is called from another thread than the main thread.
+			/// The stream is already positioned at the beginning of the chunk's data</remarks>
+			internal abstract void		Threaded_LoadContent( BinaryReader _reader, bool _prepareContent );
 
 			/// <summary>
 			/// Override this to dispose of the content
@@ -101,9 +128,237 @@ namespace Brain2 {
 			protected abstract void		InternalDispose();
 
 			protected void				NotifyContentUpdated() {
-				if ( ContentUpdated != null )
-					ContentUpdated( this, EventArgs.Empty );
-//					ContentUpdated?.Invoke( this, EventArgs.Empty );
+				ContentUpdated?.Invoke( this, EventArgs.Empty );
+			}
+		}
+
+		/// <summary>
+		/// Contains the full web page snapshot
+		/// </summary>
+		[System.Diagnostics.DebuggerDisplay( "{m_images} images" )]
+		public class ChunkWebPageSnapshot : ChunkBase {
+
+			public const uint	DEFAULT_WEBPAGE_WIDTH = 256;	// Default screenshot width
+			public const uint	DEFAULT_WEBPAGE_HEIGHT = (uint) (Mathf.PHI * DEFAULT_WEBPAGE_WIDTH);	// Golden rectangle
+
+			public static readonly ColorProfile	DEFAULT_PROFILE = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
+
+			private ImageFile.FILE_FORMAT	m_imagesFormat = ImageFile.FILE_FORMAT.JPEG;
+			private ImageFile[]				m_images = new ImageFile[0];
+			private byte[][]				m_compressedImages = new byte[0][];
+
+			/// <summary>
+			/// Will be of type ImageFile[]
+			/// </summary>
+			public override object Content {
+				get {
+					if ( m_images.Length > 0 && m_images[0] == null ) {
+						// Create placeholders for now & launch loading process...
+						for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
+							m_images[imageIndex] = new ImageFile( DEFAULT_WEBPAGE_WIDTH, DEFAULT_WEBPAGE_HEIGHT, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );
+						}
+
+						m_owner.m_database.AsyncLoadChunk( this, () => {
+							m_owner.m_database.SyncNotify( () => { NotifyContentUpdated(); } );	// Notify on the main thread
+						} );
+					}
+
+					return m_images;
+				}
+			}
+
+			public ChunkWebPageSnapshot( Fiche _owner, ulong _offset, uint _size ) : base( _owner, _offset, _size ) {
+			}
+			public ChunkWebPageSnapshot( Fiche _owner, uint _imageStartIndex, ImageFile[] _images, ImageFile.FILE_FORMAT _targetFormat ) : base( _owner, ~0UL, 0 ) {
+				UpdateImages( _imageStartIndex, _images, _targetFormat );
+			}
+
+			public void	UpdateImages( uint _imageStartIndex, ImageFile[] _images, ImageFile.FILE_FORMAT _targetFormat ) {
+				m_imagesFormat = _targetFormat;
+
+				int			newSize = Mathf.Max( m_images.Length, (int) _imageStartIndex + _images.Length );
+				ImageFile[]	newImages = new ImageFile[newSize];
+				byte[][]	newCompressedImages = new byte[newSize][];
+
+				// Copy existing images
+				for ( uint imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
+					newImages[imageIndex] = m_images[imageIndex];
+					newCompressedImages[imageIndex] = m_compressedImages[imageIndex];
+				}
+
+				// Replace with new images
+				for ( uint imageIndex=0; imageIndex < _images.Length; imageIndex++ ) {
+					if ( newImages[_imageStartIndex + imageIndex] != null ) {
+						newImages[_imageStartIndex + imageIndex].Dispose();	// We're replacing this image with a new one...
+					}
+
+					if ( _images[imageIndex] == null )
+						throw new Exception( "Invalid image! Fiche web images must not be null!" );
+					if ( m_imagesWidth != 0 && _images[imageIndex].Width != m_imagesWidth )
+						throw new Exception( "Invalid image width! All images in the image chunk should have the same width as the first image (" + m_imagesWidth + ")!" );
+
+					newImages[_imageStartIndex + imageIndex] = _images[imageIndex];
+					newCompressedImages[_imageStartIndex + imageIndex] = null;	// Clear existing compressed image since the image changed
+					m_imagesWidth = _images[imageIndex].Width;
+				}
+
+				// Replace old array
+				m_images = newImages;
+				m_compressedImages = newCompressedImages;
+
+				// Notify?
+				m_owner.NotifyWebPageImageChanged( this );
+			}
+
+			/// <summary>
+			/// Releases the images
+			/// </summary>
+			public void	UnloadImages() {
+				for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
+					ImageFile	image = m_images[imageIndex];
+					if ( image != null )
+						image.Dispose();
+
+					m_images[imageIndex] = null;
+				}
+			}
+
+			public override void Read(BinaryReader _reader) {
+				UnloadImages();
+
+				// Only read images format, images count & create empty arrays
+				m_imagesFormat = (ImageFile.FILE_FORMAT) _reader.ReadUInt32();
+				m_imagesWidth = _reader.ReadUInt32();
+				m_images = new ImageFile[_reader.ReadInt32()];
+				m_compressedImages = new byte[m_images.Length][];
+
+				// The rest of the read is performed asynchronously whenever "Content" is accessed (lazy initialization)
+			}
+
+// 			public override void LastChanceReadBeforeWrite(BinaryReader _reader) {
+// 				// Fully read the old chunk's content
+// 				using ( ChunkWebPageSnapshot oldChunk = new ChunkWebPageSnapshot( null, m_offset, m_size ) ) {
+// 
+// 					oldChunk.Threaded_LoadContent( _reader, false );
+// 
+// 					// Transfer the old chunk's content into the new chunk (unless we have new content)
+// 					int	minLength = Math.Min( m_images.Length, oldChunk.m_images.Length );
+// 					for ( int imageIndex=0; imageIndex < minLength; imageIndex++ ) {
+// 						if ( m_compressedImages[imageIndex] == null && m_images[imageIndex] == null ) {
+// 							m_compressedImages[imageIndex] = oldChunk.m_compressedImages[imageIndex];
+// 						}
+// 					}
+// 				}
+// 			}
+
+			public override void Write(BinaryWriter _writer) {
+				// Write images format & image count
+				_writer.Write( (uint) m_imagesFormat );
+				_writer.Write( m_images.Length );
+
+				// Write actual compressed content
+				for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
+					byte[]	compressedImage = m_compressedImages[imageIndex];
+					if ( compressedImage == null ) {
+						// Compress the image
+						try {
+							ImageFile	image = m_images[imageIndex];
+							if ( image == null )
+								throw new Exception( "Missing image to compress! We should have either been provided with compressed content or a valid image!" );
+
+							NativeByteArray content = null;
+							switch ( m_imagesFormat ) {
+								case ImageFile.FILE_FORMAT.PNG:
+									content = image.Save( ImageFile.FILE_FORMAT.PNG, ImageFile.SAVE_FLAGS.SF_PNG_Z_BEST_COMPRESSION );
+									break;
+
+								case ImageFile.FILE_FORMAT.JPEG:
+									content = image.Save( ImageFile.FILE_FORMAT.JPEG, ImageFile.SAVE_FLAGS.SF_JPEG_QUALITYNORMAL );
+									break;
+
+								default:
+									content = image.Save( m_imagesFormat, ImageFile.SAVE_FLAGS.NONE );
+									break;
+							}
+
+							if ( content == null )
+								throw new Exception( "Failed to save image using \"" + m_imagesFormat + "\" format! Image library returned null..." );
+
+							// Write actual compressed content
+							_writer.Write( content.Length );
+
+							compressedImage = content.AsByteArray;
+
+							content.Dispose();
+
+						} catch ( Exception _e ) {
+							// Something went wrong!
+							m_owner.Database.SyncReportFicheStatus( m_owner, FichesDB.FICHE_REPORT_STATUS.ERROR, "An error occurred while saving a part of the web page image! " + _e.Message );
+						}
+					}
+
+					// Save compressed image
+					if ( compressedImage == null ) {
+						_writer.Write( (int) 0 );
+						continue;
+					}
+
+					_writer.Write( compressedImage.Length );
+					_writer.Write( compressedImage );
+				}
+			}
+
+			internal override void	Threaded_LoadContent( BinaryReader _reader, bool _prepareContent ) {
+				try {
+
+					// Use the "light" regular reader that will initialize the array of images
+					Read( _reader );
+
+					// Read compressed data
+					for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
+						int	compressedImageLength = _reader.ReadInt32();
+						m_compressedImages[imageIndex] = new byte[compressedImageLength];
+						_reader.Read( m_compressedImages[imageIndex], 0, compressedImageLength );
+					}
+
+					if ( _prepareContent ) {
+						// Decompress images
+						for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
+							if ( m_compressedImages[imageIndex].Length == 0 ) {
+								// Create an error placeholder
+								m_images[imageIndex] = new ImageFile( m_imagesWidth, (uint) (Mathf.PHI * m_imagesWidth), PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );
+								m_images[imageIndex].Clear( float4.One );
+								m_images[imageIndex].DrawLine( new float4( 1, 0, 0, 1 ), new float2( 0, 0 ), new float2( m_images[imageIndex].Width-1, m_images[imageIndex].Height-1 ) );
+								m_images[imageIndex].DrawLine( new float4( 1, 0, 0, 1 ), new float2( 0, m_images[imageIndex].Height-1 ), new float2( m_images[imageIndex].Width-1, 0 ) );
+								continue;
+							}
+
+							if ( m_images[imageIndex] != null ) {
+								// Dispose of any existing image first...
+								m_images[imageIndex].Dispose();
+								m_images[imageIndex] = null;
+							}
+
+							// Attempt to read the image file
+							try {
+								using ( NativeByteArray imageContent = new NativeByteArray( m_compressedImages[imageIndex] ) ) {
+									m_images[imageIndex] = new ImageFile( imageContent, m_imagesFormat );
+								}
+
+							} catch ( Exception _e ) {
+								m_owner.Database.SyncReportError( "Failed to read a part of the web image chunk:" + _e.Message );
+								m_images[imageIndex] = null;
+							}
+						}
+					}
+
+				} catch ( Exception _e ) {
+					m_owner.m_database.SyncReportError( "An error occurred while attempting to read image chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
+				}
+			}
+
+			protected override void InternalDispose() {
+				UnloadImages();
 			}
 		}
 
@@ -123,9 +378,12 @@ namespace Brain2 {
 			public override object Content {
 				get {
 					if ( m_thumbnail == null ) {
-						// Launch load process & create a placeholder for now...
-						m_owner.m_database.AsyncLoadChunk( this );
+						// Create a placeholder for now and launch loading process...
 						m_thumbnail = new ImageFile( THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );	// Note that it's important to create a 24-bits format here to be able to save as JPEG!
+
+						m_owner.m_database.AsyncLoadChunk( this, () => {
+							m_owner.m_database.SyncNotify( () => { NotifyContentUpdated(); } );	// Notify on the main thread
+						} );
 					}
 
 					return m_thumbnail;
@@ -134,29 +392,29 @@ namespace Brain2 {
 
 			public ChunkThumbnail( Fiche _owner, ulong _offset, uint _size ) : base( _owner, _offset, _size ) {
 			}
-			public ChunkThumbnail( Fiche _owner, ImageFile _imageWebPage ) : base( _owner, ~0UL, 0 ) {
-				UpdateFromWebPageImage( _imageWebPage );
+			public ChunkThumbnail( Fiche _owner, ImageFile _imagesWebPage ) : base( _owner, ~0UL, 0 ) {
+				UpdateFromWebPageImage( _imagesWebPage );
 			}
 
-			public void	UpdateFromWebPageImage( ImageFile _imageWebPage ) {
-				if ( _imageWebPage == null )
+			public void	UpdateFromWebPageImage( ImageFile _imagesWebPage ) {
+				if ( _imagesWebPage == null )
 					throw new Exception( "Invalid image!" );
 
 				if ( m_thumbnail != null )
 					m_thumbnail.Dispose();
 
 				// Create a tiny thumbnail from the image
-				uint	thumbnailHeight = Mathf.Min( _imageWebPage.Height * THUMBNAIL_WIDTH / _imageWebPage.Width, THUMBNAIL_HEIGHT );	// At most our preferred ratio => we must crop the full page!
-				float	imageScale = (float) _imageWebPage.Width / THUMBNAIL_WIDTH;
+				uint	thumbnailHeight = Mathf.Min( _imagesWebPage.Height * THUMBNAIL_WIDTH / _imagesWebPage.Width, THUMBNAIL_HEIGHT );	// At most our preferred ratio => we must crop the full page!
+				float	imageScale = (float) _imagesWebPage.Width / THUMBNAIL_WIDTH;
 
 				m_thumbnail = new ImageFile( THUMBNAIL_WIDTH, thumbnailHeight, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );	// Note that it's important to create a 24-bits format here to be able to save as JPEG!
 
 				// Read "height" scanlines
-				float4[]	sourceScanline = new float4[_imageWebPage.Width];
+				float4[]	sourceScanline = new float4[_imagesWebPage.Width];
 				float4[]	targetScanline = new float4[THUMBNAIL_WIDTH];
 				for ( uint Y=0; Y < thumbnailHeight; Y++ ) {
 					uint	sourceY = (uint) (imageScale * Y);
-					_imageWebPage.ReadScanline( sourceY, sourceScanline );
+					_imagesWebPage.ReadScanline( sourceY, sourceScanline );
 					for ( uint X=0; X < THUMBNAIL_WIDTH; X++ ) {
 						targetScanline[X] = sourceScanline[(uint) (imageScale * (X+0.5f))];
 					}
@@ -181,25 +439,22 @@ namespace Brain2 {
 				}
 			}
 
-			internal override void	Threaded_LoadContent( Stream _S ) {
+			internal override void	Threaded_LoadContent( BinaryReader _reader, bool _prepareContent ) {
 				try {
-					_S.Position = (long) m_offset;
-
 					byte[]	content = new byte[m_size];
-					_S.Read( content, 0, (int) m_size );
+					_reader.Read( content, 0, (int) m_size );
 
-					// Attempt to read the JPEG file
-					ImageFile	temp = null;
-					using ( NativeByteArray imageContent = new NativeByteArray( content ) ) {
-						temp = new ImageFile( imageContent, ImageFile.FILE_FORMAT.JPEG );
+					if ( _prepareContent ) {
+						// Attempt to read the JPEG file
+						ImageFile	temp = null;
+						using ( NativeByteArray imageContent = new NativeByteArray( content ) ) {
+							temp = new ImageFile( imageContent, ImageFile.FILE_FORMAT.JPEG );
+						}
+
+						// Replace current thumbnail
+						m_thumbnail.Dispose();
+						m_thumbnail = temp;
 					}
-
-					// Replace current thumbnail
-					m_thumbnail.Dispose();
-					m_thumbnail = temp;
-
-					// Notify
-					m_owner.m_database.SyncNotify( () => { NotifyContentUpdated(); } );
 
 				} catch ( Exception _e ) {
 					m_owner.m_database.SyncReportError( "An error occurred while attempting to read thumbnail chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
@@ -210,127 +465,6 @@ namespace Brain2 {
 				if ( m_thumbnail != null ) {
 					m_thumbnail.Dispose();
 					m_thumbnail = null;
-				}
-			}
-		}
-
-		/// <summary>
-		/// Contains the full web page snapshot
-		/// </summary>
-		[System.Diagnostics.DebuggerDisplay( "{m_width}x{m_height}" )]
-		public class ChunkWebPageSnapshot : ChunkBase {
-
-			public const uint	DEFAULT_WEBPAGE_WIDTH = 1280;	// Default snapshot width
-			public const uint	DEFAULT_WEBPAGE_HEIGHT = 2071;	// Phi * Width = Golden rectangle 
-
-			public static readonly ColorProfile	DEFAULT_PROFILE = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
-
-			private uint		m_width = DEFAULT_WEBPAGE_WIDTH;
-			private uint		m_height = DEFAULT_WEBPAGE_HEIGHT;
-
-			private ImageFile	m_image = null;
-
-			public override object Content {
-				get {
-					if ( m_image == null ) {
-						// Launch load process & create a placeholder for now...
-						m_owner.m_database.AsyncLoadChunk( this );
-						m_image = new ImageFile( m_width, m_height, PIXEL_FORMAT.BGRA8, DEFAULT_PROFILE );
-					}
-
-					return m_image;
-				}
-			}
-
-			public ChunkWebPageSnapshot( Fiche _owner, ulong _offset, uint _size ) : base( _owner, _offset, _size ) {
-			}
-			public ChunkWebPageSnapshot( Fiche _owner, ImageFile _image ) : base( _owner, ~0UL, 0 ) {
-				UpdateImage( _image );
-			}
-
-			public void	UpdateImage( ImageFile _image ) {
-				if ( _image == null )
-					throw new Exception( "Invalid image!" );
-
-				if ( m_image != null )
-					m_image.Dispose();
-
-				m_image = _image;
-				m_width = m_image.Width;
-				m_height = m_image.Height;
-
-				// Notify?
-				m_owner.NotifyWebPageImageChanged( this );
-			}
-
-			/// <summary>
-			/// Releases the image
-			/// </summary>
-			public void	UnloadImage() {
-				if ( m_image != null ) {
-					m_image.Dispose();
-					m_image = null;
-				}
-			}
-
-			public override void Read(BinaryReader _reader) {
-				// Only read image width & height
-				m_width = _reader.ReadUInt32();
-				m_height = _reader.ReadUInt32();
-
-				// The rest of the read is performed asynchronously whenever "Content" is accessed
-			}
-
-			public override void Write(BinaryWriter _writer) {
-				if ( m_image == null )
-					throw new Exception( "Attempting to save an ampty thumbnail chunk! Don't create the chunk if it's normal to be empty..." );
-
-				// Write width & height
-				_writer.Write( m_image.Width );
-				_writer.Write( m_image.Height );
-
-				// Write actual content
-				using ( NativeByteArray content = m_image.Save( ImageFile.FILE_FORMAT.PNG, ImageFile.SAVE_FLAGS.SF_PNG_Z_BEST_COMPRESSION ) ) {
-					byte[]	managedContent = content.AsByteArray;
-					_writer.Write( managedContent );
-				}
-			}
-
-			internal override void	Threaded_LoadContent( Stream _S ) {
-				try {
-					_S.Position = (long) m_offset;
-
-					// Use "light" regular reader
-					using ( BinaryReader R = new BinaryReader( _S ) )
-						Read( R );
-
-					// Read remaining
-					uint	contentSize = m_size - (uint) ((ulong) _S.Position - m_offset);
-					byte[]	content = new byte[contentSize];
-					_S.Read( content, 0, (int) contentSize );
-
-					// Attempt to read the PNG file
-					ImageFile	temp = null;
-					using ( NativeByteArray imageContent = new NativeByteArray( content ) ) {
-						temp = new ImageFile( imageContent, ImageFile.FILE_FORMAT.PNG );
-					}
-
-					// Replace current image
-					m_image.Dispose();
-					m_image = temp;
-
-					// Notify
-					m_owner.m_database.SyncNotify( () => { NotifyContentUpdated(); } );
-
-				} catch ( Exception _e ) {
-					m_owner.m_database.SyncReportError( "An error occurred while attempting to read image chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
-				}
-			}
-
-			protected override void InternalDispose() {
-				if ( m_image != null ) {
-					m_image.Dispose();
-					m_image = null;
 				}
 			}
 		}
@@ -550,6 +684,11 @@ namespace Brain2 {
 
 		#region I/O
 
+		/// <summary>
+		/// Writes the entire fiche
+		/// </summary>
+		/// <param name="_writer"></param>
+		/// <remarks>All chunks should have read their data and be ready to write their full content. Use the LastChanceReadBeforeWrite() to make sure your chunks (especially lazy-initialized chunks) are complete.</remarks>
 		public void		Write( BinaryWriter _writer ) {
 			try {
 				_writer.Write( SIGNATURE );
@@ -673,6 +812,23 @@ namespace Brain2 {
 			m_status = STATUS.READY;
 		}
 
+		/// <summary>
+		/// Called with the existing fiche stream, just before we save new data and overwrite the old fiche
+		/// Use this as the last opportunity to gather all the data your chunks need to get properly saved (this is especially true for lazy-initialized chunks that need to read the data they haven't read yet so they can save it again)
+		/// </summary>
+		/// <param name="_reader"></param>
+		public void		LastChanceReadBeforeWrite( BinaryReader _reader ) {
+			foreach ( ChunkBase chunk in m_chunks ) {
+				if ( chunk.Size == 0 )
+					continue;	// 0-length chunks are new and haven't been saved yet so they don't need to be loaded
+				if ( chunk.IsContentAvailable )
+					continue;	// The chunk's content is already fully available so it can be saved immediately
+
+				// Force loading the chunk's content immediately so we can save it right afterward...
+				chunk.Threaded_LoadContent( _reader, false );
+			}
+		}
+
 // 		/// <summary>
 // 		/// Called as a post-process to finally resolve actual tag links after read
 // 		/// </summary>
@@ -773,23 +929,23 @@ namespace Brain2 {
 		/// <summary>
 		/// Create the image chunk and feed it our image
 		/// </summary>
-		/// <param name="_imageWebPage"></param>
-		internal void	CreateImageChunk( ImageFile _imageWebPage ) {
+		/// <param name="_imagesWebPage"></param>
+		internal void	CreateImageChunk( uint _imageStartIndex, ImageFile[] _imagesWebPage, ImageFile.FILE_FORMAT _targetFormat ) {
 			ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
 			if ( chunk == null ) {
-				chunk = new ChunkWebPageSnapshot( this, _imageWebPage );
+				chunk = new ChunkWebPageSnapshot( this, _imageStartIndex, _imagesWebPage, _targetFormat );
 			} else {
-				chunk.UpdateImage( _imageWebPage );
+				chunk.UpdateImages( 0, _imagesWebPage, _targetFormat );
 			}
 		}
 
 		// Create thumbnail chunk from the full webpage
-		internal void	CreateThumbnailChunkFromImage( ImageFile _imageWebPage ) {
+		internal void	CreateThumbnailChunkFromImage( ImageFile _imagesWebPage ) {
 			ChunkThumbnail	chunk = FindChunkByType<ChunkThumbnail>();
 			if ( chunk == null ) {
-				chunk = new ChunkThumbnail( this, _imageWebPage );
+				chunk = new ChunkThumbnail( this, _imagesWebPage );
 			} else {
-				chunk.UpdateFromWebPageImage( _imageWebPage );
+				chunk.UpdateFromWebPageImage( _imagesWebPage );
 			}
 		}
 
@@ -799,7 +955,7 @@ namespace Brain2 {
 		internal void	UnloadImageChunk() {
 			ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
 			if ( chunk != null )
-				chunk.UnloadImage();
+				chunk.UnloadImages();
 		}
 
 		#endregion
