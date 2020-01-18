@@ -17,6 +17,7 @@ namespace SharpMath {
 		// Standard constants
 		literal float		E = 2.7182818284590452353602874713527f;				// ??
 		literal float		PI = 3.1415926535897932384626433832795f;			// ??
+		literal float		PHI = 1.6180339887498948482045868343656;			// Golden Ratio
 		literal float		TWOPI = 6.283185307179586476925286766559f;			// 2PI
 		literal float		FOURPI = 12.566370614359172953850573533118f;		// 4PI
 		literal float		HALFPI = 1.5707963267948966192313216916398f;		// PI/2
