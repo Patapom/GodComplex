@@ -6,7 +6,7 @@ using System.Threading;
 namespace Brain2 {
 
 	/// <summary>
-	/// Schem for http:// and https:// URLs
+	/// Scheme for http:// and https:// URLs
 	/// </summary>
 	public class	SchemeHTTP : URLHandler.IScheme {
 		public bool		SupportsURL( string _candidateURL ) {

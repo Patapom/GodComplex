@@ -56,15 +56,19 @@ namespace Brain2 {
 				tagEditBox.Enabled = enable;
 				tagEditBox.RecognizedTags = enable ? m_fiche.Tags : null;
 
- 				if ( enable && m_fiche.WebPageImage != null ) {
-					panelWebPage.BackgroundImage = m_fiche.WebPageImage.AsBitmap;
+ 				if ( enable && m_fiche.WebPageImages != null ) {
+//					panelWebPage.BackgroundImage = m_fiche.WebPageImage.AsBitmap;
+System.Diagnostics.Debug.WriteLine( "New web page images need to be displayed!" );
  				}
  				panelWebPage.Enabled = enable;
 			}
 		}
 
 		private void fiche_WebPageImageChanged( Fiche _sender ) {
-			panelWebPage.BackgroundImage = _sender.WebPageImage.AsBitmap;
+//			panelWebPage.BackgroundImage = _sender.WebPageImage.AsBitmap;
+ImageUtility.ImageFile[]	images = _sender.WebPageImages;
+
+System.Diagnostics.Debug.WriteLine( "New web page images need to be displayed!" );
 		}
 
 		#endregion

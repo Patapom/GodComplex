@@ -34,7 +34,7 @@ namespace Brain2 {
 			// Create fiches for each selected tag
 			foreach ( string tag in checkedListBox.CheckedItems ) {
 				Fiche	F = m_database.SyncFindOrCreateTagFiche( tag );
-				m_database.SyncNotifyFicheModifiedAndNeedsSaving( F );
+				m_database.SyncNotifyFicheModifiedAndNeedsAsyncSaving( F );
 			}
 		}
 

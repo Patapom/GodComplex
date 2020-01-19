@@ -125,21 +125,34 @@ namespace Brain2 {
 			UNKNOWN,
 		}
 
-		public delegate void	WebPageRendered( string _HTMLContent, ImageUtility.ImageFile _imageWebPage );
+		public delegate void	WebPageSourceAvailable( string _HTMLContent, System.Xml.XmlDocument _DOMElements );
+		public delegate void	WebPagePieceRendered( uint _webPagePieceIndex, ImageUtility.ImageFile _imageWebPage );
+		public delegate void	WebPageSuccess();
 		public delegate void	WebPageError( WEB_ERROR_TYPE _error, int _errorCode, string _message );
 
 		/// <summary>
 		/// Loads a web page and renders it into an image
 		/// </summary>
 		/// <param name="_URL"></param>
-		public static void	LoadWebPage( Uri _URL, WebPageRendered _onSuccess, WebPageError _onError ) {
+		public static void	LoadWebPage( Uri _URL, WebPageSourceAvailable _onSourceAvailable, WebPagePieceRendered _onPagePieceRendered, WebPageSuccess _onSuccess, WebPageError _onError ) {
 			HTMLPageRenderer.Renderer	pageRenderer = new HTMLPageRenderer.Renderer(
 				_URL.ToString(),
-				(int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH, 0,
+				(int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH, (int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_PIECE_HEIGHT,
+				(int) Fiche.ChunkWebPageSnapshot.MAX_WEBPAGE_PIECES,
 
-				// Occurs whenever the web page was successfully loaded
-				( string _HTMLContent, ImageUtility.ImageFile _imageWebPage ) => {
-					_onSuccess( _HTMLContent, _imageWebPage );
+				// Occurs whenever the page's HTML source is available
+				( string _HTMLContent, System.Xml.XmlDocument _DOMElements ) => {
+					_onSourceAvailable( _HTMLContent, _DOMElements );
+				},
+
+				// Occurs whenever a piece of the web page was successfully rendered
+				( uint _webPagePieceIndex, ImageUtility.ImageFile _imageWebPage ) => {
+					_onPagePieceRendered( _webPagePieceIndex, _imageWebPage );
+				},
+
+				// Occurs when the page successfully rendered
+				() => {
+					_onSuccess();
 				},
 
 				// Occurs whenever the web pge failed to load
@@ -151,7 +164,7 @@ namespace Brain2 {
 			);
 		}
 
-		public static void	DummyLoadWebPage( Uri _URL, WebPageRendered _onSuccess, WebPageError _onError ) {
+		public static void	DummyLoadWebPage( Uri _URL, WebPageSourceAvailable _onSourceAvailable, WebPagePieceRendered _onPieceRendered, WebPageSuccess _onSuccess, WebPageError _onError ) {
 
 //				string	content = "DUMMY CONTENT!";
 
@@ -273,7 +286,7 @@ namespace Brain2 {
 
 			uint	seed = (uint) _URL.GetHashCode();
 
-			ImageUtility.ImageFile	dummyPage = new ImageUtility.ImageFile( Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH, Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_HEIGHT, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+			ImageUtility.ImageFile	dummyPage = new ImageUtility.ImageFile( Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH, Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_PIECE_HEIGHT, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
 			dummyPage.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
 				_color.x = Mathf.Sin( 0.1f * (seed + _X) );
 				_color.y = Mathf.Sin( 0.123f * (seed + _Y) );
@@ -282,7 +295,9 @@ namespace Brain2 {
 			} );
 
 			// Notify
-			_onSuccess( dummyHTML, dummyPage );
+			_onSourceAvailable( dummyHTML, null );
+			_onPieceRendered( 0, dummyPage );
+			_onSuccess();
 		}
 	}
 }

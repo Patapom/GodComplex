@@ -661,10 +661,11 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 								m_GUID = Guid.NewGuid();
 
 								// Attempt to find the fiche by URL
-								existingFiche = m_database.FindFicheByURL( m_URL );
+								Fiche[]	existingFiches = m_database.FindFichesByURL( m_URL );
+								existingFiche = existingFiches != null ? existingFiches[0] : null;
 								if ( existingFiche == null ) {
 									// Attempt to find a unique fiche with this title (it's okay to have multiple fiches with the same title but we only consider the fiche already exists if there's a single one with this title!)
-									Fiche[]	existingFiches = m_database.FindFichesByTitle( m_name, false );
+									existingFiches = m_database.FindFichesByTitle( m_name, false );
 									existingFiche = existingFiches.Length == 1 ? existingFiches[0] : null;
 								}
 							}

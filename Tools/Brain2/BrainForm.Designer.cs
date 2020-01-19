@@ -25,6 +25,7 @@
 			// 
 			this.timerDisplay.Enabled = true;
 			this.timerDisplay.Interval = 10;
+			this.timerDisplay.Tick += new System.EventHandler(this.timerDisplay_Tick);
 			// 
 			// notifyIcon
 			// 

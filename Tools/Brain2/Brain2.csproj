@@ -83,6 +83,7 @@
       <DependentUpon>WebEditor_COMError.cs</DependentUpon>
     </None>
     <Compile Include="Fiches\Fiche.cs" />
+    <Compile Include="Fiches\DOM\DOMElement.cs" />
     <Compile Include="Fiches\Handlers\HandlerURL.cs" />
     <Compile Include="Fiches\Handlers\HandlerText.cs" />
     <Compile Include="Fiches\Handlers\URL Schemes\SchemeHTTP.cs" />

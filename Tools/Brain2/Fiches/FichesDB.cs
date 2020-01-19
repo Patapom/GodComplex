@@ -56,14 +56,17 @@ namespace Brain2 {
 					// Request the content asynchronously
 					m_owner.AsyncRenderWebPage( m_fiche.URL,
 
-						// On success => update content
-						( string _HTMLContent ) => {
+						// On page source & DOM available => Update content
+						( string _HTMLContent, System.Xml.XmlDocument _DOMElements ) => {
+							m_fiche.Lock( Fiche.STATUS.UPDATING, () => {
+								m_fiche.HTMLContent = _HTMLContent;
+								m_fiche.DOMElements = DOMElement.FromPageRendererXML( _DOMElements );
+							} );
+						},
 
-						// On success => update content
+						// On page rendered => Update content
 						( uint _imageIndex, ImageUtility.ImageFile _imageWebPage ) => {
 							m_fiche.Lock( Fiche.STATUS.UPDATING, () => {
-
-								m_fiche.HTMLContent = _HTMLContent;
 
 								// Create image chunk
 								m_fiche.CreateImageChunk( _imageIndex, new ImageUtility.ImageFile[] { _imageWebPage }, ImageUtility.ImageFile.FILE_FORMAT.JPEG );
@@ -72,10 +75,12 @@ namespace Brain2 {
 								if ( _imageIndex == 0 ) {
 									m_fiche.CreateThumbnailChunkFromImage( _imageWebPage );
 								}
-
-								// Request to save the fiche now that it's complete...
-								m_owner.AsyncSaveFiche( m_fiche, m_unloadContentAfterSave, true );
 							} );
+						},
+
+						// On success => Request to save the fiche now that it's complete...
+						() => {
+							m_owner.AsyncSaveFiche( m_fiche, m_unloadContentAfterSave, true );
 						},
 
 						// On error => Log error? Todo?
@@ -95,7 +100,7 @@ namespace Brain2 {
 
 						using ( BinaryReader R = new BinaryReader( S ) ) {
 							m_caller.OwnerFiche.Lock( Fiche.STATUS.LOADING, () => {
-								m_caller.Threaded_LoadContent( R );
+								m_caller.Threaded_LoadContent( R, true );	// Here this is part of a user request to see the content so we also want to prepare it (e.g. create the images from compressed data)
 								m_delegate();	// Notify
 							} );
 						}
@@ -168,15 +173,20 @@ namespace Brain2 {
 
 			public class		JobLoadWebPage : JobBase {
 				public Uri							m_URL;
-				public WebHelpers.WebPageRendered	m_delegateSuccess;
-				public WebHelpers.WebPageError		m_delegateError;
-				public JobLoadWebPage( FichesDB _owner, Uri _URL, WebHelpers.WebPageRendered _onSuccess, WebHelpers.WebPageError _onError ) : base( _owner ) {
+				public WebHelpers.WebPageSourceAvailable	m_delegateSourceAvailable;
+				public WebHelpers.WebPagePieceRendered		m_delegatePagePieceRendered;
+				public WebHelpers.WebPageSuccess			m_delegateSuccess;
+				public WebHelpers.WebPageError				m_delegateError;
+
+				public JobLoadWebPage( FichesDB _owner, Uri _URL, WebHelpers.WebPageSourceAvailable _delegateSourceAvailable, WebHelpers.WebPagePieceRendered _delegatePagePieceRendered, WebHelpers.WebPageSuccess _delegateSuccess, WebHelpers.WebPageError _delegateError ) : base( _owner ) {
 					m_URL = _URL;
-					m_delegateSuccess = _onSuccess;
-					m_delegateError = _onError;
+					m_delegateSourceAvailable = _delegateSourceAvailable;
+					m_delegatePagePieceRendered = _delegatePagePieceRendered;
+					m_delegateSuccess = _delegateSuccess;
+					m_delegateError = _delegateError;
 				}
 				public override void	Run() {
-					WebHelpers.LoadWebPage( m_URL, m_delegateSuccess, m_delegateError );
+					WebHelpers.LoadWebPage( m_URL, m_delegateSourceAvailable, m_delegatePagePieceRendered, m_delegateSuccess, m_delegateError );
 				}
 			}
 
@@ -256,7 +266,7 @@ namespace Brain2 {
 		// Fiches and referencing structures
 		private List< Fiche >						m_fiches = new List< Fiche >();
 		private Dictionary< Guid, Fiche >			m_GUID2Fiche = new Dictionary<Guid, Fiche>();
-		private Dictionary< Uri, Fiche >			m_URL2Fiche = new Dictionary<Uri, Fiche>();
+		private Dictionary< Uri, List< Fiche > >	m_URL2Fiches = new Dictionary<Uri, List<Fiche>>();
 
 		private Dictionary< Guid, List< Fiche > >				m_GUID2FichesRequiringTag = new Dictionary<Guid, List<Fiche>>();		// The list of fiches requiring the key GUID as a tag (polled each time a new fiche is registered)
 		private Dictionary< Fiche, FicheUpdatedNeedsSaving >	m_fiche2NeedToSave = new Dictionary<Fiche, FicheUpdatedNeedsSaving>();	// The map of fiches that were accessed and should be saved ASAP
@@ -333,13 +343,13 @@ namespace Brain2 {
 			return result;
 		}
 
-		public Fiche	FindFicheByURL( Uri _URL ) {
+		public Fiche[]	FindFichesByURL( Uri _URL ) {
 			if ( _URL == null )
 				throw new Exception( "Invalid URL!" );
 
-			Fiche	result = null;
-			m_URL2Fiche.TryGetValue( _URL, out result );
-			return result;
+			List< Fiche >	result = null;
+			m_URL2Fiches.TryGetValue( _URL, out result );
+			return result != null ? result.ToArray() : null;
 		}
 
 		public Fiche[]	FindFichesByTitle( string _title, bool _caseSensitive ) {
@@ -635,8 +645,8 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_URL"></param>
 		/// <param name="_delegate"></param>
-		internal void	AsyncRenderWebPage( Uri _URL, WebHelpers.WebPageRendered _onSuccess, WebHelpers.WebPageError _onError ) {
-			WorkingThread.JobLoadWebPage	job = new WorkingThread.JobLoadWebPage( this, _URL, _onSuccess, _onError );
+		internal void	AsyncRenderWebPage( Uri _URL, WebHelpers.WebPageSourceAvailable _onSourceAvailable, WebHelpers.WebPagePieceRendered _onPagePieceRendered, WebHelpers.WebPageSuccess _onSuccess, WebHelpers.WebPageError _onError ) {
+			WorkingThread.JobLoadWebPage	job = new WorkingThread.JobLoadWebPage( this, _URL, _onSourceAvailable, _onPagePieceRendered, _onSuccess, _onError );
 			lock ( m_threadedJobs )
 				m_threadedJobs.Enqueue( job );
 		}
@@ -655,7 +665,7 @@ throw new Exception( "TODO!" );
 		}
 
 		/// <summary>
-		/// Creates a fiche with obly a valid descriptor (usually filled later asynchronouly)
+		/// Creates a fiche with only a valid descriptor (usually filled later asynchronouly)
 		/// </summary>
 		/// <param name="_type"></param>
 		/// <param name="_title"></param>
@@ -678,7 +688,7 @@ throw new Exception( "TODO!" );
 			}
 
 			// Create the tag
-			return SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, null, null, WebHelpers.BuildHTMLDocument( _tag, null ) );
+			return SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, new Uri( "tag://" + _tag ), null, WebHelpers.BuildHTMLDocument( _tag, null ) );
 		}
 
 		/// <summary>
@@ -900,15 +910,28 @@ throw new Exception( "TODO!" );
 				throw new Exception( "Invalid fiche!" );
 
 			// Remove from former position
-			if ( _formerURL != null )
-				m_URL2Fiche.Remove( _formerURL );
+			if ( _formerURL != null ) {
+				m_URL2Fiches[_formerURL].Remove( _fiche );
+			}
 
 			// Add to new position
-			if ( _fiche.URL != null )
-				m_URL2Fiche.Add( _fiche.URL, _fiche );
+			if ( _fiche.URL != null ) {
+				List< Fiche >	fiches = null;
+				if ( !m_URL2Fiches.TryGetValue( _fiche.URL, out fiches ) ) {
+					m_URL2Fiches.Add( _fiche.URL, fiches = new List<Fiche>() );
+				}
+				fiches.Add( _fiche );
+			}
 		}
 
 		internal void	FicheHTMLContentChanged( Fiche _fiche ) {
+			if ( _fiche == null )
+				throw new Exception( "Invalid fiche!" );
+
+			// Maybe not useful? Don't know what to do here...
+		}
+
+		internal void	FicheDOMElementsChanged( Fiche _fiche ) {
 			if ( _fiche == null )
 				throw new Exception( "Invalid fiche!" );
 
@@ -949,8 +972,9 @@ throw new Exception( "TODO!" );
 
 			m_fiches.Add( _fiche );
 			m_GUID2Fiche.Add( _fiche.GUID, _fiche );
-			if ( _fiche.URL != null )
-				m_URL2Fiche.Add( _fiche.URL, _fiche );
+			if ( _fiche.URL != null ) {
+				FicheURLChanged( _fiche, null );
+			}
 			FicheTitleChanged( _fiche, null );	// Will add the fiche to dictionaries
 
 			lock ( m_GUID2FichesRequiringTag ) {
@@ -992,8 +1016,9 @@ throw new Exception( "TODO!" );
 
 			m_fiches.Remove( _fiche );
 			m_GUID2Fiche.Remove( _fiche.GUID );
-			if ( _fiche.URL != null )
-				m_URL2Fiche.Remove( _fiche.URL );
+			if ( _fiche.URL != null ) {
+				m_URL2Fiches[_fiche.URL].Remove( _fiche );
+			}
 			_fiche.Title = null;	// Will remove the fiche from the dictionaries
 		}
 

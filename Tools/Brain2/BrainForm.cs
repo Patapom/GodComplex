@@ -889,6 +889,15 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 
 		#endregion
 
+		private void timerDisplay_Tick(object sender, EventArgs e) {
+			if ( Visible )
+				return;	// When the form is visible, let the application's OnIdle event handle the refresh...
+
+			// Update database & UI
+			m_database.OnIdle();
+			m_notificationForm.Animate();
+		}
+
 		#endregion
 	}
 }

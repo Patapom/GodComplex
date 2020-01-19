@@ -40,6 +40,8 @@ namespace Brain2 {
 
 		public delegate void	FicheEventHandler( Fiche _sender );
 
+		#region Chunks
+
 		public abstract class ChunkBase : IDisposable {
 
 			protected Fiche				m_owner;
@@ -62,8 +64,10 @@ namespace Brain2 {
 
 			/// <summary>
 			/// Tells if the content is FULLY available (i.e. Content has been called and is ready) or the chunk is still incomplete
+			/// If the chunk answers false then this will trigger an immediate call to Threaded_LoadContent( reader, false ) to ask the chunk to fully load its content (but not prepare it for display)
+			/// This occurs right before a chunk is saved again with an updated version of the fiche
 			/// </summary>
-			public abstract bool		IsContentAvailable	{ get; }
+			public abstract bool		IsFullyLoaded	{ get; }
 
 			/// <summary>
 			/// Returns the chunk's content
@@ -138,14 +142,23 @@ namespace Brain2 {
 		[System.Diagnostics.DebuggerDisplay( "{m_images} images" )]
 		public class ChunkWebPageSnapshot : ChunkBase {
 
-			public const uint	DEFAULT_WEBPAGE_WIDTH = 256;	// Default screenshot width
-			public const uint	DEFAULT_WEBPAGE_HEIGHT = (uint) (Mathf.PHI * DEFAULT_WEBPAGE_WIDTH);	// Golden rectangle
+			public const uint	DEFAULT_WEBPAGE_WIDTH = 1280;	// Default screenshot width
+			public const uint	DEFAULT_WEBPAGE_PIECE_HEIGHT = (uint) (Mathf.PHI * DEFAULT_WEBPAGE_WIDTH);	// Golden rectangle = 2071
+			public const uint	MAX_WEBPAGE_PIECES = 10;		// So up to 20710 in height
+
+			private const uint	PLACEHOLDER_WIDTH = 256;
+			private const uint	PLACEHOLDER_HEIGHT = (uint) (Mathf.PHI * PLACEHOLDER_WIDTH);
 
 			public static readonly ColorProfile	DEFAULT_PROFILE = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
 
 			private ImageFile.FILE_FORMAT	m_imagesFormat = ImageFile.FILE_FORMAT.JPEG;
 			private ImageFile[]				m_images = new ImageFile[0];
 			private byte[][]				m_compressedImages = new byte[0][];
+
+			/// <summary>
+			/// Content is fully loaded whenever its compressed images are available
+			/// </summary>
+			public override bool IsFullyLoaded => m_compressedImages.Length == 0 || m_compressedImages[0] != null;
 
 			/// <summary>
 			/// Will be of type ImageFile[]
@@ -155,7 +168,7 @@ namespace Brain2 {
 					if ( m_images.Length > 0 && m_images[0] == null ) {
 						// Create placeholders for now & launch loading process...
 						for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
-							m_images[imageIndex] = new ImageFile( DEFAULT_WEBPAGE_WIDTH, DEFAULT_WEBPAGE_HEIGHT, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );
+							m_images[imageIndex] = new ImageFile( PLACEHOLDER_WIDTH, PLACEHOLDER_HEIGHT, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );
 						}
 
 						m_owner.m_database.AsyncLoadChunk( this, () => {
@@ -194,12 +207,9 @@ namespace Brain2 {
 
 					if ( _images[imageIndex] == null )
 						throw new Exception( "Invalid image! Fiche web images must not be null!" );
-					if ( m_imagesWidth != 0 && _images[imageIndex].Width != m_imagesWidth )
-						throw new Exception( "Invalid image width! All images in the image chunk should have the same width as the first image (" + m_imagesWidth + ")!" );
 
 					newImages[_imageStartIndex + imageIndex] = _images[imageIndex];
 					newCompressedImages[_imageStartIndex + imageIndex] = null;	// Clear existing compressed image since the image changed
-					m_imagesWidth = _images[imageIndex].Width;
 				}
 
 				// Replace old array
@@ -228,7 +238,6 @@ namespace Brain2 {
 
 				// Only read images format, images count & create empty arrays
 				m_imagesFormat = (ImageFile.FILE_FORMAT) _reader.ReadUInt32();
-				m_imagesWidth = _reader.ReadUInt32();
 				m_images = new ImageFile[_reader.ReadInt32()];
 				m_compressedImages = new byte[m_images.Length][];
 
@@ -326,7 +335,8 @@ namespace Brain2 {
 						for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
 							if ( m_compressedImages[imageIndex].Length == 0 ) {
 								// Create an error placeholder
-								m_images[imageIndex] = new ImageFile( m_imagesWidth, (uint) (Mathf.PHI * m_imagesWidth), PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );
+								uint	imageWidth = m_images.Length > 0 && m_images[0] != null ? m_images[0].Width : PLACEHOLDER_WIDTH;
+								m_images[imageIndex] = new ImageFile( imageWidth, (uint) (Mathf.PHI * imageWidth), PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );
 								m_images[imageIndex].Clear( float4.One );
 								m_images[imageIndex].DrawLine( new float4( 1, 0, 0, 1 ), new float2( 0, 0 ), new float2( m_images[imageIndex].Width-1, m_images[imageIndex].Height-1 ) );
 								m_images[imageIndex].DrawLine( new float4( 1, 0, 0, 1 ), new float2( 0, m_images[imageIndex].Height-1 ), new float2( m_images[imageIndex].Width-1, 0 ) );
@@ -373,7 +383,13 @@ namespace Brain2 {
 
 			public static readonly ColorProfile	DEFAULT_PROFILE = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
 
+			private byte[]		m_compressedContent = null;
 			private ImageFile	m_thumbnail = null;
+
+			/// <summary>
+			/// Content is fully loaded whenever its compressed images are available
+			/// </summary>
+			public override bool IsFullyLoaded => m_compressedContent != null;
 
 			public override object Content {
 				get {
@@ -402,6 +418,7 @@ namespace Brain2 {
 
 				if ( m_thumbnail != null )
 					m_thumbnail.Dispose();
+				m_compressedContent = null;	// Clear compressed content as it will be repalced with our new thumbnail anyway
 
 				// Create a tiny thumbnail from the image
 				uint	thumbnailHeight = Mathf.Min( _imagesWebPage.Height * THUMBNAIL_WIDTH / _imagesWebPage.Width, THUMBNAIL_HEIGHT );	// At most our preferred ratio => we must crop the full page!
@@ -430,24 +447,28 @@ namespace Brain2 {
 			}
 
 			public override void Write(BinaryWriter _writer) {
-				if ( m_thumbnail == null )
-					throw new Exception( "Attempting to save an ampty thumbnail chunk! Don't create the chunk if it's normal to be empty..." );
+				if ( m_compressedContent == null ) {
+					// We need to compress content
+					if ( m_thumbnail == null )
+						throw new Exception( "Attempting to save an ampty thumbnail chunk! Don't create the chunk if it's normal to be empty..." );
 
-				using ( NativeByteArray content = m_thumbnail.Save( ImageFile.FILE_FORMAT.JPEG, ImageFile.SAVE_FLAGS.SF_JPEG_FAST ) ) {
-					byte[]	managedContent = content.AsByteArray;
-					_writer.Write( managedContent );
+					using ( NativeByteArray content = m_thumbnail.Save( ImageFile.FILE_FORMAT.JPEG, ImageFile.SAVE_FLAGS.SF_JPEG_FAST ) ) {
+						m_compressedContent = content.AsByteArray;
+					}
 				}
+
+				_writer.Write( m_compressedContent );
 			}
 
 			internal override void	Threaded_LoadContent( BinaryReader _reader, bool _prepareContent ) {
 				try {
-					byte[]	content = new byte[m_size];
-					_reader.Read( content, 0, (int) m_size );
+					m_compressedContent = new byte[m_size];
+					_reader.Read( m_compressedContent, 0, (int) m_size );
 
 					if ( _prepareContent ) {
 						// Attempt to read the JPEG file
 						ImageFile	temp = null;
-						using ( NativeByteArray imageContent = new NativeByteArray( content ) ) {
+						using ( NativeByteArray imageContent = new NativeByteArray( m_compressedContent ) ) {
 							temp = new ImageFile( imageContent, ImageFile.FILE_FORMAT.JPEG );
 						}
 
@@ -471,6 +492,8 @@ namespace Brain2 {
 
 		#endregion
 
+		#endregion
+
 		#region FIELDS
 
 		private FichesDB			m_database = null;
@@ -486,6 +509,7 @@ namespace Brain2 {
 		private string				m_title = "";
 		private Uri					m_URL = null;
 		private string				m_HTMLContent = null;
+		private DOMElement			m_rootElement = null;
 
 		private STATUS				m_status = STATUS.EMPTY;
 
@@ -573,6 +597,19 @@ namespace Brain2 {
 			}
 		}
 
+		public DOMElement			DOMElements {
+			get { return m_rootElement; }
+			set {
+				Lock( STATUS.UPDATING, () => {
+					if ( value == m_rootElement )
+						return;
+
+					m_rootElement = value;
+					Database.FicheDOMElementsChanged( this );
+				} );
+			}
+		}
+
 		public Uri					URL {
 			get { return m_URL; }
 			set {
@@ -606,14 +643,14 @@ namespace Brain2 {
 		public int					ReferencesCount { get { return m_references.Count; } }
 
 		/// <summary>
-		/// Returns the captured web page image if the chunk exists
+		/// Returns the captured web page images if the chunk exists
 		/// </summary>
 		/// <remarks>Will launch an asynchronous loading of the image and return a placeholder whenever the image is actually loaded and ready.
 		/// You should subscribe to the WebPageImageChanged event to update the image once it's available</remarks>
-		public ImageFile			WebPageImage {
+		public ImageFile[]			WebPageImages {
 			get {
 				ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
-				return chunk != null ? chunk.Content as ImageFile : null;
+				return chunk != null ? chunk.Content as ImageFile[] : null;
 			}
 		}
 
@@ -714,6 +751,10 @@ namespace Brain2 {
 				if ( m_HTMLContent != null ) {
 					_writer.Write( m_HTMLContent );
 				}
+				_writer.Write( m_rootElement != null );
+				if ( m_rootElement != null ) {
+					m_rootElement.Write( _writer );
+				}
 
 				// Write chunks
 				_writer.Write( (uint) m_chunks.Count );
@@ -786,6 +827,9 @@ namespace Brain2 {
 			if ( _reader.ReadBoolean() ) {
 				m_HTMLContent = _reader.ReadString();
 			}
+			if ( _reader.ReadBoolean() ) {
+				m_rootElement = new Brain2.DOMElement( _reader );
+			}
 
 			// Read chunks
 			while ( m_chunks.Count > 0 ) {
@@ -821,7 +865,7 @@ namespace Brain2 {
 			foreach ( ChunkBase chunk in m_chunks ) {
 				if ( chunk.Size == 0 )
 					continue;	// 0-length chunks are new and haven't been saved yet so they don't need to be loaded
-				if ( chunk.IsContentAvailable )
+				if ( chunk.IsFullyLoaded )
 					continue;	// The chunk's content is already fully available so it can be saved immediately
 
 				// Force loading the chunk's content immediately so we can save it right afterward...
@@ -935,7 +979,7 @@ namespace Brain2 {
 			if ( chunk == null ) {
 				chunk = new ChunkWebPageSnapshot( this, _imageStartIndex, _imagesWebPage, _targetFormat );
 			} else {
-				chunk.UpdateImages( 0, _imagesWebPage, _targetFormat );
+				chunk.UpdateImages( _imageStartIndex, _imagesWebPage, _targetFormat );
 			}
 		}
 
