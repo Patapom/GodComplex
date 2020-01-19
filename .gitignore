@@ -736,3 +736,7 @@ obj
 /Intro/Resources/Scenes/Sponza/texturesPOM
 *.user
 *.suo
+/Packages/CefSharp.OffScreen.75.1.143
+/Packages/cef.redist.x64.75.1.14
+/Packages/cef.redist.x86.75.1.14
+/Packages/CefSharp.Common.75.1.143
