@@ -161,6 +161,13 @@ namespace HTMLPageRenderer {
 System.Diagnostics.Debug.WriteLine( "browser_BrowserInitialized" );
 
 			m_browser.Load( m_URL );
+
+			RestartTimer();
+
+			// Execute waiting task
+//			var	T = ExecuteTaskOrTimeOut( WaitForPageRendered(), m_TimeOut_ms_PageRender );
+			Task	T = new Task( WaitForPageRendered );
+					T.Start();
 		}
 
 		private void browser_LoadError(object sender, LoadErrorEventArgs e) {
@@ -202,46 +209,13 @@ System.Diagnostics.Debug.WriteLine( "browser_LoadingStateChanged" );
 
 			m_timer.Stop();
 			m_timer.Start();
+			m_timer.Enabled = true;
 		}
 
-		/// <summary>
-		/// Executes a task for a given amount of time before it times out
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="_task"></param>
-		/// <param name="_timeOut_ms"></param>
-		/// <returns></returns>
-		async Task<Task>	ExecuteTaskOrTimeOut< T >( T _task, int _timeOut_ms ) where T : Task {
-			if ( (await Task.WhenAny( _task, Task.Delay( _timeOut_ms ) )) != _task ) {
-				_task.Dispose();
-				throw new TimeoutException();
-			}
-
-			return _task;
-		}
-
-		async Task	AsyncWaitForStablePage() {
-			while( !m_pageStable ) {
-				await Task.Delay( 500 );  // We do need these delays. Some pages, like facebook, may need to load viewport content.
-			}
-		}
-
-		async Task	WaitForStablePage() {
-			await ExecuteTaskOrTimeOut( AsyncWaitForStablePage(), m_TimeOut_ms_PageRender );
-		}
-
-		async Task<JavascriptResponse>	ExecuteJS( string _JS ) {
-//			return (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS ), m_TimeOut_ms_JavascriptNoRender )) as Task<JavascriptResponse>;
-
-			Task<JavascriptResponse>	task = (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS, null ), m_TimeOut_ms_JavascriptNoRender )) as Task<JavascriptResponse>;
-			return task.Result;
-		}
-
-		bool	m_contentQueried = false;
-		private async void timer_Tick(object sender, EventArgs e) {
+		private void timer_Tick(object sender, EventArgs e) {
 System.Diagnostics.Debug.WriteLine( "timer_Tick()" );
 
-			m_timer.Enabled = false;	// Prevent any further tick
+			m_timer.Stop();	// Prevent any further tick
 
 // 			m_browser.LoadError -= browser_LoadError;
 // 			m_browser.LoadingStateChanged -= browser_LoadingStateChanged;
@@ -249,13 +223,11 @@ System.Diagnostics.Debug.WriteLine( "timer_Tick()" );
 
 			// Raise a "stable" flag once dust seems to have settled for a moment...
 			m_pageStable = true;
+		}
 
-			//////////////////////////////////////////////////////////////////////////
-			/// If first occurrence of stable page then we can start our grabbing operation
-			if ( m_contentQueried )
-				return;
-
-			m_contentQueried = true;	// Don't re-enter!
+		async void	WaitForPageRendered() {
+			// Wait until the page is stable a first time...
+			await WaitForStablePage();
 
 			// First query the HTML source code and DOM content
 			await QueryContent();
@@ -273,7 +245,7 @@ System.Diagnostics.Debug.WriteLine( "timer_Tick()" );
 			int	viewportHeight = m_browser.Size.Height;
 			int	screenshotsCount = (int) Math.Ceiling( (double) scrollHeight / viewportHeight );
 
-			var	onSenFout = DoScreenshots( screenshotsCount );
+			await DoScreenshots( screenshotsCount );
 		}
 
 		/// <summary>
@@ -300,7 +272,6 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved HTML code " + (
 				m_pageError( -1, "An error occurred while attempting to retrieve HTML source for URL \"" + m_URL + "\": \r\n" + _e.Message );
 			}
 		}
-
 
 		/// <summary>
 		/// Do multiple screenshots to capture the entire page
@@ -344,10 +315,11 @@ System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Retrieved web page image
 						if ( scrollIndex < _scrollsCount-1 ) {
 System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Requesting scrolling... (should retrigger rendering)" );
 
-							// Mark the page as "unstable" and scroll down until we reach the bottom (if it exists, or until we reach the specified maximum amount of authorized screenshots)
-							RestartTimer();
 //							await m_browser.GetBrowser().MainFrame.EvaluateScriptAsync("(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();");
 							await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();" );
+
+							// Mark the page as "unstable" and scroll down until we reach the bottom (if it exists, or until we reach the specified maximum amount of authorized screenshots)
+							RestartTimer();
 
 							// Wait for the page to stabilize (i.e. the timer hasn't been reset for some time, indicating most elements should be ready)
 							await WaitForStablePage();
@@ -371,7 +343,6 @@ System.Diagnostics.Debug.WriteLine( "DoScreenshots() => EXCEPTION! " + _e.Messag
 				m_pageError( -1, "An error occurred while attempting to render a page screenshot for URL \"" + m_URL + "\": \r\n" + _e.Message );
 			}
 		}
-
 
 		/// <summary>
 		/// Do multiple screenshots to capture the entire page
@@ -538,6 +509,40 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
 			} catch ( Exception _e ) {
 				m_pageError( -1, "An error occurred while attempting to render a page screenshot for URL \"" + m_URL + "\": \r\n" + _e.Message );
 			}
+		}
+
+		/// <summary>
+		/// Executes a task for a given amount of time before it times out
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="_task"></param>
+		/// <param name="_timeOut_ms"></param>
+		/// <returns></returns>
+		async Task<Task>	ExecuteTaskOrTimeOut< T >( T _task, int _timeOut_ms ) where T : Task {
+			if ( (await Task.WhenAny( _task, Task.Delay( _timeOut_ms ) )) != _task ) {
+//				_task.Dispose();
+				throw new TimeoutException();
+			}
+
+			return _task;
+		}
+
+		async Task<JavascriptResponse>	ExecuteJS( string _JS ) {
+//			return (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS ), m_TimeOut_ms_JavascriptNoRender )) as Task<JavascriptResponse>;
+
+			Task<JavascriptResponse>	task = (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS, null ), m_TimeOut_ms_JavascriptNoRender )) as Task<JavascriptResponse>;
+			return task.Result;
+		}
+
+		async Task	AsyncWaitForStablePage() {
+			while( !m_pageStable ) {
+				Application.DoEvents();
+				await Task.Delay( 500 );  // We do need these delays. Some pages, like facebook, may need to load viewport content.
+			}
+		}
+
+		async Task	WaitForStablePage() {
+			await ExecuteTaskOrTimeOut( AsyncWaitForStablePage(), m_TimeOut_ms_PageRender );
 		}
 
 		public void Dispose() {

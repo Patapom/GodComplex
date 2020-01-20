@@ -68,6 +68,13 @@ namespace Brain2 {
 						( uint _imageIndex, ImageUtility.ImageFile _imageWebPage ) => {
 							m_fiche.Lock( Fiche.STATUS.UPDATING, () => {
 
+								if ( _imageWebPage.PixelFormat != ImageUtility.PIXEL_FORMAT.BGR8 ) {
+									// Make sure it's the proper format for JPEG
+									ImageUtility.ImageFile	properImageForJPG = new ImageUtility.ImageFile( _imageWebPage, ImageUtility.PIXEL_FORMAT.BGR8 );
+									_imageWebPage.Dispose();
+									_imageWebPage = properImageForJPG;
+								}
+
 								// Create image chunk
 								m_fiche.CreateImageChunk( _imageIndex, new ImageUtility.ImageFile[] { _imageWebPage }, ImageUtility.ImageFile.FILE_FORMAT.JPEG );
 
