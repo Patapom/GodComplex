@@ -197,11 +197,11 @@ System.Diagnostics.Debug.WriteLine( "browser_LoadingStateChanged" );
 
 		bool	m_pageStable = false;
 		void	RestartTimer() {
-			m_timer.Enabled = false;
-			m_timer.Enabled = true;
-
 			// Mark the page as unstable... It will be marked as stable again if the timer fires, meaning there hasn't been a single loading event for enough time to consider the page loading as completed.
 			m_pageStable = false;
+
+			m_timer.Stop();
+			m_timer.Start();
 		}
 
 		/// <summary>
@@ -212,8 +212,10 @@ System.Diagnostics.Debug.WriteLine( "browser_LoadingStateChanged" );
 		/// <param name="_timeOut_ms"></param>
 		/// <returns></returns>
 		async Task<Task>	ExecuteTaskOrTimeOut< T >( T _task, int _timeOut_ms ) where T : Task {
-			if ( (await Task.WhenAny( _task, Task.Delay( _timeOut_ms ) )) != _task )
+			if ( (await Task.WhenAny( _task, Task.Delay( _timeOut_ms ) )) != _task ) {
+				_task.Dispose();
 				throw new TimeoutException();
+			}
 
 			return _task;
 		}
@@ -271,7 +273,7 @@ System.Diagnostics.Debug.WriteLine( "timer_Tick()" );
 			int	viewportHeight = m_browser.Size.Height;
 			int	screenshotsCount = (int) Math.Ceiling( (double) scrollHeight / viewportHeight );
 
-			await DoScreenshots( screenshotsCount );
+			var	onSenFout = DoScreenshots( screenshotsCount );
 		}
 
 		/// <summary>
@@ -299,11 +301,83 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved HTML code " + (
 			}
 		}
 
+
 		/// <summary>
 		/// Do multiple screenshots to capture the entire page
 		/// </summary>
 		/// <returns></returns>
 		async Task	DoScreenshots( int _scrollsCount ) {
+			_scrollsCount = Math.Min( m_maxScreenshotsCount, _scrollsCount );
+
+			try {
+				// Code from https://github.com/WildGenie/OSIRTv2/blob/3e60d3ce908a1d25a7b4633dc9afdd53256cbb4f/OSIRT/Browser/MainBrowser.cs#L300
+//				await m_browser.GetBrowser().MainFrame.EvaluateScriptAsync("(function() { document.documentElement.style.overflow = 'hidden'; })();");
+//				await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( "(function() { document.documentElement.style.overflow = 'hidden'; })();" ), m_TimeOut_ms_JavascriptNoRender );
+				await ExecuteJS( "(function() { document.documentElement.style.overflow = 'hidden'; })();" );
+
+				uint	viewportHeight = (uint) m_browser.Size.Height;
+				for ( uint scrollIndex=0; scrollIndex < _scrollsCount; scrollIndex++ ) {
+
+					try {
+						//////////////////////////////////////////////////////////////////////////
+						/// Request a screenshot
+System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Requesting screenshot {0}", scrollIndex );
+
+// 						Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync();
+// 						if ( (await Task.WhenAny( task, Task.Delay( m_TimeOut_ms_PageRender ) )) == task ) {
+
+ 						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync(), m_TimeOut_ms_Screenshot )) as Task<System.Drawing.Bitmap>;
+
+System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
+
+						try {
+							ImageUtility.ImageFile image = new ImageUtility.ImageFile( task.Result, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+							m_pageRendered( scrollIndex, image );
+						} catch ( Exception _e ) {
+							throw new Exception( "Failed to create image from web page bitmap: \r\n" + _e.Message, _e );
+						} finally {
+							task.Result.Dispose();	// Always dispose of the bitmap anyway!
+						}
+
+						//////////////////////////////////////////////////////////////////////////
+						/// Scroll down the page
+						if ( scrollIndex < _scrollsCount-1 ) {
+System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Requesting scrolling... (should retrigger rendering)" );
+
+							// Mark the page as "unstable" and scroll down until we reach the bottom (if it exists, or until we reach the specified maximum amount of authorized screenshots)
+							RestartTimer();
+//							await m_browser.GetBrowser().MainFrame.EvaluateScriptAsync("(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();");
+							await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();" );
+
+							// Wait for the page to stabilize (i.e. the timer hasn't been reset for some time, indicating most elements should be ready)
+							await WaitForStablePage();
+
+System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Scrolling done!" );
+						}
+
+					} catch ( TimeoutException ) {
+System.Diagnostics.Debug.WriteLine( "DoScreenshots() => TIMEOUT!" );
+//						throw new Exception( "Page rendering timed out" );
+//m_pageError()
+					} catch ( Exception _e ) {
+System.Diagnostics.Debug.WriteLine( "DoScreenshots() => EXCEPTION! " + _e.Message );
+					}
+				}
+
+				// Notify the page was successfully loaded
+				m_pageSuccess();
+
+			} catch ( Exception _e ) {
+				m_pageError( -1, "An error occurred while attempting to render a page screenshot for URL \"" + m_URL + "\": \r\n" + _e.Message );
+			}
+		}
+
+
+		/// <summary>
+		/// Do multiple screenshots to capture the entire page
+		/// </summary>
+		/// <returns></returns>
+		async Task	OLD_DoScreenshots( int _scrollsCount ) {
 			_scrollsCount = Math.Min( m_maxScreenshotsCount, _scrollsCount );
 
 			try {
