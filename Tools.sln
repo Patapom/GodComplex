@@ -78,7 +78,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HTMLEditControl", "Packages
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Everything", "Packages\Everything\Everything.vcxproj", "{CA85F8F3-AD1B-42A8-8121-F7E941078392}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HTMLPageRenderer", "Packages\HTMLPageRenderer\HTMLPageRenderer.csproj", "{11BB1F51-29E3-44A7-A5A8-2242684DEB62}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServices", "Packages\HTMLPageRenderer\WebServices.csproj", "{11BB1F51-29E3-44A7-A5A8-2242684DEB62}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

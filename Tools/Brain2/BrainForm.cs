@@ -322,7 +322,7 @@ this.TopMost = false;
 			m_preferenceForm.Dispose();
 			m_ficheWebPageEditorForm.Dispose();
 			m_ficheWebPageAnnotatorForm.Dispose();
-			HTMLPageRenderer.Renderer.ExitChromium();
+			WebServices.HTMLPageRenderer.ExitChromium();
 
 			base.Dispose(disposing);
 		}

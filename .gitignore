@@ -740,3 +740,11 @@ obj
 /Packages/cef.redist.x64.75.1.14
 /Packages/cef.redist.x86.75.1.14
 /Packages/CefSharp.Common.75.1.143
+/Data/Images/In/TGA
+/Data/Images/In/TIFF
+/Data/Images/In/BMP
+/Data/Images/In/CRW
+/Data/Images/In/DDS
+/Data/Images/In/HDR
+/Data/Images/In/LDR2HDR
+*.sdf

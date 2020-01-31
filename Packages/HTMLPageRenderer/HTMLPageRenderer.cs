@@ -9,7 +9,7 @@ using System.Xml;
 using CefSharp;
 using CefSharp.OffScreen;
 
-namespace HTMLPageRenderer {
+namespace WebServices {
 
 // TODO:
 //	• Use schemes to handle local files: https://github.com/cefsharp/CefSharp/wiki/General-Usage#scheme-handler
@@ -20,7 +20,7 @@ namespace HTMLPageRenderer {
 	/// Class wrapping CEF Sharp (Chromium Embedded Framework, .Net wrapper version) to render web pages in an offscreen bitmap
 	/// https://github.com/cefsharp/CefSharp/wiki/General-Usage
 	/// </summary>
-	public class Renderer : IDisposable {
+	public class HTMLPageRenderer : IDisposable {
 
 		#region NESTED TYPES
 
@@ -108,9 +108,9 @@ namespace HTMLPageRenderer {
 
 		#endregion
 
-		#region
+		#region METHODS
 
-		public Renderer( string _URL, int _browserViewportWidth, int _browserViewportHeight, int _maxScreenshotsCount, WebPageSourceAvailable _pageSourceAvailable, WebPageRendered _pageRendered, WebPageSuccess _pageSuccess, WebPageErrorOccurred _pageError ) {
+		public HTMLPageRenderer( string _URL, int _browserViewportWidth, int _browserViewportHeight, int _maxScreenshotsCount, WebPageSourceAvailable _pageSourceAvailable, WebPageRendered _pageRendered, WebPageSuccess _pageSuccess, WebPageErrorOccurred _pageError ) {
 
 //Main( null );
 

@@ -135,7 +135,7 @@ namespace Brain2 {
 		/// </summary>
 		/// <param name="_URL"></param>
 		public static void	LoadWebPage( Uri _URL, WebPageSourceAvailable _onSourceAvailable, WebPagePieceRendered _onPagePieceRendered, WebPageSuccess _onSuccess, WebPageError _onError ) {
-			HTMLPageRenderer.Renderer	pageRenderer = new HTMLPageRenderer.Renderer(
+			WebServices.HTMLPageRenderer	pageRenderer = new WebServices.HTMLPageRenderer(
 				_URL.ToString(),
 				(int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH, (int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_PIECE_HEIGHT,
 				(int) Fiche.ChunkWebPageSnapshot.MAX_WEBPAGE_PIECES,
