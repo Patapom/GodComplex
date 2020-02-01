@@ -125,7 +125,7 @@ namespace Brain2 {
 			UNKNOWN,
 		}
 
-		public delegate void	WebPageSourceAvailable( string _HTMLContent, System.Xml.XmlDocument _DOMElements );
+		public delegate void	WebPageSourceAvailable( string _title, string _HTMLContent, System.Xml.XmlDocument _DOMElements );
 		public delegate void	WebPagePieceRendered( uint _webPagePieceIndex, ImageUtility.ImageFile _imageWebPage );
 		public delegate void	WebPageSuccess();
 		public delegate void	WebPageError( WEB_ERROR_TYPE _error, int _errorCode, string _message );
@@ -141,8 +141,8 @@ namespace Brain2 {
 				(int) Fiche.ChunkWebPageSnapshot.MAX_WEBPAGE_PIECES,
 
 				// Occurs whenever the page's HTML source is available
-				( string _HTMLContent, System.Xml.XmlDocument _DOMElements ) => {
-					_onSourceAvailable( _HTMLContent, _DOMElements );
+				( string _title, string _HTMLContent, System.Xml.XmlDocument _DOMElements ) => {
+					_onSourceAvailable( _title, _HTMLContent, _DOMElements );
 				},
 
 				// Occurs whenever a piece of the web page was successfully rendered
@@ -164,6 +164,7 @@ namespace Brain2 {
 			);
 		}
 
+		#region Dummy Page Loader
 		public static void	DummyLoadWebPage( Uri _URL, WebPageSourceAvailable _onSourceAvailable, WebPagePieceRendered _onPieceRendered, WebPageSuccess _onSuccess, WebPageError _onError ) {
 
 //				string	content = "DUMMY CONTENT!";
@@ -282,7 +283,8 @@ namespace Brain2 {
 //				return new Fiche( _title, _URL, null, Fiche.BuildHTMLDocument( title, content ) );
 
 
-			string	dummyHTML = BuildHTMLDocument( "Dummy Title", content );
+			string	dummyTitle = "Dummy Title";
+			string	dummyHTML = BuildHTMLDocument( dummyTitle, content );
 
 			uint	seed = (uint) _URL.GetHashCode();
 
@@ -295,9 +297,10 @@ namespace Brain2 {
 			} );
 
 			// Notify
-			_onSourceAvailable( dummyHTML, null );
+			_onSourceAvailable( dummyTitle, dummyHTML, null );
 			_onPieceRendered( 0, dummyPage );
 			_onSuccess();
 		}
+		#endregion
 	}
 }

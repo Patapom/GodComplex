@@ -18,6 +18,8 @@
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.AutoValidate = System.Windows.Forms.AutoValidate.Disable;
+			this.CausesValidation = false;
 			this.ClientSize = new System.Drawing.Size(274, 196);
 			this.DoubleBuffered = true;
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;

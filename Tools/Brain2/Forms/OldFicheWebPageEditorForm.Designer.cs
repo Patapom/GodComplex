@@ -1,5 +1,5 @@
 ﻿namespace Brain2 {
-	partial class FicheWebPageEditorForm {
+	partial class OldFicheWebPageEditorForm {
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -24,11 +24,13 @@
 		/// </summary>
 		private void InitializeComponent() {
 			this.components = new System.ComponentModel.Container();
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(OldFicheWebPageEditorForm));
 			this.label1 = new System.Windows.Forms.Label();
 			this.richTextBoxTitle = new System.Windows.Forms.RichTextBox();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
 			this.tagEditBox = new Brain2.TagEditBox(this.components);
+			this.webEditor = new ZetaHtmlEditControl.Pom.WebEditor();
 			this.richTextBoxURL = new System.Windows.Forms.RichTextBox();
 			this.SuspendLayout();
 			// 
@@ -47,7 +49,6 @@
 			this.richTextBoxTitle.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.richTextBoxTitle.Enabled = false;
-			this.richTextBoxTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold);
 			this.richTextBoxTitle.Location = new System.Drawing.Point(78, 6);
 			this.richTextBoxTitle.Multiline = false;
 			this.richTextBoxTitle.Name = "richTextBoxTitle";
@@ -82,7 +83,6 @@
 			this.tagEditBox.ApplicationForm = null;
 			this.tagEditBox.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
 			this.tagEditBox.Enabled = false;
-			this.tagEditBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
 			this.tagEditBox.Location = new System.Drawing.Point(52, 64);
 			this.tagEditBox.Name = "tagEditBox";
 			this.tagEditBox.OwnerForm = null;
@@ -90,6 +90,20 @@
 			this.tagEditBox.Size = new System.Drawing.Size(960, 26);
 			this.tagEditBox.TabIndex = 1;
 			this.tagEditBox.TabStop = true;
+			// 
+			// webEditor
+			// 
+			this.webEditor.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.webEditor.Document = "\t\t\t ";
+			this.webEditor.Enabled = false;
+			this.webEditor.Location = new System.Drawing.Point(12, 96);
+			this.webEditor.Name = "webEditor";
+			this.webEditor.Size = new System.Drawing.Size(1000, 614);
+			this.webEditor.TabIndex = 2;
+			this.webEditor.TempImagesFolder = ((System.IO.DirectoryInfo)(resources.GetObject("webEditor.TempImagesFolder")));
+			this.webEditor.URL = new System.Uri("http://localhost:12781/texts/1", System.UriKind.Absolute);
 			// 
 			// richTextBoxURL
 			// 
@@ -107,12 +121,13 @@
 			this.richTextBoxURL.WordWrap = false;
 			this.richTextBoxURL.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.richTextBoxURL_LinkClicked);
 			// 
-			// FicheWebPageEditorForm
+			// FicheEditorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.Gainsboro;
 			this.ClientSize = new System.Drawing.Size(1024, 720);
+			this.Controls.Add(this.webEditor);
 			this.Controls.Add(this.richTextBoxURL);
 			this.Controls.Add(this.tagEditBox);
 			this.Controls.Add(this.label3);
@@ -122,11 +137,11 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
 			this.KeyPreview = true;
 			this.MinimumSize = new System.Drawing.Size(1024, 720);
-			this.Name = "FicheWebPageEditorForm";
+			this.Name = "FicheEditorForm";
 			this.ShowInTaskbar = false;
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-			this.Text = "Web Page Editor Form";
+			this.Text = "PreferencesForm";
 			this.TopMost = true;
 			this.ResumeLayout(false);
 			this.PerformLayout();
@@ -138,6 +153,7 @@
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.RichTextBox richTextBoxTitle;
 		private System.Windows.Forms.Label label2;
+		private ZetaHtmlEditControl.Pom.WebEditor webEditor;
 		private System.Windows.Forms.Label label3;
 		private TagEditBox tagEditBox;
 		private System.Windows.Forms.RichTextBox richTextBoxURL;

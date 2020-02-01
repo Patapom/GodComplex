@@ -229,8 +229,8 @@ this.TopMost = false;
 				m_preferenceForm.RootDBFolderChanged += preferenceForm_RootDBFolderChanged;
 				m_preferenceForm.Visible = false;
 
-// 				m_ficheEditorForm = new FicheEditorForm( this );
-// 				m_ficheEditorForm.Visible = false;
+				m_ficheWebPageEditorForm = new FicheWebPageEditorForm( this );
+				m_ficheWebPageEditorForm.Visible = false;
 
 				m_ficheWebPageAnnotatorForm = new FicheWebPageAnnotatorForm( this );
 				m_ficheWebPageAnnotatorForm.Visible = false;
@@ -477,18 +477,22 @@ this.TopMost = false;
 			if ( !Visible )
 				return;	// No change...
 
+			HideChildForms();
+
+//			Capture = false;
+			base.Hide();
+		}
+
+		public void		HideChildForms() {
 			// Also hide any open form
 			m_showPreferenceFormOnShowMain = m_preferenceForm.Visible;
 			m_preferenceForm.Hide();
 
-// 			m_showEditorFormOnShowMain = m_ficheWebPageEditorForm.Visible;
-// 			m_ficheWebPageEditorForm.Hide();
+ 			m_showEditorFormOnShowMain = m_ficheWebPageEditorForm.Visible;
+ 			m_ficheWebPageEditorForm.Hide();
 
 			m_showAnnotatorFormOnShowMain = m_ficheWebPageAnnotatorForm.Visible;
 			m_ficheWebPageAnnotatorForm.Hide();
-
-//			Capture = false;
-			base.Hide();
 		}
 
 		protected override void OnLostFocus(EventArgs e) {
@@ -816,7 +820,7 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 
 			if ( e.KeyCode == m_preferenceForm.SHORTCUT_KEY ) {
 				ToggleShowPreferences();
- 			} else if ( m_ficheWebPageEditorForm != null && e.KeyCode == m_ficheWebPageEditorForm.SHORTCUT_KEY ) {
+ 			} else if ( e.KeyCode == m_ficheWebPageEditorForm.SHORTCUT_KEY ) {
  				ToggleShowFicheEditor();
  			} else if ( e.KeyCode == m_ficheWebPageAnnotatorForm.SHORTCUT_KEY ) {
  				ToggleShowFicheAnnotator();
@@ -840,6 +844,38 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 			base.OnVisibleChanged(e);
 			timerDisplay.Enabled = Visible;
 		}
+
+		#region Activation
+
+		// Any de-activation without a child activation in the next 2 timer events hides the form and its child forms
+		// This is the case if you do an alt-tab or switch to any other application...
+
+		private uint	m_activeFormsCounter = 0;
+		private uint	m_timerCounterToCheckForDeActivation = 0;
+
+		protected override void OnActivated(EventArgs e) {
+			base.OnActivated(e);
+			NotifyFormActivated( this );
+		}
+		protected override void OnDeactivate(EventArgs e) {
+			base.OnDeactivate(e);
+			NotifyFormDeactivated( this );
+		}
+
+		internal void NotifyFormActivated( Form _form ) {
+			m_activeFormsCounter++;
+
+// System.Diagnostics.Debug.WriteLine( _form.Text + " Activated! (Count = " + m_activeFormsCounter + ")" );
+		}
+
+		internal void NotifyFormDeactivated( Form _form ) {
+			m_activeFormsCounter--;
+			m_timerCounterToCheckForDeActivation = 2;	// Ask to wait 2 timer events before checking for full de-activation
+
+// System.Diagnostics.Debug.WriteLine( _form.Text + " Deactivated! (Count = " + m_activeFormsCounter + ")" );
+		}
+
+		#endregion
 
 		private void notifyIcon_MouseUp(object sender, MouseEventArgs e) {
 			if ( e.Button != MouseButtons.Left )
@@ -890,6 +926,18 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 		#endregion
 
 		private void timerDisplay_Tick(object sender, EventArgs e) {
+
+			// Check if we should time the comparison of the active forms counter
+			if ( m_timerCounterToCheckForDeActivation > 0 ) {
+				m_timerCounterToCheckForDeActivation--;
+				if ( m_timerCounterToCheckForDeActivation == 0 ) {
+					if ( m_activeFormsCounter == 0 ) {
+//						Hide();
+						HideChildForms();
+					}
+				}
+			}
+
 			if ( Visible )
 				return;	// When the form is visible, let the application's OnIdle event handle the refresh...
 

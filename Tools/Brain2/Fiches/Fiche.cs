@@ -580,6 +580,9 @@ namespace Brain2 {
 					string	oldTitle = m_title;
 					m_title = value;
 					Database.FicheTitleChanged( this, oldTitle );
+
+					// Notify
+					TitleChanged?.Invoke( this );
 				} );
 			}
 		}
@@ -666,12 +669,17 @@ namespace Brain2 {
 		}
 
 		/// <summary>
-		/// Raised whenever the web page image changed
+		/// Raised whenever the fiche's title changed
+		/// </summary>
+		public event FicheEventHandler	TitleChanged;
+
+		/// <summary>
+		/// Raised whenever the web page image changed (not necessarily on the main thread!)
 		/// </summary>
 		public event FicheEventHandler	WebPageImageChanged;
 
 		/// <summary>
-		/// Raised whenever the thumbnail changed
+		/// Raised whenever the thumbnail changed (not necessarily on the main thread!)
 		/// </summary>
 		public event FicheEventHandler	ThumbnailChanged;
 

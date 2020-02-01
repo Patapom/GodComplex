@@ -211,6 +211,15 @@ namespace Brain2 {
 // //			m_mouseDownButtons = MouseButtons.None;
 // 		}
 
+		protected override void OnActivated(EventArgs e) {
+			base.OnActivated(e);
+			m_owner.NotifyFormActivated( this );
+		}
+		protected override void OnDeactivate(EventArgs e) {
+			base.OnDeactivate(e);
+			m_owner.NotifyFormDeactivated( this );
+		}
+
 		#endregion
 
 		#region EVENTS

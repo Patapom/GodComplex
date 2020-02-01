@@ -30,7 +30,9 @@
 			this.label3 = new System.Windows.Forms.Label();
 			this.tagEditBox = new Brain2.TagEditBox(this.components);
 			this.richTextBoxURL = new System.Windows.Forms.RichTextBox();
-			this.panelWebPage = new System.Windows.Forms.Panel();
+			this.panelHost = new ScrollablePannel();
+			this.panelWebPage = new Brain2.PanelMultiBitmaps(this.components);
+			this.panelHost.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// label1
@@ -48,6 +50,7 @@
 			this.richTextBoxTitle.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.richTextBoxTitle.Enabled = false;
+			this.richTextBoxTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.richTextBoxTitle.Location = new System.Drawing.Point(78, 6);
 			this.richTextBoxTitle.Multiline = false;
 			this.richTextBoxTitle.Name = "richTextBoxTitle";
@@ -82,12 +85,13 @@
 			this.tagEditBox.ApplicationForm = null;
 			this.tagEditBox.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
 			this.tagEditBox.Enabled = false;
+			this.tagEditBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
 			this.tagEditBox.Location = new System.Drawing.Point(52, 64);
 			this.tagEditBox.Name = "tagEditBox";
 			this.tagEditBox.OwnerForm = null;
 			this.tagEditBox.RecognizedTags = new Brain2.Fiche[0];
 			this.tagEditBox.Size = new System.Drawing.Size(960, 26);
-			this.tagEditBox.TabIndex = 1;
+			this.tagEditBox.TabIndex = 2;
 			this.tagEditBox.TabStop = true;
 			// 
 			// richTextBoxURL
@@ -106,23 +110,34 @@
 			this.richTextBoxURL.WordWrap = false;
 			this.richTextBoxURL.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.richTextBoxURL_LinkClicked);
 			// 
-			// panelWebPage
+			// panelHost
 			// 
-			this.panelWebPage.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+			this.panelHost.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.panelWebPage.Location = new System.Drawing.Point(7, 96);
-			this.panelWebPage.Name = "panelWebPage";
-			this.panelWebPage.Size = new System.Drawing.Size(1011, 615);
-			this.panelWebPage.TabIndex = 2;
+			this.panelHost.AutoScroll = true;
+			this.panelHost.Controls.Add(this.panelWebPage);
+			this.panelHost.Location = new System.Drawing.Point(12, 96);
+			this.panelHost.Name = "panelHost";
+			this.panelHost.Size = new System.Drawing.Size(1000, 612);
+			this.panelHost.TabIndex = 2;
+			this.panelHost.TabStop = true;
 			// 
-			// FicheAnnotatorForm
+			// panelWebPage
+			// 
+			this.panelWebPage.Bitmaps = new System.Drawing.Bitmap[0];
+			this.panelWebPage.Location = new System.Drawing.Point(0, 0);
+			this.panelWebPage.Name = "panelWebPage";
+			this.panelWebPage.Size = new System.Drawing.Size(1000, 612);
+			this.panelWebPage.TabIndex = 0;
+			// 
+			// FicheWebPageAnnotatorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.Gainsboro;
 			this.ClientSize = new System.Drawing.Size(1024, 720);
-			this.Controls.Add(this.panelWebPage);
+			this.Controls.Add(this.panelHost);
 			this.Controls.Add(this.richTextBoxURL);
 			this.Controls.Add(this.tagEditBox);
 			this.Controls.Add(this.label3);
@@ -132,12 +147,13 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
 			this.KeyPreview = true;
 			this.MinimumSize = new System.Drawing.Size(1024, 720);
-			this.Name = "FicheAnnotatorForm";
+			this.Name = "FicheWebPageAnnotatorForm";
 			this.ShowInTaskbar = false;
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-			this.Text = "PreferencesForm";
+			this.Text = "Web Page Annotator Form";
 			this.TopMost = true;
+			this.panelHost.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -151,6 +167,7 @@
 		private System.Windows.Forms.Label label3;
 		private TagEditBox tagEditBox;
 		private System.Windows.Forms.RichTextBox richTextBoxURL;
-		private System.Windows.Forms.Panel panelWebPage;
+		private ScrollablePannel	panelHost;
+		private PanelMultiBitmaps panelWebPage;
 	}
 }

@@ -202,6 +202,25 @@ namespace Brain2 {
 			base.OnMouseDown(e);
 		}
 
+		protected override void OnActivated(EventArgs e) {
+			base.OnActivated(e);
+			m_owner.NotifyFormActivated( this );
+		}
+
+		protected override void OnDeactivate(EventArgs e) {
+			base.OnDeactivate(e);
+			m_owner.NotifyFormDeactivated( this );
+		}
+
+		// Code from https://stackoverflow.com/questions/21894343/enable-disable-activation-of-a-form
+		private const int WS_EX_NOACTIVATE = 0x08000000;
+		protected override CreateParams CreateParams {
+			get {
+				CreateParams	createParams = base.CreateParams;
+								createParams.ExStyle |= WS_EX_NOACTIVATE;
+				return createParams;
+			}
+		}
 		#endregion
 	}
 }

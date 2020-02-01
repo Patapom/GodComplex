@@ -57,9 +57,10 @@ namespace WebServices {
 		/// <summary>
 		/// Used to notify the HTML source is available
 		/// </summary>
+		/// <param name="_pageTitle">HTML Document's title</param>
 		/// <param name="_HTMLContent">HTML source</param>
 		/// <param name="_DOMElements">The XML document describing the DOM elements present in the returned web page</param>
-		public delegate void	WebPageSourceAvailable( string _HTMLContent, XmlDocument _DOMElements );
+		public delegate void	WebPageSourceAvailable( string _pageTitle, string _HTMLContent, XmlDocument _DOMElements );
 
 		/// <summary>
 		/// Used to notify a new piece of the web page is available in the form of a rendering
@@ -239,6 +240,14 @@ System.Diagnostics.Debug.WriteLine( "timer_Tick()" );
 //			Task<JavascriptResponse>	task = ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( "(function() { var body = document.body, html = document.documentElement; return Math.max( body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight ); } )();", null ), m_TimeOut_ms_JavascriptNoRender ).Result as Task<JavascriptResponse>;
 //			int	scrollHeight = (int) task.Result.Result;
 			JavascriptResponse	JSResult = await ExecuteJS( "(function() { var body = document.body, html = document.documentElement; return Math.max( body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight ); } )();" );
+			if ( JSResult.Result == null ) {
+				JSResult = await ExecuteJS( "(function() { var body = document.body; return Math.max( body.scrollHeight, body.offsetHeight ); } )();" );
+				if ( JSResult.Result == null ) {
+					JSResult = await ExecuteJS( "(function() { var html = document.documentElement; return Math.max( html.clientHeight, html.scrollHeight, html.offsetHeight ); } )();" );
+					if ( JSResult.Result == null )
+						throw new Exception( "None of the 3 attempts at querying page height was successful!" );
+				}
+			}
 			int	scrollHeight = (int) JSResult.Result;
 
 			// Perform as many screenshots as necessary to capture the entire page
@@ -263,10 +272,13 @@ System.Diagnostics.Debug.WriteLine( "QueryContent for " + m_URL );
 
 System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved HTML code " + (source.Length < 100 ? source : source.Remove( 100 )) );
 
+				JavascriptResponse	JSResult = await ExecuteJS( "(function() { return document.title; } )();" );
+				string	pageTitle = JSResult.Result as string;
+
 // @TODO: Parse DOM!
 
 				// Notify source is ready
-				m_pageSourceAvailable( source, null );
+				m_pageSourceAvailable( pageTitle, source, null );
 
 			} catch ( Exception _e ) {
 				m_pageError( -1, "An error occurred while attempting to retrieve HTML source for URL \"" + m_URL + "\": \r\n" + _e.Message );
@@ -328,11 +340,11 @@ System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Scrolling done!" );
 						}
 
 					} catch ( TimeoutException ) {
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => TIMEOUT!" );
+System.Diagnostics.Debug.WriteLine( "♫♫♫ DoScreenshots() => TIMEOUT!" );
 //						throw new Exception( "Page rendering timed out" );
 //m_pageError()
 					} catch ( Exception _e ) {
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => EXCEPTION! " + _e.Message );
+System.Diagnostics.Debug.WriteLine( "♫♫♫ DoScreenshots() => EXCEPTION! " + _e.Message );
 					}
 				}
 

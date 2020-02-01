@@ -368,6 +368,8 @@ namespace Brain2 {
 			Init();
 		}
 
+//comprendre pourquoi on peut pas l'utiliser dans les modeless forms ?
+
 		Brush	m_brushBack = null;
 		Brush	m_brushTag = null;
 		Brush	m_brushTagSelected = null;
@@ -575,6 +577,7 @@ namespace Brain2 {
 		}
 		protected override void OnMouseDown(MouseEventArgs e) {
 			Invalidate();
+			Focus();
 
 			// Select the proper tag according to where they were drawn last
 			EditedTag	currentTag = m_selectedTag.First;

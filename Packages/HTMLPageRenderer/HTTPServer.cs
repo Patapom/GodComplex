@@ -181,27 +181,9 @@ System.Diagnostics.Debug.WriteLine( "Serving file " + filename );
 
 			filename = filename.Substring( 1 );
  
-// 			if ( string.IsNullOrEmpty(filename) ) {
-// 				foreach ( string indexFile in ms_indexFiles ) {
-// 					if ( File.Exists( Path.Combine( m_rootDirectory, indexFile ) ) ) {
-// 						filename = indexFile;
-// 						break;
-// 					}
-// 				}
-// 			}
-//  
-// 			filename = Path.Combine(m_rootDirectory, filename);
-// 
-// 			if ( !File.Exists( filename ) ) {
-// 				context.Response.StatusCode = (int) HttpStatusCode.NotFound;
-// 				context.Response.OutputStream.Close();
-// 				return;
-// 			}
-
+			Stream	input = null;
 			try {
-//				Stream input = new FileStream(filename, FileMode.Open);
-
-				Stream	input = m_fileServer( filename );
+				input = m_fileServer( filename );
 				if ( input == null ) {
 					context.Response.StatusCode = (int) HttpStatusCode.NotFound;
 					context.Response.OutputStream.Close();
@@ -213,7 +195,7 @@ System.Diagnostics.Debug.WriteLine( "Serving file " + filename );
 				context.Response.ContentType = ms_mimeTypeMappings.TryGetValue( Path.GetExtension(filename), out mime ) ? mime : "application/octet-stream";
 				context.Response.ContentLength64 = input.Length;
 				context.Response.AddHeader( "Date", DateTime.Now.ToString("r") );
-				context.Response.AddHeader( "Last-Modified", System.IO.File.GetLastWriteTime(filename).ToString("r") );
+//				context.Response.AddHeader( "Last-Modified", System.IO.File.GetLastWriteTime(filename).ToString("r") );
  
 				int		nbytes;
 				while ( (nbytes = input.Read(m_buffer, 0, m_buffer.Length)) > 0 ) {
@@ -225,6 +207,10 @@ System.Diagnostics.Debug.WriteLine( "Serving file " + filename );
 				context.Response.OutputStream.Flush();
 			} catch ( Exception ) {
 				context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+			} finally {
+				if ( input != null ) {
+					input.Dispose();
+				}
 			}
         
 			context.Response.OutputStream.Close();

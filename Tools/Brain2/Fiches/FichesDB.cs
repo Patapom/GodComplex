@@ -57,8 +57,9 @@ namespace Brain2 {
 					m_owner.AsyncRenderWebPage( m_fiche.URL,
 
 						// On page source & DOM available => Update content
-						( string _HTMLContent, System.Xml.XmlDocument _DOMElements ) => {
+						( string _title, string _HTMLContent, System.Xml.XmlDocument _DOMElements ) => {
 							m_fiche.Lock( Fiche.STATUS.UPDATING, () => {
+								m_fiche.Title = _title;
 								m_fiche.HTMLContent = _HTMLContent;
 								m_fiche.DOMElements = DOMElement.FromPageRendererXML( _DOMElements );
 							} );

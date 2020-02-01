@@ -11,7 +11,7 @@ using System.IO;
 
 namespace Brain2 {
 
-	public partial class FicheWebPageEditorForm : Brain2.ModelessForm {
+	public partial class OldFicheWebPageEditorForm : Brain2.ModelessForm {
 
 		#region CONSTANTS
 
@@ -48,21 +48,21 @@ namespace Brain2 {
 				tagEditBox.Enabled = enable;
 				tagEditBox.RecognizedTags = enable ? m_fiche.Tags : null;
 
-// 				if ( enable ) {
-// 					if ( m_fiche.HTMLContent != null ) {
-// 						// Use cached HTML document by default
-// 						webEditor.Document = m_fiche.HTMLContent;
-// 					} else if ( m_fiche.URL != null ) {
-// 						// Use URL instead
-// 						webEditor.URL = m_fiche.URL;
-// 					} else {
-// 						// Setup empty document
-// 						webEditor.Document = WebHelpers.BuildHTMLDocument( "Invalid Fiche Content", "Fiche has no content and no source URL!" );
-// 					}
-// 				} else {
-// 					webEditor.Document = WebHelpers.BuildHTMLDocument( "", "<body/>" );
-// 				}
-// 				webEditor.Enabled = enable;
+				if ( enable ) {
+					if ( m_fiche.HTMLContent != null ) {
+						// Use cached HTML document by default
+						webEditor.Document = m_fiche.HTMLContent;
+					} else if ( m_fiche.URL != null ) {
+						// Use URL instead
+						webEditor.URL = m_fiche.URL;
+					} else {
+						// Setup empty document
+						webEditor.Document = WebHelpers.BuildHTMLDocument( "Invalid Fiche Content", "Fiche has no content and no source URL!" );
+					}
+				} else {
+					webEditor.Document = WebHelpers.BuildHTMLDocument( "", "<body/>" );
+				}
+				webEditor.Enabled = enable;
 			}
 		}
 
@@ -70,14 +70,14 @@ namespace Brain2 {
 
 		#region METHODS
 
-		public FicheWebPageEditorForm( BrainForm _owner ) : base( _owner ) {
+		public OldFicheWebPageEditorForm( BrainForm _owner ) : base( _owner ) {
 			InitializeComponent();
 
 			tagEditBox.ApplicationForm = m_owner;
 			tagEditBox.OwnerForm = this;
 
-// 			webEditor.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.webEditor_PreviewKeyDown);
-// 			webEditor.DocumentUpdated += WebEditor_DocumentUpdated;
+			webEditor.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.webEditor_PreviewKeyDown);
+			webEditor.DocumentUpdated += WebEditor_DocumentUpdated;
 		}
 
 		private void webEditor_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
@@ -106,8 +106,8 @@ namespace Brain2 {
 		}
 
 		private void WebEditor_DocumentUpdated(object sender, EventArgs e) {
-// 			if ( m_fiche != null )
-// 				m_fiche.HTMLContent = webEditor.Document;	// Update fiche
+			if ( m_fiche != null )
+				m_fiche.HTMLContent = webEditor.Document;	// Update fiche
 		}
 
 		#endregion
