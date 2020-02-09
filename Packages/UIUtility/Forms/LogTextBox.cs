@@ -58,9 +58,11 @@ namespace UIUtility
 			@"{\colortbl;\red0\green0\blue0;\red32\green128\blue32;\red192\green128\blue0;\red255\green0\blue0;}" +
 			m_Log.ToString() + "}";
 
+			this.SuspendLayout();
 			this.Rtf = RTFText;
 			SelectionStart = this.Rtf.Length;
 			this.ScrollToCaret();
+			this.ResumeLayout();
 		}
 	}
 }
