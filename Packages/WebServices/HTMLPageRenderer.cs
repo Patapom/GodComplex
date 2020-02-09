@@ -101,7 +101,6 @@ namespace WebServices {
 		private int					m_TimeOut_ms_Screenshot = 1000;			// Default timeout after 1s for a screenshot
 
 		private ChromiumWebBrowser	m_browser = null;
-//		public Timer				m_timer = new Timer() { Enabled = false, Interval = 1000 };
 
 // 		public HostHandler host;
 // 		private DownloadHandler dHandler;
@@ -153,8 +152,6 @@ namespace WebServices {
 // 
 // 			host = new HostHandler(this);
 
-//			m_timer.Tick += timer_Tick;
-
 			m_browser = new ChromiumWebBrowser( "", browserSettings );
 			m_browser.LifeSpanHandler = new LifeSpanHandler();
 
@@ -171,19 +168,6 @@ namespace WebServices {
 
 			m_browser.BrowserInitialized += browser_BrowserInitialized;
 		}
-
-// 		private void timer_Tick(object sender, EventArgs e) {
-// Log( LOG_TYPE.DEBUG, "timer_Tick()" );
-// 
-// 			m_timer.Stop();	// Prevent any further tick
-// 
-// // 			m_browser.LoadError -= browser_LoadError;
-// // 			m_browser.LoadingStateChanged -= browser_LoadingStateChanged;
-// // 			m_browser.FrameLoadEnd -= browser_FrameLoadEnd;
-// 
-// 			// Raise a "stable" flag once dust seems to have settled for a moment...
-// 			m_pageStable = true;
-// 		}
 
 		private void browser_BrowserInitialized(object sender, EventArgs e) {
 Log( LOG_TYPE.DEBUG, "browser_BrowserInitialized" );
@@ -311,19 +295,56 @@ Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 				await ExecuteJS( "(function() { document.documentElement.style.overflow = 'hidden'; })();" );
 
 				uint	viewportHeight = (uint) m_browser.Size.Height;
+				//////////////////////////////////////////////////////////////////////////
+				/// Execute a first rounde to "prep the page"
+				/// 
+				if ( _scrollsCount > 0 ) {
+					for ( uint scrollIndex=0; scrollIndex < _scrollsCount; scrollIndex++ ) {
+
+						try {
+							/// Request a screenshot
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting screenshot {0}", scrollIndex );
+
+ 							Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync(), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
+
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
+
+							//////////////////////////////////////////////////////////////////////////
+							/// Scroll down the page
+							if ( scrollIndex < _scrollsCount-1 ) {
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting scrolling..." );
+								await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();" );
+							}
+
+						} catch ( TimeoutException _e ) {
+Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) TIMEOUT EXCEPTION! " + _e.Message );
+//							throw new Exception( "Page rendering timed out" );
+//m_pageError()
+						} catch ( Exception _e ) {
+Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
+						}
+					}
+
+					// Scroll all the way back up
+					await ExecuteJS( "(function() { window.scroll( 0, 0 ); })();" );
+				}
+
+				//////////////////////////////////////////////////////////////////////////
+				/// Do a 2nd batch where we actually store the screenshots!
+				///
 				for ( uint scrollIndex=0; scrollIndex < _scrollsCount; scrollIndex++ ) {
 
 					try {
 						//////////////////////////////////////////////////////////////////////////
 						/// Request a screenshot
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => Requesting screenshot {0}", scrollIndex );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting screenshot {0}", scrollIndex );
 
 // 						Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync();
 // 						if ( (await Task.WhenAny( task, Task.Delay( m_TimeOut_ms_PageRender ) )) == task ) {
 
  						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync(), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
 
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
 						try {
 							ImageUtility.ImageFile image = new ImageUtility.ImageFile( task.Result, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
@@ -337,26 +358,16 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0}
 						//////////////////////////////////////////////////////////////////////////
 						/// Scroll down the page
 						if ( scrollIndex < _scrollsCount-1 ) {
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => Requesting scrolling... (should retrigger rendering)" );
-
-// 							// Mark the page as "unstable" and scroll down until we reach the bottom (if it exists, or until we reach the specified maximum amount of authorized screenshots)
-// 							m_hasPageEvents = false;
-
-//							await m_browser.GetBrowser().MainFrame.EvaluateScriptAsync("(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();");
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting scrolling..." );
 							await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();" );
-
-// 							// Wait for the page to stabilize (i.e. the timer hasn't been reset for some time, indicating most elements should be ready)
-// 							await WaitForStablePage( "DoScreenshots() => Wait for scrolling..." );
-
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => Scrolling done!" );
 						}
 
 					} catch ( TimeoutException _e ) {
-Log( LOG_TYPE.ERROR, "DoScreenshots() => TIMEOUT EXCEPTION! " + _e.Message );
+Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) TIMEOUT EXCEPTION! " + _e.Message );
 //						throw new Exception( "Page rendering timed out" );
 //m_pageError()
 					} catch ( Exception _e ) {
-Log( LOG_TYPE.ERROR, "DoScreenshots() => EXCEPTION! " + _e.Message );
+Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 					}
 				}
 
