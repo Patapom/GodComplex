@@ -50,11 +50,12 @@ namespace Brain2 {
 
 			public class		JobFillFiche : JobBase {
 				public Fiche		m_fiche;
+				public uint			m_maxScrollsCount;
 				public bool			m_unloadContentAfterSave;
-				public JobFillFiche( FichesDB _owner, Fiche _fiche, bool _unloadContentAfterSave ) : base( _owner ) { m_fiche = _fiche; m_unloadContentAfterSave = _unloadContentAfterSave; }
+				public JobFillFiche( FichesDB _owner, Fiche _fiche, uint _maxScrollsCount, bool _unloadContentAfterSave ) : base( _owner ) { m_fiche = _fiche; m_maxScrollsCount = _maxScrollsCount; m_unloadContentAfterSave = _unloadContentAfterSave; }
 				public override void	Run() {
 					// Request the content asynchronously
-					m_owner.Async_RenderWebPage( m_fiche.URL,
+					m_owner.Async_RenderWebPage( m_fiche.URL, m_maxScrollsCount,
 
 						// On page source & DOM available => Update content
 						( string _title, string _HTMLContent, System.Xml.XmlDocument _DOMElements ) => {
@@ -189,15 +190,17 @@ namespace Brain2 {
 			}
 
 			public class		JobLoadWebPage : JobBase {
-				public Uri							m_URL;
+				public Uri									m_URL;
+				public uint									m_maxScrollsCount;
 				public WebHelpers.WebPageSourceAvailable	m_delegateSourceAvailable;
 				public WebHelpers.WebPagePieceRendered		m_delegatePagePieceRendered;
 				public WebHelpers.WebPageSuccess			m_delegateSuccess;
 				public WebHelpers.WebPageError				m_delegateError;
 				public WebHelpers.Log						m_delegateLog;
 
-				public JobLoadWebPage( FichesDB _owner, Uri _URL, WebHelpers.WebPageSourceAvailable _delegateSourceAvailable, WebHelpers.WebPagePieceRendered _delegatePagePieceRendered, WebHelpers.WebPageSuccess _delegateSuccess, WebHelpers.WebPageError _delegateError, WebHelpers.Log _delegateLog ) : base( _owner ) {
+				public JobLoadWebPage( FichesDB _owner, Uri _URL, uint _maxScrollsCount, WebHelpers.WebPageSourceAvailable _delegateSourceAvailable, WebHelpers.WebPagePieceRendered _delegatePagePieceRendered, WebHelpers.WebPageSuccess _delegateSuccess, WebHelpers.WebPageError _delegateError, WebHelpers.Log _delegateLog ) : base( _owner ) {
 					m_URL = _URL;
+					m_maxScrollsCount = _maxScrollsCount;
 					m_delegateSourceAvailable = _delegateSourceAvailable;
 					m_delegatePagePieceRendered = _delegatePagePieceRendered;
 					m_delegateSuccess = _delegateSuccess;
@@ -205,7 +208,7 @@ namespace Brain2 {
 					m_delegateLog = _delegateLog;
 				}
 				public override void	Run() {
-					WebHelpers.LoadWebPage( m_URL, m_delegateSourceAvailable, m_delegatePagePieceRendered, m_delegateSuccess, m_delegateError, m_delegateLog );
+					WebHelpers.LoadWebPage( m_URL, m_maxScrollsCount, m_delegateSourceAvailable, m_delegatePagePieceRendered, m_delegateSuccess, m_delegateError, m_delegateLog );
 				}
 			}
 
@@ -320,7 +323,6 @@ namespace Brain2 {
 
 		#region PROPERTIES
 
-//		public event DatabaseErrorHandler		ErrorOccurred;		// Occurs whenever an internal database error occurred
 		public event DatabaseLogHandler			Log;				// Occurs whenever a log event occurred
 
 		public event FicheEventHandler			FicheSuccessOccurred;	// Occurs whenever a fiche success occurred
@@ -674,8 +676,8 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_URL"></param>
 		/// <param name="_delegate"></param>
-		internal void	Async_RenderWebPage( Uri _URL, WebHelpers.WebPageSourceAvailable _onSourceAvailable, WebHelpers.WebPagePieceRendered _onPagePieceRendered, WebHelpers.WebPageSuccess _onSuccess, WebHelpers.WebPageError _onError, WebHelpers.Log _log ) {
-			WorkingThread.JobLoadWebPage	job = new WorkingThread.JobLoadWebPage( this, _URL, _onSourceAvailable, _onPagePieceRendered, _onSuccess, _onError, _log );
+		internal void	Async_RenderWebPage( Uri _URL, uint _maxScrollsCount, WebHelpers.WebPageSourceAvailable _onSourceAvailable, WebHelpers.WebPagePieceRendered _onPagePieceRendered, WebHelpers.WebPageSuccess _onSuccess, WebHelpers.WebPageError _onError, WebHelpers.Log _log ) {
+			WorkingThread.JobLoadWebPage	job = new WorkingThread.JobLoadWebPage( this, _URL, _maxScrollsCount, _onSourceAvailable, _onPagePieceRendered, _onSuccess, _onError, _log );
 			lock ( m_threadedJobs )
 				m_threadedJobs.Enqueue( job );
 		}
@@ -684,11 +686,12 @@ throw new Exception( "TODO!" );
 		/// Ask a thread to fill the content of the fiche asynchronously (we'll be notified on the main thread when the content is available)
 		/// </summary>
 		/// <param name="_fiche"></param>
+		/// <param name="_maxScrollsCount">Amount of allowed scrolls to capture the entire page</param>
 		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
 		/// <returns>The temporary fiche with only a valid desciptor</returns>
-		internal void	Async_LoadContentAndSaveFiche( Fiche _fiche, bool _unloadContentAfterSave ) {
+		internal void	Async_LoadContentAndSaveFiche( Fiche _fiche, uint _maxScrollsCount, bool _unloadContentAfterSave ) {
 			// Create a new job and let the threads handle it
-			WorkingThread.JobFillFiche	job = new WorkingThread.JobFillFiche( this, _fiche, _unloadContentAfterSave );
+			WorkingThread.JobFillFiche	job = new WorkingThread.JobFillFiche( this, _fiche, _maxScrollsCount, _unloadContentAfterSave );
 			lock ( m_threadedJobs )
 				m_threadedJobs.Enqueue( job );
 		}

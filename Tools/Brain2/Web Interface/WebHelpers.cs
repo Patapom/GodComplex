@@ -142,11 +142,12 @@ namespace Brain2 {
 		/// Loads a web page and renders it into an image
 		/// </summary>
 		/// <param name="_URL"></param>
-		public static void	LoadWebPage( Uri _URL, WebPageSourceAvailable _onSourceAvailable, WebPagePieceRendered _onPagePieceRendered, WebPageSuccess _onSuccess, WebPageError _onError, Log _log ) {
+		public static void	LoadWebPage( Uri _URL, uint _maxScrollsCount, WebPageSourceAvailable _onSourceAvailable, WebPagePieceRendered _onPagePieceRendered, WebPageSuccess _onSuccess, WebPageError _onError, Log _log ) {
 			WebServices.HTMLPageRenderer	pageRenderer = new WebServices.HTMLPageRenderer(
 				_URL.ToString(),
-				(int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH, (int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_PIECE_HEIGHT,
-				(int) Fiche.ChunkWebPageSnapshot.MAX_WEBPAGE_PIECES,
+				(int) Fiche.ChunkWebPageSnapshot.ms_defaultWebPageWidth, (int) Fiche.ChunkWebPageSnapshot.ms_defaultWebPageHeight,
+				//(int) Fiche.ChunkWebPageSnapshot.ms_maxWebPagePieces,
+				(int) _maxScrollsCount,
 
 				// Occurs whenever the page's HTML source is available
 				( string _title, string _HTMLContent, System.Xml.XmlDocument _DOMElements ) => {
@@ -300,7 +301,7 @@ namespace Brain2 {
 
 			uint	seed = (uint) _URL.GetHashCode();
 
-			ImageUtility.ImageFile	dummyPage = new ImageUtility.ImageFile( Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH, Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_PIECE_HEIGHT, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+			ImageUtility.ImageFile	dummyPage = new ImageUtility.ImageFile( Fiche.ChunkWebPageSnapshot.ms_defaultWebPageWidth, Fiche.ChunkWebPageSnapshot.ms_defaultWebPageHeight, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
 			dummyPage.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
 				_color.x = Mathf.Sin( 0.1f * (seed + _X) );
 				_color.y = Mathf.Sin( 0.123f * (seed + _Y) );

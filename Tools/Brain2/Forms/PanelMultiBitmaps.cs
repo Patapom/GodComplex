@@ -116,25 +116,6 @@ namespace Brain2
 			this.Parent.Focus();
 		}
 
-// 		protected override void OnKeyDown(KeyEventArgs e) {
-// 			base.OnKeyDown(e);
-// 
-// 			Panel	parent = this.Parent as Panel;
-// 			if ( parent == null )
-// 				return;
-// 
-// 			Point	scrollPosition = parent.AutoScrollPosition;
-// 
-// 			switch ( e.KeyCode ) {
-// 				case Keys.PageUp:	scrollPosition.Y -= 10; break;
-// 				case Keys.PageDown:	scrollPosition.Y += 10; break;
-// 				case Keys.Home:		scrollPosition.Y = 0; break;
-// 				case Keys.End:		scrollPosition.Y = this.Height - parent.Height; break;
-// 			}
-// 
-// 			parent.AutoScrollPosition = scrollPosition;
-// 		}
-
 		protected override void OnPaintBackground( PaintEventArgs e ) {
 //			base.OnPaintBackground( e );	// Don't!
 		}

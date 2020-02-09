@@ -137,23 +137,30 @@ namespace Brain2 {
 		}
 
 		/// <summary>
-		/// Contains the full web page snapshot
+		/// Contains the full web page as an array of single page screenshots
 		/// </summary>
 		[System.Diagnostics.DebuggerDisplay( "{m_images} images" )]
 		public class ChunkWebPageSnapshot : ChunkBase {
 
-			public const uint	DEFAULT_WEBPAGE_WIDTH = 1280;	// Default screenshot width
-			public const uint	DEFAULT_WEBPAGE_PIECE_HEIGHT = (uint) (Mathf.PHI * DEFAULT_WEBPAGE_WIDTH);	// Golden rectangle = 2071
-			public const uint	MAX_WEBPAGE_PIECES = 10;		// So up to 20710 in height
+// 			public const uint	DEFAULT_WEBPAGE_WIDTH = 1280;	// Default screenshot width
+// 			public const uint	DEFAULT_WEBPAGE_PIECE_HEIGHT = (uint) (Mathf.PHI * DEFAULT_WEBPAGE_WIDTH);	// Golden rectangle = 2071
+//			public const uint	MAX_WEBPAGE_PIECES = 10;		// So up to 20710 in height
 
 			private const uint	PLACEHOLDER_WIDTH = 256;
 			private const uint	PLACEHOLDER_HEIGHT = (uint) (Mathf.PHI * PLACEHOLDER_WIDTH);
 
-			public static readonly ColorProfile	DEFAULT_PROFILE = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
+			private static readonly ColorProfile	DEFAULT_PROFILE = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
 
 			private ImageFile.FILE_FORMAT	m_imagesFormat = ImageFile.FILE_FORMAT.JPEG;
 			private ImageFile[]				m_images = new ImageFile[0];
 			private byte[][]				m_compressedImages = new byte[0][];
+
+			// These are the default rendering sizes of a web-page capture
+			// The user would expect these to be set to their screen's dimensions...
+			//
+			public static uint				ms_defaultWebPageWidth = 1280;											// Default screenshot width
+			public static uint				ms_defaultWebPageHeight = (uint) (Mathf.PHI * ms_defaultWebPageWidth);	// Golden rectangle = 2071;
+			public static uint				ms_maxWebPagePieces = 10;												// So up to 20710 in height
 
 			/// <summary>
 			/// Content is fully loaded whenever its compressed images are available

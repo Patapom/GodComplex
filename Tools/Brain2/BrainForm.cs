@@ -226,8 +226,13 @@ this.TopMost = false;
 				m_database.FicheSuccessOccurred += database_FicheSuccessOccurred;
 				m_database.FicheWarningOccurred += database_FicheWarningOccurred;
 				m_database.FicheErrorOccurred += database_FicheErrorOccurred;
-//				m_database.ErrorOccurred += database_ErrorOccurred;
 				m_database.Log += database_Log;
+
+				// Setup the fiches' default dimensions to the primary monitor's dimensions
+				Rectangle	primaryScreenRect = Screen.PrimaryScreen.Bounds;
+				Fiche.ChunkWebPageSnapshot.ms_defaultWebPageWidth = (uint) primaryScreenRect.Width;
+				Fiche.ChunkWebPageSnapshot.ms_defaultWebPageHeight = (uint) primaryScreenRect.Height;
+				Fiche.ChunkWebPageSnapshot.ms_maxWebPagePieces = (uint) Math.Ceiling( 20000.0 / primaryScreenRect.Height );
 
 				// Create the modeless forms
 				m_preferenceForm = new PreferencesForm( this );
@@ -773,10 +778,12 @@ Debug( "ERROR " + _text );
 
 		public static void	Debug( string _text ) {
 			System.Diagnostics.Debug.WriteLine( _text );
+ms_singleton.database_Log( FichesDB.LOG_TYPE.DEBUG, _text );
 		}
 
 		public static void	DebugMainThread( string _text ) {
 //			Form.ReflectMessage()
+ms_singleton.database_Log( FichesDB.LOG_TYPE.DEBUG, "MainThread " + _text );
 		}
 
 		#endregion
@@ -787,14 +794,17 @@ Debug( "ERROR " + _text );
 
 		private void database_FicheSuccessOccurred(Fiche _fiche) {
 			m_notificationForm.NotifyFiche( _fiche, NotificationForm.NOTIFICATION_TYPE.SUCCESS );
+database_Log( FichesDB.LOG_TYPE.INFO, "SUCCESS on fiche \"" + _fiche.Title + "\"!" );
 		}
 
 		private void database_FicheWarningOccurred(Fiche _fiche, string _errorOrWarning) {
 			m_notificationForm.NotifyFiche( _fiche, NotificationForm.NOTIFICATION_TYPE.WARNING );
+database_Log( FichesDB.LOG_TYPE.WARNING, _errorOrWarning );
 		}
 
 		private void database_FicheErrorOccurred(Fiche _fiche, string _error) {
 			m_notificationForm.NotifyFiche( _fiche, NotificationForm.NOTIFICATION_TYPE.ERROR );
+database_Log( FichesDB.LOG_TYPE.ERROR, _error );
 		}
 
 		private void database_Log(FichesDB.LOG_TYPE _type, string _message) {
@@ -804,10 +814,6 @@ Debug( "ERROR " + _text );
 				case FichesDB.LOG_TYPE.ERROR: LogError( _message ); break;
 				case FichesDB.LOG_TYPE.DEBUG: m_logForm.LogDebug( "<DEBUG> " + _message ); break;
 			}
-		}
-
-		private void database_ErrorOccurred( string _error ) {
-			LogError( new Exception( _error ) );
 		}
 
 // 		protected override bool ProcessKeyPreview(ref Message m) {

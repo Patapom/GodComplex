@@ -671,6 +671,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 							}
 
 							if ( existingFiche != null && existingFiche.URL == m_URL ) {
+BrainForm.LogWarning( "Fiche with URL " + existingFiche.URL + " already exists! @TODO: MERGE TAGS!" );
 								break;	// No need to create the fiche as it already exists...
 							}
 
@@ -687,12 +688,18 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 							}
 
 							// Create the new fiche
-							m_fiche = m_database.Sync_CreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, m_name, m_URL, parents.ToArray(), null );
-							m_fiche.GUID = m_GUID;
-							m_fiche.CreationTime = m_dateAdded;
+// 							m_fiche = m_database.Sync_CreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, m_name, m_URL, parents.ToArray(), null );
+// 							m_fiche.GUID = m_GUID;
+// 							m_fiche.CreationTime = m_dateAdded;
+// 
+// 							// Asynchronously load content & save the fiche when ready
+//							m_database.Async_LoadContentAndSaveFiche( m_fiche, true );
 
-							// Asynchronously load content & save the fiche when ready
-							m_database.Async_LoadContentAndSaveFiche( m_fiche, true );
+							m_fiche = URLHandler.CreateURLFiche( m_database, m_name, m_URL );
+							m_fiche.GUID = m_GUID;
+ 							m_fiche.CreationTime = m_dateAdded;
+							m_fiche.AddTags( parents.ToArray() );
+
 							break;
 						}
 					}

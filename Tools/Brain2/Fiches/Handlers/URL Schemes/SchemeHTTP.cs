@@ -34,7 +34,9 @@ namespace Brain2 {
 			Fiche	F = _database.Sync_CreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, _title, _URL, tagFiches.ToArray(), null );
 
 			// Load the web page and save the fiche when ready
-			_database.Async_LoadContentAndSaveFiche( F, true );
+			uint	maxScrollsCount = Fiche.ChunkWebPageSnapshot.ms_maxWebPagePieces;	// @TODO: make that depend on the domain, like tweets shouldn't have any comments and a single screen should suffice, for example...
+
+			_database.Async_LoadContentAndSaveFiche( F, maxScrollsCount, true );
 
 			return F;
 		}

@@ -250,10 +250,6 @@
       <Project>{ca85f8f3-ad1b-42a8-8121-f7e941078392}</Project>
       <Name>Everything</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Packages\HTMLPageRenderer\WebServices.csproj">
-      <Project>{11bb1f51-29e3-44a7-a5a8-2242684deb62}</Project>
-      <Name>WebServices</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Packages\ImageUtility\ImageUtility.vcxproj">
       <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
       <Name>ImageUtility</Name>
@@ -265,6 +261,10 @@
     <ProjectReference Include="..\..\Packages\Renderer\Renderer.vcxproj">
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
       <Name>Renderer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Packages\WebServices\WebServices.csproj">
+      <Project>{11bb1f51-29e3-44a7-a5a8-2242684deb62}</Project>
+      <Name>WebServices</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Packages\ZetaHtmlEditControl\Source\Control\HTMLEditControl.csproj">
       <Project>{b00ae765-8212-43fd-8e70-768a6c20ee93}</Project>
