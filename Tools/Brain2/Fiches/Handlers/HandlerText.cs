@@ -27,8 +27,8 @@ namespace Brain2 {
 
 			string	title = text;	// Do better?
 			string	HTML = WebHelpers.BuildHTMLDocument( title, text );
-			Fiche	F = _database.SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, text, null, null, HTML );
-			_database.AsyncSaveFiche( F, true, true );
+			Fiche	F = _database.Sync_CreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, text, null, null, HTML );
+			_database.Async_SaveFiche( F, true, true );
 			return F;
 		}
 	}

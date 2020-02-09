@@ -59,6 +59,8 @@ namespace Brain2 {
 
 		#region FIELDS
 
+		static BrainForm			ms_singleton = null;
+
 		// Database
 		FichesDB					m_database;
 
@@ -74,6 +76,8 @@ namespace Brain2 {
 		DateTime					m_lastFrameTime;
 
 		// Modeless forms
+		LogForm						m_logForm = new LogForm();
+
 		bool						m_showPreferenceFormOnShowMain = false;
 		PreferencesForm				m_preferenceForm = null;
 
@@ -177,7 +181,7 @@ Debug( "_____________________________" );
 //Hide();
 
 				// Ask factory to create the best fiche for our data
-				Fiche	fiche = m_database.CreateFicheFromClipboard( _data );
+				Fiche	fiche = m_database.Sync_CreateFicheFromClipboard( _data );
 
 				// Start edition
 				switch ( fiche.Type ) {
@@ -205,9 +209,9 @@ Debug( "_____________________________" );
 		#region Init / Exit
 
 		public BrainForm() {
+			ms_singleton = this;
+
 			InitializeComponent();
-
-
 
 
 this.TopMost = false;
@@ -222,7 +226,8 @@ this.TopMost = false;
 				m_database.FicheSuccessOccurred += database_FicheSuccessOccurred;
 				m_database.FicheWarningOccurred += database_FicheWarningOccurred;
 				m_database.FicheErrorOccurred += database_FicheErrorOccurred;
-				m_database.ErrorOccurred += database_ErrorOccurred;
+//				m_database.ErrorOccurred += database_ErrorOccurred;
+				m_database.Log += database_Log;
 
 				// Create the modeless forms
 				m_preferenceForm = new PreferencesForm( this );
@@ -565,7 +570,7 @@ this.TopMost = false;
 							// Create quick fiche & ask for tags in a very light way
 							try {
 								IDataObject	clipboardData = Clipboard.GetDataObject();
-								Fiche	fiche = m_database.CreateFicheFromClipboard( clipboardData );
+								Fiche	fiche = m_database.Sync_CreateFicheFromClipboard( clipboardData );
 
 								FastTaggerForm	F = new FastTaggerForm( this, new Fiche[] { fiche } );
 												//F.Location = this.Location + this.Size - F.Size;	// Bottom-right of the screen
@@ -592,7 +597,7 @@ this.TopMost = false;
 						case PreferencesForm.Shortcut.SHORTCUT.NEW:
 							// Show and create a new empty editable fiche
 							try {
- 								Fiche	fiche = m_database.SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, "New Fiche", null, null, null );
+ 								Fiche	fiche = m_database.Sync_CreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, "New Fiche", null, null, null );
 
 // FastTaggerForm	F = new FastTaggerForm( this, new Fiche[] { fiche } );
 // F.Show( this );
@@ -725,8 +730,22 @@ this.TopMost = false;
 
 		#region Helpers
 
+		public static void	LogInformation( string _text ) {
+ms_singleton.m_logForm.Log( _text );
+Debug( "INFO " + _text );
+		}
+
+		public static void	LogWarning( string _text ) {
+ms_singleton.m_logForm.LogWarning( _text );
+Debug( "WARNING " + _text );
+		}
+
+		public static void	LogError( string _text ) {
+ms_singleton.m_logForm.LogError( _text );
+Debug( "ERROR " + _text );
+		}
 		public static void	LogError( Exception _e ) {
-Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
+			LogError( ExpandExceptionMessages( _e ) );
 		}
 
 		static string	ExpandExceptionMessages( Exception _e ) {
@@ -776,6 +795,15 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 
 		private void database_FicheErrorOccurred(Fiche _fiche, string _error) {
 			m_notificationForm.NotifyFiche( _fiche, NotificationForm.NOTIFICATION_TYPE.ERROR );
+		}
+
+		private void database_Log(FichesDB.LOG_TYPE _type, string _message) {
+			switch ( _type ) {
+				case FichesDB.LOG_TYPE.INFO: LogInformation( _message ); break;
+				case FichesDB.LOG_TYPE.WARNING: LogWarning( _message ); break;
+				case FichesDB.LOG_TYPE.ERROR: LogError( _message ); break;
+				case FichesDB.LOG_TYPE.DEBUG: m_logForm.LogDebug( "<DEBUG> " + _message ); break;
+			}
 		}
 
 		private void database_ErrorOccurred( string _error ) {
@@ -834,6 +862,11 @@ Debug( "@TODO: Proper logging ==> " + ExpandExceptionMessages( _e ) );
 			switch ( e.KeyCode ) {
 				case Keys.Alt | Keys.Menu:
 					ExitFishing();
+					break;
+
+				case Keys.F11:
+					if ( !m_logForm.Visible )
+						m_logForm.Show( this );
 					break;
 			}
 

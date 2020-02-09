@@ -11,6 +11,8 @@ namespace Brain2
 {
 	public class ScrollablePannel : Panel {
 
+		const int		SCROLL_JUMP = 400;
+
 		public Panel	m_childPanel = null;
 
 		public ScrollablePannel() {
@@ -80,8 +82,8 @@ namespace Brain2
 					scrollPosition.Y = Math.Abs( scrollPosition.Y );
 
 			switch ( e.KeyCode ) {
-				case Keys.PageUp:	scrollPosition.Y -= 100; break;
-				case Keys.PageDown:	scrollPosition.Y += 100; break;
+				case Keys.PageUp:	scrollPosition.Y -= this.Height; break;
+				case Keys.PageDown:	scrollPosition.Y += this.Height; break;
 				case Keys.Home:		scrollPosition.Y = 0; break;
 				case Keys.End:		scrollPosition.Y = m_childPanel.Height - Height; break;
 			}

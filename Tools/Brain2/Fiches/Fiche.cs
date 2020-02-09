@@ -171,8 +171,8 @@ namespace Brain2 {
 							m_images[imageIndex] = new ImageFile( PLACEHOLDER_WIDTH, PLACEHOLDER_HEIGHT, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );
 						}
 
-						m_owner.m_database.AsyncLoadChunk( this, () => {
-							m_owner.m_database.SyncNotify( () => { NotifyContentUpdated(); } );	// Notify on the main thread
+						m_owner.m_database.Async_LoadChunk( this, () => {
+							m_owner.m_database.AsyncMain_Execute<object>( ( object _userData ) => { NotifyContentUpdated(); }, null );	// Notify on the main thread
 						} );
 					}
 
@@ -302,7 +302,7 @@ namespace Brain2 {
 
 						} catch ( Exception _e ) {
 							// Something went wrong!
-							m_owner.Database.SyncReportFicheStatus( m_owner, FichesDB.FICHE_REPORT_STATUS.ERROR, "An error occurred while saving a part of the web page image! " + _e.Message );
+							m_owner.Database.AsyncMain_ReportFicheStatus( m_owner, FichesDB.FICHE_REPORT_STATUS.ERROR, "An error occurred while saving a part of the web page image! " + _e.Message );
 						}
 					}
 
@@ -356,14 +356,14 @@ namespace Brain2 {
 								}
 
 							} catch ( Exception _e ) {
-								m_owner.Database.SyncReportError( "Failed to read a part of the web image chunk:" + _e.Message );
+								m_owner.Database.AsyncMain_LogError( "Failed to read a part of the web image chunk:" + _e.Message );
 								m_images[imageIndex] = null;
 							}
 						}
 					}
 
 				} catch ( Exception _e ) {
-					m_owner.m_database.SyncReportError( "An error occurred while attempting to read image chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
+					m_owner.m_database.AsyncMain_LogError( "An error occurred while attempting to read image chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
 				}
 			}
 
@@ -397,8 +397,8 @@ namespace Brain2 {
 						// Create a placeholder for now and launch loading process...
 						m_thumbnail = new ImageFile( THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );	// Note that it's important to create a 24-bits format here to be able to save as JPEG!
 
-						m_owner.m_database.AsyncLoadChunk( this, () => {
-							m_owner.m_database.SyncNotify( () => { NotifyContentUpdated(); } );	// Notify on the main thread
+						m_owner.m_database.Async_LoadChunk( this, () => {
+							m_owner.m_database.AsyncMain_Execute<object>( ( object _userData ) => { NotifyContentUpdated(); }, null );	// Notify on the main thread
 						} );
 					}
 
@@ -478,7 +478,7 @@ namespace Brain2 {
 					}
 
 				} catch ( Exception _e ) {
-					m_owner.m_database.SyncReportError( "An error occurred while attempting to read thumbnail chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
+					m_owner.m_database.AsyncMain_LogError( "An error occurred while attempting to read thumbnail chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
 				}
 			}
 

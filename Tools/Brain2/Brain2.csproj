@@ -93,6 +93,12 @@
     <Compile Include="Forms\FicheWebPageAnnotatorForm.Designer.cs">
       <DependentUpon>FicheWebPageAnnotatorForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\LogForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\LogForm.Designer.cs">
+      <DependentUpon>LogForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\OldFicheWebPageEditorForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -170,6 +176,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FicheWebPageAnnotatorForm.resx">
       <DependentUpon>FicheWebPageAnnotatorForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\LogForm.resx">
+      <DependentUpon>LogForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\OldFicheWebPageEditorForm.resx">
       <DependentUpon>OldFicheWebPageEditorForm.cs</DependentUpon>

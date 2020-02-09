@@ -81,6 +81,15 @@ namespace WebServices {
 		/// <param name="_errorText"></param>
 		public delegate void	WebPageErrorOccurred( int _errorCode, string _errorText );
 
+		public enum LOG_TYPE {
+			INFO,
+			WARNING,
+			ERROR,
+			DEBUG,
+		}
+
+		public delegate void	LogDelegate( LOG_TYPE _type, string _text );
+
 		#endregion
 
 		#region FIELDS
@@ -107,11 +116,13 @@ namespace WebServices {
 		private WebPageSuccess			m_pageSuccess;
 		private WebPageErrorOccurred	m_pageError;
 
+		private LogDelegate				m_logDelegate;
+
 		#endregion
 
 		#region METHODS
 
-		public HTMLPageRenderer( string _URL, int _browserViewportWidth, int _browserViewportHeight, int _maxScreenshotsCount, WebPageSourceAvailable _pageSourceAvailable, WebPageRendered _pageRendered, WebPageSuccess _pageSuccess, WebPageErrorOccurred _pageError ) {
+		public HTMLPageRenderer( string _URL, int _browserViewportWidth, int _browserViewportHeight, int _maxScreenshotsCount, WebPageSourceAvailable _pageSourceAvailable, WebPageRendered _pageRendered, WebPageSuccess _pageSuccess, WebPageErrorOccurred _pageError, LogDelegate _logDelegate ) {
 
 //Main( null );
 
@@ -121,6 +132,7 @@ namespace WebServices {
 			m_pageRendered = _pageRendered;
 			m_pageSuccess = _pageSuccess;
 			m_pageError = _pageError;
+			m_logDelegate = _logDelegate != null ? _logDelegate : DefaultLogger;
 
 			if ( !Cef.IsInitialized ) {
 				InitChromium();
@@ -159,7 +171,7 @@ namespace WebServices {
 		}
 
 		private void browser_BrowserInitialized(object sender, EventArgs e) {
-System.Diagnostics.Debug.WriteLine( "browser_BrowserInitialized" );
+Log( LOG_TYPE.DEBUG, "browser_BrowserInitialized" );
 
 			m_browser.Load( m_URL );
 
@@ -172,7 +184,7 @@ System.Diagnostics.Debug.WriteLine( "browser_BrowserInitialized" );
 		}
 
 		private void browser_LoadError(object sender, LoadErrorEventArgs e) {
-System.Diagnostics.Debug.WriteLine( "browser_LoadError: " + e.ErrorText );
+Log( LOG_TYPE.DEBUG, "browser_LoadError: " + e.ErrorText );
 
 			switch ( (uint) e.ErrorCode ) {
 				case 0xffffffe5U:
@@ -183,13 +195,13 @@ System.Diagnostics.Debug.WriteLine( "browser_LoadError: " + e.ErrorText );
 		}
 
 		private void browser_FrameLoadStart(object sender, FrameLoadStartEventArgs e) {
-System.Diagnostics.Debug.WriteLine( "browser_FrameLoadStart" );
+Log( LOG_TYPE.DEBUG, "browser_FrameLoadStart" );
 
 			RestartTimer();
 		}
 		
 		private void browser_FrameLoadEnd(object sender, FrameLoadEndEventArgs e) {
-System.Diagnostics.Debug.WriteLine( "browser_FrameLoadEnd" );
+Log( LOG_TYPE.DEBUG, "browser_FrameLoadEnd" );
 
 			RestartTimer();
 		}
@@ -198,7 +210,7 @@ System.Diagnostics.Debug.WriteLine( "browser_FrameLoadEnd" );
 			if ( e.IsLoading )
 				return;
 
-System.Diagnostics.Debug.WriteLine( "browser_LoadingStateChanged" );
+Log( LOG_TYPE.DEBUG, "browser_LoadingStateChanged" );
 
 			RestartTimer();
 		}
@@ -214,7 +226,7 @@ System.Diagnostics.Debug.WriteLine( "browser_LoadingStateChanged" );
 		}
 
 		private void timer_Tick(object sender, EventArgs e) {
-System.Diagnostics.Debug.WriteLine( "timer_Tick()" );
+Log( LOG_TYPE.DEBUG, "timer_Tick()" );
 
 			m_timer.Stop();	// Prevent any further tick
 
@@ -241,11 +253,15 @@ System.Diagnostics.Debug.WriteLine( "timer_Tick()" );
 //			int	scrollHeight = (int) task.Result.Result;
 			JavascriptResponse	JSResult = await ExecuteJS( "(function() { var body = document.body, html = document.documentElement; return Math.max( body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight ); } )();" );
 			if ( JSResult.Result == null ) {
+Log( LOG_TYPE.DEBUG, "JS scrollHeight returned null => 2nd call" );
 				JSResult = await ExecuteJS( "(function() { var body = document.body; return Math.max( body.scrollHeight, body.offsetHeight ); } )();" );
 				if ( JSResult.Result == null ) {
+Log( LOG_TYPE.DEBUG, "JS scrollHeight returned null => 3rd call" );
 					JSResult = await ExecuteJS( "(function() { var html = document.documentElement; return Math.max( html.clientHeight, html.scrollHeight, html.offsetHeight ); } )();" );
-					if ( JSResult.Result == null )
+					if ( JSResult.Result == null ) {
+Log( LOG_TYPE.ERROR, "JS scrollHeight returned null => Exception!" );
 						throw new Exception( "None of the 3 attempts at querying page height was successful!" );
+					}
 				}
 			}
 			int	scrollHeight = (int) JSResult.Result;
@@ -263,14 +279,14 @@ System.Diagnostics.Debug.WriteLine( "timer_Tick()" );
 		/// <returns></returns>
 		async Task	QueryContent() {
 			try {
-System.Diagnostics.Debug.WriteLine( "QueryContent for " + m_URL );
+Log( LOG_TYPE.DEBUG, "QueryContent for " + m_URL );
 
 				// From Line 162 https://github.com/WildGenie/OSIRTv2/blob/3e60d3ce908a1d25a7b4633dc9afdd53256cbb4f/OSIRT/Browser/MainBrowser.cs#L300
 				string	source = await m_browser.GetBrowser().MainFrame.GetSourceAsync();
 				if ( source == null )
 					throw new Exception( "Failed to retrieve HTML source!" );
 
-System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved HTML code " + (source.Length < 100 ? source : source.Remove( 100 )) );
+Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved HTML code " + (source.Length < 100 ? source : source.Remove( 100 )) );
 
 				JavascriptResponse	JSResult = await ExecuteJS( "(function() { return document.title; } )();" );
 				string	pageTitle = JSResult.Result as string;
@@ -304,14 +320,14 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved HTML code " + (
 					try {
 						//////////////////////////////////////////////////////////////////////////
 						/// Request a screenshot
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Requesting screenshot {0}", scrollIndex );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Requesting screenshot {0}", scrollIndex );
 
 // 						Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync();
 // 						if ( (await Task.WhenAny( task, Task.Delay( m_TimeOut_ms_PageRender ) )) == task ) {
 
- 						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync(), m_TimeOut_ms_Screenshot )) as Task<System.Drawing.Bitmap>;
+ 						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync(), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
 
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
 						try {
 							ImageUtility.ImageFile image = new ImageUtility.ImageFile( task.Result, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
@@ -325,7 +341,7 @@ System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Retrieved web page image
 						//////////////////////////////////////////////////////////////////////////
 						/// Scroll down the page
 						if ( scrollIndex < _scrollsCount-1 ) {
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Requesting scrolling... (should retrigger rendering)" );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Requesting scrolling... (should retrigger rendering)" );
 
 //							await m_browser.GetBrowser().MainFrame.EvaluateScriptAsync("(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();");
 							await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();" );
@@ -336,15 +352,15 @@ System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Requesting scrolling... 
 							// Wait for the page to stabilize (i.e. the timer hasn't been reset for some time, indicating most elements should be ready)
 							await WaitForStablePage();
 
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Scrolling done!" );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Scrolling done!" );
 						}
 
-					} catch ( TimeoutException ) {
-System.Diagnostics.Debug.WriteLine( "♫♫♫ DoScreenshots() => TIMEOUT!" );
+					} catch ( TimeoutException _e ) {
+Log( LOG_TYPE.DEBUG, "♫♫♫ DoScreenshots() => TIMEOUT! " + _e.Message );
 //						throw new Exception( "Page rendering timed out" );
 //m_pageError()
 					} catch ( Exception _e ) {
-System.Diagnostics.Debug.WriteLine( "♫♫♫ DoScreenshots() => EXCEPTION! " + _e.Message );
+Log( LOG_TYPE.DEBUG, "♫♫♫ DoScreenshots() => EXCEPTION! " + _e.Message );
 					}
 				}
 
@@ -376,14 +392,14 @@ System.Diagnostics.Debug.WriteLine( "♫♫♫ DoScreenshots() => EXCEPTION! " +
 					try {
 						//////////////////////////////////////////////////////////////////////////
 						/// Request a screenshot
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Requesting screenshot {0}", scrollIndex );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Requesting screenshot {0}", scrollIndex );
 
 // 						Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync();
 // 						if ( (await Task.WhenAny( task, Task.Delay( m_TimeOut_ms_PageRender ) )) == task ) {
 
- 						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync(), m_TimeOut_ms_Screenshot )) as Task<System.Drawing.Bitmap>;
+ 						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync(), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
 
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
 						try {
 							ImageUtility.ImageFile image = new ImageUtility.ImageFile( task.Result, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
@@ -397,7 +413,7 @@ System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Retrieved web page image
 						//////////////////////////////////////////////////////////////////////////
 						/// Scroll down the page
 						if ( scrollIndex < _scrollsCount-1 ) {
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Requesting scrolling... (should retrigger rendering)" );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Requesting scrolling... (should retrigger rendering)" );
 
 							// Mark the page as "unstable" and scroll down until we reach the bottom (if it exists, or until we reach the specified maximum amount of authorized screenshots)
 							RestartTimer();
@@ -407,15 +423,15 @@ System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Requesting scrolling... 
 							// Wait for the page to stabilize (i.e. the timer hasn't been reset for some time, indicating most elements should be ready)
 							await WaitForStablePage();
 
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => Scrolling done!" );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Scrolling done!" );
 						}
 
 					} catch ( TimeoutException ) {
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => TIMEOUT!" );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => TIMEOUT!" );
 //						throw new Exception( "Page rendering timed out" );
 //m_pageError()
 					} catch ( Exception _e ) {
-System.Diagnostics.Debug.WriteLine( "DoScreenshots() => EXCEPTION! " + _e.Message );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => EXCEPTION! " + _e.Message );
 					}
 				}
 
@@ -484,7 +500,7 @@ System.Diagnostics.Debug.WriteLine( "DoScreenshots() => EXCEPTION! " + _e.Messag
 //				Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync( true, PopupBlending.Main );
 				Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync();
 				if ( (await Task.WhenAny( task, Task.Delay( m_TimeOut_ms_PageRender ) )) == task ) {
-System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image" );
+Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved web page image" );
 
 					try {
 						ImageUtility.ImageFile image = new ImageUtility.ImageFile( task.Result, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
@@ -496,7 +512,7 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
 					}
 
 				} else {
-System.Diagnostics.Debug.WriteLine( "QueryContent() => TIMEOUT!" );
+Log( LOG_TYPE.DEBUG, "QueryContent() => TIMEOUT!" );
 					throw new Exception( "Page rendering timed out" );
 				}
 #else
@@ -506,7 +522,7 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => TIMEOUT!" );
 					image = new ImageUtility.ImageFile( B, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
 				}
 
-System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image" );
+Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved web page image" );
 
 				try {
 //					m_pageRendered( sourceReader.m_HTMLContent, image );
@@ -530,10 +546,10 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
 		/// <param name="_task"></param>
 		/// <param name="_timeOut_ms"></param>
 		/// <returns></returns>
-		async Task<Task>	ExecuteTaskOrTimeOut< T >( T _task, int _timeOut_ms ) where T : Task {
+		async Task<Task>	ExecuteTaskOrTimeOut< T >( T _task, int _timeOut_ms, string _timeOutMessage ) where T : Task {
 			if ( (await Task.WhenAny( _task, Task.Delay( _timeOut_ms ) )) != _task ) {
 //				_task.Dispose();
-				throw new TimeoutException();
+				throw new TimeoutException( _timeOutMessage );
 			}
 
 			return _task;
@@ -542,7 +558,7 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
 		async Task<JavascriptResponse>	ExecuteJS( string _JS ) {
 //			return (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS ), m_TimeOut_ms_JavascriptNoRender )) as Task<JavascriptResponse>;
 
-			Task<JavascriptResponse>	task = (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS, null ), m_TimeOut_ms_JavascriptNoRender )) as Task<JavascriptResponse>;
+			Task<JavascriptResponse>	task = (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS, null ), m_TimeOut_ms_JavascriptNoRender, "EvaluateScriptAsync " + _JS )) as Task<JavascriptResponse>;
 			return task.Result;
 		}
 
@@ -554,7 +570,7 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
 		}
 
 		async Task	WaitForStablePage() {
-			await ExecuteTaskOrTimeOut( AsyncWaitForStablePage(), m_TimeOut_ms_PageRender );
+			await ExecuteTaskOrTimeOut( AsyncWaitForStablePage(), m_TimeOut_ms_PageRender, "AsyncWaitForStablePage()" );
 		}
 
 		public void Dispose() {
@@ -668,6 +684,21 @@ System.Diagnostics.Debug.WriteLine( "QueryContent() => Retrieved web page image"
 		}
 
 		#endregion
+
+		public void	Log( LOG_TYPE _type, string _text, params object[] _arguments ) {
+			_text = string.Format( _text, _arguments );
+			m_logDelegate( _type, _text );
+		}
+
+		public void	DefaultLogger( LOG_TYPE _type, string _text ) {
+			switch ( _type ) {
+				case LOG_TYPE.WARNING:	_text = "<WARNING> " + _text; break;
+				case LOG_TYPE.ERROR:	_text = "<ERROR> " + _text; break;
+				case LOG_TYPE.DEBUG:	_text = "<DEBUG> " + _text; break;
+			}
+
+System.Diagnostics.Debug.WriteLine( _text );
+		}
 
 		#endregion
 	}

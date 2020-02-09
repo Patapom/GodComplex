@@ -39,7 +39,7 @@ Of course, there is no obligation to do that as you can use arbitrary tag names,
 
 				// Update title & request saving
 				fiche.Title = item.Text;
-				fiche.Database.SyncNotifyFicheModifiedAndNeedsAsyncSaving( fiche );
+				fiche.Database.Async_NotifyFicheModifiedAndNeedsAsyncSaving( fiche );
 			}
 		}
 

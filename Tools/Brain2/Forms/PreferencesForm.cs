@@ -636,12 +636,12 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 
 								if ( m_fiche == null ) {
 									// Create the tag fiche
-									m_fiche = m_database.SyncFindOrCreateTagFiche( name );
+									m_fiche = m_database.Sync_FindOrCreateTagFiche( name );
 									m_fiche.GUID = m_GUID;
 									m_fiche.CreationTime = m_dateAdded;
 
 									// Save whenever possible
-									m_database.AsyncSaveFiche( m_fiche, true, false );
+									m_database.Async_SaveFiche( m_fiche, true, false );
 
 									// Register new tag
 									ms_tags.Add( m_fiche );
@@ -687,12 +687,12 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 							}
 
 							// Create the new fiche
-							m_fiche = m_database.SyncCreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, m_name, m_URL, parents.ToArray(), null );
+							m_fiche = m_database.Sync_CreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, m_name, m_URL, parents.ToArray(), null );
 							m_fiche.GUID = m_GUID;
 							m_fiche.CreationTime = m_dateAdded;
 
 							// Asynchronously load content & save the fiche when ready
-							m_database.AsyncLoadContentAndSaveFiche( m_fiche, true );
+							m_database.Async_LoadContentAndSaveFiche( m_fiche, true );
 							break;
 						}
 					}

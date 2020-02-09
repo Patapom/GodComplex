@@ -54,7 +54,7 @@ namespace Brain2 {
 				public JobFillFiche( FichesDB _owner, Fiche _fiche, bool _unloadContentAfterSave ) : base( _owner ) { m_fiche = _fiche; m_unloadContentAfterSave = _unloadContentAfterSave; }
 				public override void	Run() {
 					// Request the content asynchronously
-					m_owner.AsyncRenderWebPage( m_fiche.URL,
+					m_owner.Async_RenderWebPage( m_fiche.URL,
 
 						// On page source & DOM available => Update content
 						( string _title, string _HTMLContent, System.Xml.XmlDocument _DOMElements ) => {
@@ -88,13 +88,19 @@ namespace Brain2 {
 
 						// On success => Request to save the fiche now that it's complete...
 						() => {
-							m_owner.AsyncSaveFiche( m_fiche, m_unloadContentAfterSave, true );
+							m_owner.Async_SaveFiche( m_fiche, m_unloadContentAfterSave, true );
 						},
 
 						// On error => Log error? Todo?
 						( WebHelpers.WEB_ERROR_TYPE _error, int _errorCode, string _message ) => {
-							m_owner.SyncReportFicheStatus( m_fiche, FICHE_REPORT_STATUS.ERROR, "Page failed to load and returned error code " + _errorCode + " with message \"" + _message + "\"!" );
-						} );
+							m_owner.AsyncMain_ReportFicheStatus( m_fiche, FICHE_REPORT_STATUS.ERROR, "Page failed to load and returned error code " + _errorCode + " with message \"" + _message + "\"!" );
+						},
+
+						// Log
+						( WebHelpers.LOG_TYPE _type, string _message ) => {
+							m_owner.AsyncMain_Log( (LOG_TYPE) _type, _message );
+						}
+					);
 				}
 			}
 
@@ -139,23 +145,17 @@ namespace Brain2 {
 				public bool			m_notifyAfterSave;
 				public JobSaveFiche( FichesDB _owner, Fiche _caller, bool _unloadContentAfterSave, bool _notifyAfterSave ) : base( _owner ) { m_caller = _caller; m_unloadContentAfterSave = _unloadContentAfterSave; m_notifyAfterSave = _notifyAfterSave; }
 				public override void	Run() {
-					m_owner.SyncSaveFiche( m_caller, m_unloadContentAfterSave, m_notifyAfterSave );
+					m_owner.Sync_SaveFiche( m_caller, m_unloadContentAfterSave, m_notifyAfterSave );
 				}
 			}
 
-			public class		JobNotify : JobBase {
-				public Action	m_action;
-				public JobNotify( FichesDB _owner, Action _action ) : base( _owner ) { m_action = _action; }
-				public override void	Run() {
-					m_action();
-				}
-			}
+			public class		JobExecute<T> : JobBase {
+				public Action<T>	m_action;
+				public T			m_userData;
 
-			public class		JobReportError : JobBase {
-				public string	m_error;
-				public JobReportError( FichesDB _owner, string _error ) : base( _owner ) { m_error = _error; }
+				public JobExecute( FichesDB _owner, Action<T> _action, T _userData ) : base( _owner ) { m_action = _action; m_userData = _userData; }
 				public override void	Run() {
-					m_owner.ErrorOccurred?.Invoke( m_error );
+					m_action( m_userData );
 				}
 			}
 
@@ -179,22 +179,33 @@ namespace Brain2 {
 				}
 			}
 
+			public class		JobLog : JobBase {
+				public LOG_TYPE	m_type;
+				public string	m_message;
+				public JobLog( FichesDB _owner, LOG_TYPE _type, string _message ) : base( _owner ) { m_type = _type; m_message = _message; }
+				public override void	Run() {
+					m_owner.Log?.Invoke( m_type, m_message );
+				}
+			}
+
 			public class		JobLoadWebPage : JobBase {
 				public Uri							m_URL;
 				public WebHelpers.WebPageSourceAvailable	m_delegateSourceAvailable;
 				public WebHelpers.WebPagePieceRendered		m_delegatePagePieceRendered;
 				public WebHelpers.WebPageSuccess			m_delegateSuccess;
 				public WebHelpers.WebPageError				m_delegateError;
+				public WebHelpers.Log						m_delegateLog;
 
-				public JobLoadWebPage( FichesDB _owner, Uri _URL, WebHelpers.WebPageSourceAvailable _delegateSourceAvailable, WebHelpers.WebPagePieceRendered _delegatePagePieceRendered, WebHelpers.WebPageSuccess _delegateSuccess, WebHelpers.WebPageError _delegateError ) : base( _owner ) {
+				public JobLoadWebPage( FichesDB _owner, Uri _URL, WebHelpers.WebPageSourceAvailable _delegateSourceAvailable, WebHelpers.WebPagePieceRendered _delegatePagePieceRendered, WebHelpers.WebPageSuccess _delegateSuccess, WebHelpers.WebPageError _delegateError, WebHelpers.Log _delegateLog ) : base( _owner ) {
 					m_URL = _URL;
 					m_delegateSourceAvailable = _delegateSourceAvailable;
 					m_delegatePagePieceRendered = _delegatePagePieceRendered;
 					m_delegateSuccess = _delegateSuccess;
 					m_delegateError = _delegateError;
+					m_delegateLog = _delegateLog;
 				}
 				public override void	Run() {
-					WebHelpers.LoadWebPage( m_URL, m_delegateSourceAvailable, m_delegatePagePieceRendered, m_delegateSuccess, m_delegateError );
+					WebHelpers.LoadWebPage( m_URL, m_delegateSourceAvailable, m_delegatePagePieceRendered, m_delegateSuccess, m_delegateError, m_delegateLog );
 				}
 			}
 
@@ -227,7 +238,7 @@ namespace Brain2 {
 							try {
 								job.Run();
 							} catch ( Exception _e ) {
-								_this.m_database.SyncReportError( "A \"" + job.ToString() + "\" failed with error: " + _e.Message );
+								_this.m_database.AsyncMain_LogError( "A \"" + job.ToString() + "\" failed with error: " + _e.Message );
 							}
 						}
 					}
@@ -242,6 +253,14 @@ namespace Brain2 {
 			WARNING,
 			ERROR,
 		}
+
+		public enum LOG_TYPE {
+			INFO,
+			WARNING,
+			ERROR,
+			DEBUG
+		}
+
 
 		/// <summary>
 		/// Whenever a fiche is modified, it should call FicheDB.SyncNotifyFicheModifiedAndNeedsSaving() so a timer is started and the fiche gets automatically saved when the timer expires
@@ -264,6 +283,7 @@ namespace Brain2 {
 		public delegate void	FicheEventHandler( Fiche _fiche );
 		public delegate void	FicheErrorOrWarningHandler( Fiche _fiche, string _errorOrWarning );
 		public delegate void	DatabaseErrorHandler( string _error );
+		public delegate void	DatabaseLogHandler( LOG_TYPE _type, string _message );
 
 		#endregion
 
@@ -300,7 +320,8 @@ namespace Brain2 {
 
 		#region PROPERTIES
 
-		public event DatabaseErrorHandler		ErrorOccurred;		// Occurs whenever an internal database error occurred
+//		public event DatabaseErrorHandler		ErrorOccurred;		// Occurs whenever an internal database error occurred
+		public event DatabaseLogHandler			Log;				// Occurs whenever a log event occurred
 
 		public event FicheEventHandler			FicheSuccessOccurred;	// Occurs whenever a fiche success occurred
 		public event FicheErrorOrWarningHandler	FicheWarningOccurred;	// Occurs whenever a fiche warning occurred
@@ -332,7 +353,7 @@ namespace Brain2 {
 			// Save remaining modified fiches now
 			lock ( m_fiche2NeedToSave ) {
 				foreach ( FicheUpdatedNeedsSaving value in m_fiche2NeedToSave.Values ) {
-					SyncSaveFiche( value.m_fiche, false, false );
+					Sync_SaveFiche( value.m_fiche, false, false );
 				}
 			}
 
@@ -491,7 +512,7 @@ namespace Brain2 {
 							throw new Exception( "Returned fiche file \"" + result.PathName + "\" doesn't exist!" );
 
 						// Attempt to read fiche from file
-						AsyncLoadAndRegisterFiche( file );
+						Async_LoadAndRegisterFiche( file );
 
 					} catch ( Exception _e ) {
 						errors.Add( _e );
@@ -530,7 +551,7 @@ throw new Exception( "TODO!" );
 					try {
 						job.Run();
 					} catch ( Exception _e ) {
-						SyncReportError( "A \"" + job.ToString() + "\" failed with error: " + _e.Message );
+						AsyncMain_LogError( "A \"" + job.ToString() + "\" failed with error: " + _e.Message );
 					}
 				}
 			}
@@ -543,7 +564,7 @@ throw new Exception( "TODO!" );
 					if ( timeSinceLastModification > DEFAULT_DELAY_BEFORE_SAVE_SECONDS ) {
 						// Okay, enough time has passed, we can asynchronously save the fiche now...
 						m_fiche2NeedToSave.Remove( value.m_fiche );
-						AsyncSaveFiche( value.m_fiche, true, false );
+						Async_SaveFiche( value.m_fiche, true, false );
 					}
 				}
 			}
@@ -571,7 +592,7 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_data"></param>
 		/// <returns></returns>
-		public Fiche	CreateFicheFromClipboard( System.Windows.Forms.IDataObject _data ) {
+		public Fiche	Sync_CreateFicheFromClipboard( System.Windows.Forms.IDataObject _data ) {
 			if ( _data == null )
 				throw new Exception( "Invalid data object!" );
 
@@ -617,7 +638,7 @@ throw new Exception( "TODO!" );
 			return fiche;
 		}
 
-		internal void	AsyncLoadAndRegisterFiche( FileInfo _ficheFileName ) {
+		internal void	Async_LoadAndRegisterFiche( FileInfo _ficheFileName ) {
 			// Create a new job and let the threads handle it
 			WorkingThread.JobLoadFiche	job = new WorkingThread.JobLoadFiche( this, _ficheFileName );
 			lock ( m_threadedJobs )
@@ -629,7 +650,7 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_caller"></param>
 		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
-		internal void	AsyncSaveFiche( Fiche _fiche, bool _unloadContentAfterSave, bool _notifyAfterSave ) {
+		internal void	Async_SaveFiche( Fiche _fiche, bool _unloadContentAfterSave, bool _notifyAfterSave ) {
 			// Create a new job and let the threads handle it
 			WorkingThread.JobSaveFiche	job = new WorkingThread.JobSaveFiche( this, _fiche, _unloadContentAfterSave, _notifyAfterSave );
 			lock ( m_threadedJobs )
@@ -641,7 +662,7 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_caller"></param>
 		/// <param name="_delegate">Called once the chunk has been loaded</param>
-		internal void	AsyncLoadChunk( Fiche.ChunkBase _caller, Action _delegate ) {
+		internal void	Async_LoadChunk( Fiche.ChunkBase _caller, Action _delegate ) {
 			// Create a new job and let the loading threads handle it
 			WorkingThread.JobLoadChunk	job = new WorkingThread.JobLoadChunk( this, _caller, _delegate );
 			lock ( m_threadedJobs )
@@ -653,8 +674,8 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_URL"></param>
 		/// <param name="_delegate"></param>
-		internal void	AsyncRenderWebPage( Uri _URL, WebHelpers.WebPageSourceAvailable _onSourceAvailable, WebHelpers.WebPagePieceRendered _onPagePieceRendered, WebHelpers.WebPageSuccess _onSuccess, WebHelpers.WebPageError _onError ) {
-			WorkingThread.JobLoadWebPage	job = new WorkingThread.JobLoadWebPage( this, _URL, _onSourceAvailable, _onPagePieceRendered, _onSuccess, _onError );
+		internal void	Async_RenderWebPage( Uri _URL, WebHelpers.WebPageSourceAvailable _onSourceAvailable, WebHelpers.WebPagePieceRendered _onPagePieceRendered, WebHelpers.WebPageSuccess _onSuccess, WebHelpers.WebPageError _onError, WebHelpers.Log _log ) {
+			WorkingThread.JobLoadWebPage	job = new WorkingThread.JobLoadWebPage( this, _URL, _onSourceAvailable, _onPagePieceRendered, _onSuccess, _onError, _log );
 			lock ( m_threadedJobs )
 				m_threadedJobs.Enqueue( job );
 		}
@@ -665,7 +686,7 @@ throw new Exception( "TODO!" );
 		/// <param name="_fiche"></param>
 		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
 		/// <returns>The temporary fiche with only a valid desciptor</returns>
-		internal void	AsyncLoadContentAndSaveFiche( Fiche _fiche, bool _unloadContentAfterSave ) {
+		internal void	Async_LoadContentAndSaveFiche( Fiche _fiche, bool _unloadContentAfterSave ) {
 			// Create a new job and let the threads handle it
 			WorkingThread.JobFillFiche	job = new WorkingThread.JobFillFiche( this, _fiche, _unloadContentAfterSave );
 			lock ( m_threadedJobs )
@@ -680,7 +701,7 @@ throw new Exception( "TODO!" );
 		/// <param name="_URL"></param>
 		/// <param name="_HTMLContent">Optional HTML content, will be replaced by actual content for remote URLs</param>
 		/// <returns></returns>
-		public Fiche	SyncCreateFicheDescriptor( Fiche.TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) {
+		public Fiche	Sync_CreateFicheDescriptor( Fiche.TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) {
 			return new Fiche( this, _type, _title, _URL, _tags, _HTMLContent );
 		}
 
@@ -689,14 +710,14 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_tag"></param>
 		/// <returns></returns>
-		public Fiche	SyncFindOrCreateTagFiche( string _tag ) {
+		public Fiche	Sync_FindOrCreateTagFiche( string _tag ) {
 			Fiche[]	tagFiches = FindFichesByTitle( _tag, false );
 			if ( tagFiches.Length > 0 ) {
 				return tagFiches[0];	// Arbitrarily use first tag...
 			}
 
 			// Create the tag
-			return SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, new Uri( "tag://" + _tag ), null, WebHelpers.BuildHTMLDocument( _tag, null ) );
+			return Sync_CreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, new Uri( "tag://" + _tag ), null, WebHelpers.BuildHTMLDocument( _tag, null ) );
 		}
 
 		/// <summary>
@@ -704,7 +725,7 @@ throw new Exception( "TODO!" );
 		/// The idea is to notify often, but save only once the fiche is left alone for some time...
 		/// </summary>
 		/// <param name="_fiche"></param>
-		internal void	SyncNotifyFicheModifiedAndNeedsAsyncSaving( Fiche _fiche ) {
+		internal void	Async_NotifyFicheModifiedAndNeedsAsyncSaving( Fiche _fiche ) {
 			lock ( m_fiche2NeedToSave ) {
 				FicheUpdatedNeedsSaving	saveTimer = null;
 				if ( !m_fiche2NeedToSave.TryGetValue( _fiche, out saveTimer ) )
@@ -720,10 +741,10 @@ throw new Exception( "TODO!" );
 		/// <param name="_fiche"></param>
 		/// <param name="_unloadContentAfterSave">True to unload heavy content after the fiche is saved</param>
 		/// <param name="_notifyAfterSave">True to send a success notification after the fiche is saved</param>
-		internal void	SyncSaveFiche( Fiche _fiche, bool _unloadContentAfterSave, bool _notifyAfterSave ) {
+		internal void	Sync_SaveFiche( Fiche _fiche, bool _unloadContentAfterSave, bool _notifyAfterSave ) {
 
 			// If the file already exists then notify the fiche it's its last chance to read data from the old file before it's overwritten!
-			if ( SyncFicheStreamAlreadyExists( _fiche ) ) {
+			if ( Sync_FicheStreamAlreadyExists( _fiche ) ) {
 				using ( Stream S = SyncRequestFicheStream( _fiche, true ) ) {
 					using ( BinaryReader R = new BinaryReader( S ) ) {
 						_fiche.LastChanceReadBeforeWrite( R );
@@ -747,7 +768,7 @@ throw new Exception( "TODO!" );
 
 						// Optional notification
 						if ( _notifyAfterSave ) {
-							SyncReportFicheStatus( _fiche, FICHE_REPORT_STATUS.SUCCESS, null );
+							AsyncMain_ReportFicheStatus( _fiche, FICHE_REPORT_STATUS.SUCCESS, null );
 						}
 					} );
 				}
@@ -755,22 +776,12 @@ throw new Exception( "TODO!" );
 		}
 
 		/// <summary>
-		/// Ask the main thread to perform our notification for us
+		/// Asks the main thread to execute a delegate for us
 		/// </summary>
-		/// <param name="_delegate"></param>
-		internal void	SyncNotify( Action _delegate ) {
-			WorkingThread.JobNotify	job = new WorkingThread.JobNotify( this, _delegate );
-			lock ( m_mainThreadJobs )
-				m_mainThreadJobs.Enqueue( job );
-		}
-
-		/// <summary>
-		/// Ask the main thread to report our error
-		/// Use this to report internal errors relative to the software, not errors concerning fiche content (use SyncReportFicheStatus instead)
-		/// </summary>
-		/// <param name="_error"></param>
-		internal void	SyncReportError( string _error ) {
-			WorkingThread.JobReportError	job = new WorkingThread.JobReportError( this, _error );
+		/// <param name="_delegate">The action to execute on the main thread</param>
+		/// <param name="_userData"></param>
+		internal void	AsyncMain_Execute<T>( Action<T> _delegate, T _userData ) {
+			WorkingThread.JobExecute<T>	job = new WorkingThread.JobExecute<T>( this, _delegate, _userData );
 			lock ( m_mainThreadJobs )
 				m_mainThreadJobs.Enqueue( job );
 		}
@@ -781,20 +792,36 @@ throw new Exception( "TODO!" );
 		///		• The fiche was successfully created and saved
 		///		• The web page failed to load and the fiche should probably be deleted
 		/// </summary>
-		/// <param name="_fiche">The fiche for which the error occurred</param>
-		/// <param name="_error"></param>
-		internal void	SyncReportFicheStatus( Fiche _fiche, FICHE_REPORT_STATUS _status, string _errorOrWarning ) {
-			WorkingThread.JobReportFicheStatus	job = new WorkingThread.JobReportFicheStatus( this, _fiche, _status, _errorOrWarning );
+		/// <param name="_fiche">The fiche to report about</param>
+		/// <param name="_status">The type of report</param>
+		/// <param name="_report"></param>
+		internal void	AsyncMain_ReportFicheStatus( Fiche _fiche, FICHE_REPORT_STATUS _status, string _report ) {
+			WorkingThread.JobReportFicheStatus	job = new WorkingThread.JobReportFicheStatus( this, _fiche, _status, _report );
 			lock ( m_mainThreadJobs )
 				m_mainThreadJobs.Enqueue( job );
 		}
 
 		/// <summary>
-		/// 
+		/// Asks the main thread to log the message for us
+		/// </summary>
+		/// <param name="_type"></param>
+		/// <param name="_message"></param>
+		internal void	AsyncMain_Log( LOG_TYPE _type, string _message ) {
+			WorkingThread.JobLog	job = new WorkingThread.JobLog( this, _type, _message );
+			lock ( m_mainThreadJobs )
+				m_mainThreadJobs.Enqueue( job );
+		}
+
+		internal void	AsyncMain_LogError( string _message ) {
+			AsyncMain_Log( LOG_TYPE.ERROR, _message );
+		}
+
+		/// <summary>
+		/// Immediately returns the fiche's file name
 		/// </summary>
 		/// <param name="_fiche">The fiche to create a file stream for</param>
 		/// <returns></returns>
-		private FileInfo	SyncGetFicheFileName( Fiche _fiche ) {
+		private FileInfo	Sync_GetFicheFileName( Fiche _fiche ) {
 			FileInfo	ficheFileName = new FileInfo( Path.Combine( m_rootFolder.FullName, _fiche.FileName ) );
 			return ficheFileName;
 		}
@@ -804,8 +831,8 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_fiche">The fiche to check stream existence for</param>
 		/// <returns>True if the stream is already available, false if the fiche needs to be created</returns>
-		internal bool	SyncFicheStreamAlreadyExists( Fiche _fiche ) {
-			FileInfo	ficheFileName = SyncGetFicheFileName( _fiche );
+		internal bool	Sync_FicheStreamAlreadyExists( Fiche _fiche ) {
+			FileInfo	ficheFileName = Sync_GetFicheFileName( _fiche );
 			return ficheFileName.Exists;
 		}
 
@@ -818,7 +845,7 @@ throw new Exception( "TODO!" );
 		/// <param name="_read">True for a read operation, false for a write operation</param>
 		/// <returns></returns>
 		internal Stream	SyncRequestFicheStream( Fiche _fiche, bool _read ) {
-			FileInfo	ficheFileName = SyncGetFicheFileName( _fiche );
+			FileInfo	ficheFileName = Sync_GetFicheFileName( _fiche );
 			if ( _read ) {
 				return ficheFileName.OpenRead();
 			} else {

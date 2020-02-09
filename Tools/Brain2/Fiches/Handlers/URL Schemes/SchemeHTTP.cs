@@ -26,15 +26,15 @@ namespace Brain2 {
 			string[]		tags = WebHelpers.ExtractTags( _title );
 			List< Fiche >	tagFiches = new List<Fiche>();
 			foreach ( string tag in tags ) {
-				Fiche	tagFiche = _database.SyncFindOrCreateTagFiche( tag );
+				Fiche	tagFiche = _database.Sync_FindOrCreateTagFiche( tag );
 				tagFiches.Add( tagFiche );
 			}
 
 			// Create the descriptor
-			Fiche	F = _database.SyncCreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, _title, _URL, tagFiches.ToArray(), null );
+			Fiche	F = _database.Sync_CreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, _title, _URL, tagFiches.ToArray(), null );
 
 			// Load the web page and save the fiche when ready
-			_database.AsyncLoadContentAndSaveFiche( F, true );
+			_database.Async_LoadContentAndSaveFiche( F, true );
 
 			return F;
 		}

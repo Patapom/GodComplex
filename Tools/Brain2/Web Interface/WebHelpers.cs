@@ -125,16 +125,24 @@ namespace Brain2 {
 			UNKNOWN,
 		}
 
+		public enum LOG_TYPE {
+			INFO,
+			WARNING,
+			ERROR,
+			DEBUG
+		}
+
 		public delegate void	WebPageSourceAvailable( string _title, string _HTMLContent, System.Xml.XmlDocument _DOMElements );
 		public delegate void	WebPagePieceRendered( uint _webPagePieceIndex, ImageUtility.ImageFile _imageWebPage );
 		public delegate void	WebPageSuccess();
 		public delegate void	WebPageError( WEB_ERROR_TYPE _error, int _errorCode, string _message );
+		public delegate void	Log( LOG_TYPE _type, string _message );
 
 		/// <summary>
 		/// Loads a web page and renders it into an image
 		/// </summary>
 		/// <param name="_URL"></param>
-		public static void	LoadWebPage( Uri _URL, WebPageSourceAvailable _onSourceAvailable, WebPagePieceRendered _onPagePieceRendered, WebPageSuccess _onSuccess, WebPageError _onError ) {
+		public static void	LoadWebPage( Uri _URL, WebPageSourceAvailable _onSourceAvailable, WebPagePieceRendered _onPagePieceRendered, WebPageSuccess _onSuccess, WebPageError _onError, Log _log ) {
 			WebServices.HTMLPageRenderer	pageRenderer = new WebServices.HTMLPageRenderer(
 				_URL.ToString(),
 				(int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_WIDTH, (int) Fiche.ChunkWebPageSnapshot.DEFAULT_WEBPAGE_PIECE_HEIGHT,
@@ -160,6 +168,10 @@ namespace Brain2 {
 					WEB_ERROR_TYPE	type = WEB_ERROR_TYPE.UNKNOWN;
 					// TODO: Resolve known errors from Cef errors...
 					_onError( type, (int) _errorCode, _errorText );
+				},
+
+				( WebServices.HTMLPageRenderer.LOG_TYPE _type, string _text ) => {
+					_log( (LOG_TYPE) _type, _text );
 				}
 			);
 		}
