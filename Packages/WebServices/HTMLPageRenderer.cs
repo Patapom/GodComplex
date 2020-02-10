@@ -95,10 +95,11 @@ namespace WebServices {
 		#region FIELDS
 
 		private int					m_Time_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for 5s
+		private int					m_time_ms_ScrollDown = 250;				// Wait for 100ms before taking a screenshot after a page scroll
 
 		private int					m_TimeOut_ms_JavascriptNoRender = 1000;	// Default timeout after 1s of a JS command that doesn't trigger a new rendering
 		private int					m_TimeOut_ms_PageRender = 30000;		// Default timeout after 30s for a page rendering
-		private int					m_TimeOut_ms_Screenshot = 1000;			// Default timeout after 1s for a screenshot
+		private int					m_TimeOut_ms_Screenshot = 10000;			// Default timeout after 1s for a screenshot
 
 		private ChromiumWebBrowser	m_browser = null;
 
@@ -298,14 +299,14 @@ Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 				//////////////////////////////////////////////////////////////////////////
 				/// Execute a first rounde to "prep the page"
 				/// 
-				if ( _scrollsCount > 0 ) {
+				if ( _scrollsCount > 1 ) {
 					for ( uint scrollIndex=0; scrollIndex < _scrollsCount; scrollIndex++ ) {
 
 						try {
 							/// Request a screenshot
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting screenshot {0}", scrollIndex );
 
- 							Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync(), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
+ 							await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" );
 
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
@@ -313,7 +314,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0}
 							/// Scroll down the page
 							if ( scrollIndex < _scrollsCount-1 ) {
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting scrolling..." );
-								await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();" );
+								await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();", m_time_ms_ScrollDown );
 							}
 
 						} catch ( TimeoutException _e ) {
@@ -325,8 +326,11 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 						}
 					}
 
+					// Do another screenshot
+ 					await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" );
+
 					// Scroll all the way back up
-					await ExecuteJS( "(function() { window.scroll( 0, 0 ); })();" );
+					await ExecuteJS( "(function() { window.scroll( 0, 0 ); })();", m_time_ms_ScrollDown );
 				}
 
 				//////////////////////////////////////////////////////////////////////////
@@ -342,7 +346,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting screenshot {0}", s
 // 						Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync();
 // 						if ( (await Task.WhenAny( task, Task.Delay( m_TimeOut_ms_PageRender ) )) == task ) {
 
- 						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync(), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
+ 						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
 
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
@@ -359,7 +363,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						/// Scroll down the page
 						if ( scrollIndex < _scrollsCount-1 ) {
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting scrolling..." );
-							await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();" );
+							await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();", m_time_ms_ScrollDown );
 						}
 
 					} catch ( TimeoutException _e ) {
@@ -396,7 +400,15 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 		}
 
 		async Task<JavascriptResponse>	ExecuteJS( string _JS ) {
+			return await ExecuteJS( _JS, 0 );
+		}
+		async Task<JavascriptResponse>	ExecuteJS( string _JS, int _delay_ms ) {
 			Task<JavascriptResponse>	task = (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS, null ), m_TimeOut_ms_JavascriptNoRender, "EvaluateScriptAsync " + _JS )) as Task<JavascriptResponse>;
+
+			if ( _delay_ms > 0 ) {
+				await Task.Delay( _delay_ms );
+			}
+
 			return task.Result;
 		}
 
