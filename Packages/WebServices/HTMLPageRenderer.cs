@@ -250,7 +250,7 @@ Log( LOG_TYPE.ERROR, "JS scrollHeight returned null => Exception!" );
 			int	screenshotsCount = (int) Math.Ceiling( (double) scrollHeight / viewportHeight );
 Log( LOG_TYPE.DEBUG, "Page scroll height = " + scrollHeight + " - Screenshots Count = " + screenshotsCount );
 
-			await DoScreenshots( screenshotsCount );
+			await DoScreenshots( screenshotsCount, scrollHeight );
 		}
 
 		/// <summary>
@@ -286,8 +286,10 @@ Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 		/// Do multiple screenshots to capture the entire page
 		/// </summary>
 		/// <returns></returns>
-		async Task	DoScreenshots( int _scrollsCount ) {
+		async Task	DoScreenshots( int _scrollsCount, int _scrollHeight ) {
 			_scrollsCount = Math.Min( m_maxScreenshotsCount, _scrollsCount );
+
+			int	viewportHeight = m_browser.Size.Height;
 
 			try {
 				// Code from https://github.com/WildGenie/OSIRTv2/blob/3e60d3ce908a1d25a7b4633dc9afdd53256cbb4f/OSIRT/Browser/MainBrowser.cs#L300
@@ -295,7 +297,6 @@ Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 //				await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( "(function() { document.documentElement.style.overflow = 'hidden'; })();" ), m_TimeOut_ms_JavascriptNoRender );
 				await ExecuteJS( "(function() { document.documentElement.style.overflow = 'hidden'; })();" );
 
-				uint	viewportHeight = (uint) m_browser.Size.Height;
 				//////////////////////////////////////////////////////////////////////////
 				/// Execute a first rounde to "prep the page"
 				/// 
@@ -336,7 +337,7 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 				//////////////////////////////////////////////////////////////////////////
 				/// Do a 2nd batch where we actually store the screenshots!
 				///
-				for ( uint scrollIndex=0; scrollIndex < _scrollsCount; scrollIndex++ ) {
+				for ( int scrollIndex=0; scrollIndex < _scrollsCount; scrollIndex++ ) {
 
 					try {
 						//////////////////////////////////////////////////////////////////////////
@@ -350,13 +351,38 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting screenshot {0}", s
 
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
-						try {
-							ImageUtility.ImageFile image = new ImageUtility.ImageFile( task.Result, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
-							m_pageRendered( scrollIndex, image );
-						} catch ( Exception _e ) {
-							throw new Exception( "Failed to create image from web page bitmap: \r\n" + _e.Message, _e );
-						} finally {
-							task.Result.Dispose();	// Always dispose of the bitmap anyway!
+						System.Drawing.Bitmap	bitmap = task.Result;
+						int	remainingHeight = _scrollHeight - scrollIndex * viewportHeight;
+						if ( remainingHeight < bitmap.Height ) {
+							// Clip bitmap and keep only the last relevant lines
+							if ( remainingHeight < 16 ) {
+								bitmap = null;
+							} else {
+								using ( System.Drawing.Bitmap oldBitmap = bitmap ) {
+									bitmap = new System.Drawing.Bitmap( oldBitmap.Width, (int) remainingHeight, oldBitmap.PixelFormat );
+									using ( System.Drawing.Graphics G = System.Drawing.Graphics.FromImage( bitmap ) ) {
+										G.DrawImage( oldBitmap, 0, remainingHeight - oldBitmap.Height );
+									}
+								}
+//using (Bitmap src = GetCurrentViewScreenshot())
+// 						using (Bitmap target = new Bitmap(cropRect.Width, cropRect.Height))
+// 						using (Graphics g = Graphics.FromImage(target))
+// 						{
+// 							g.DrawImage(src, new Rectangle(0, 0, target.Width, target.Height), cropRect, GraphicsUnit.Pixel);
+// 							cache.AddImage(count, target);
+// 						}								}
+							}
+						}
+
+						if ( bitmap != null ) {
+							try {
+								ImageUtility.ImageFile image = new ImageUtility.ImageFile( bitmap, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+								m_pageRendered( (uint) scrollIndex, image );
+							} catch ( Exception _e ) {
+								throw new Exception( "Failed to create image from web page bitmap: \r\n" + _e.Message, _e );
+							} finally {
+								task.Result.Dispose();	// Always dispose of the bitmap anyway!
+							}
 						}
 
 						//////////////////////////////////////////////////////////////////////////
