@@ -60,7 +60,11 @@ namespace Brain2 {
 						// On page source & DOM available => Update content
 						( string _title, string _HTMLContent, System.Xml.XmlDocument _DOMElements ) => {
 							m_fiche.Lock( Fiche.STATUS.UPDATING, () => {
-								m_fiche.Title = _title;
+								if ( _title != null && _title != "" )
+									m_fiche.Title = _title;
+								else if ( m_fiche.URL != null )
+									m_fiche.Title = m_fiche.URL.ToString();
+
 								m_fiche.HTMLContent = _HTMLContent;
 								m_fiche.DOMElements = DOMElement.FromPageRendererXML( _DOMElements );
 							} );

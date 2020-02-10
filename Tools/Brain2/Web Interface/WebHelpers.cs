@@ -46,7 +46,7 @@ namespace Brain2 {
 				throw new Exception( "Invalid URL!" );
 
 			// Easy clean up
-			_URL = _URL.ToLower();
+//			_URL = _URL.ToLower();	// DON'T!! URLs are case-sensitive!
 			_URL = _URL.Replace( '\\', '/' );
 
 			// Clean up facebook tracking shit (e.g. "www.myurl.com?fbclid=IwAR0C-JE26XJWpAk1VcBzk9-2y8NwbKhGB_jbIGKMLLakvGWYimKu96xDGMk" => "www.myurl.com")
@@ -146,7 +146,6 @@ namespace Brain2 {
 			WebServices.HTMLPageRenderer	pageRenderer = new WebServices.HTMLPageRenderer(
 				_URL.ToString(),
 				(int) Fiche.ChunkWebPageSnapshot.ms_defaultWebPageWidth, (int) Fiche.ChunkWebPageSnapshot.ms_defaultWebPageHeight,
-				//(int) Fiche.ChunkWebPageSnapshot.ms_maxWebPagePieces,
 				(int) _maxScrollsCount,
 
 				// Occurs whenever the page's HTML source is available

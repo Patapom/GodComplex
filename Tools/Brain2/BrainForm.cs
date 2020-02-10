@@ -464,20 +464,7 @@ this.TopMost = false;
 			}
 
 			// Restore any previously open form
-			if ( m_showPreferenceFormOnShowMain ) {
-				m_showPreferenceFormOnShowMain = false;
-				m_preferenceForm.Show();
-			}
-
-			if ( m_showEditorFormOnShowMain ) {
-				m_showEditorFormOnShowMain = false;
-				m_ficheWebPageEditorForm.Show();
-			}
-
-			if ( m_showAnnotatorFormOnShowMain ) {
-				m_showAnnotatorFormOnShowMain = false;
-				m_ficheWebPageAnnotatorForm.Show();
-			}
+			RestoreChildForms();
 
 			base.Show();
 //			Capture = true;
@@ -493,7 +480,24 @@ this.TopMost = false;
 			base.Hide();
 		}
 
-		public void		HideChildForms() {
+		public void	RestoreChildForms() {
+			if ( m_showPreferenceFormOnShowMain ) {
+				m_showPreferenceFormOnShowMain = false;
+				m_preferenceForm.Show();
+			}
+
+			if ( m_showEditorFormOnShowMain ) {
+				m_showEditorFormOnShowMain = false;
+				m_ficheWebPageEditorForm.Show();
+			}
+
+			if ( m_showAnnotatorFormOnShowMain ) {
+				m_showAnnotatorFormOnShowMain = false;
+				m_ficheWebPageAnnotatorForm.Show();
+			}
+		}
+
+		public void	HideChildForms() {
 			// Also hide any open form
 			m_showPreferenceFormOnShowMain = m_preferenceForm.Visible;
 			m_preferenceForm.Hide();
@@ -895,6 +899,9 @@ database_Log( FichesDB.LOG_TYPE.ERROR, _error );
 		protected override void OnActivated(EventArgs e) {
 			base.OnActivated(e);
 			NotifyFormActivated( this );
+
+			// Show any previously opened child window
+			RestoreChildForms();
 		}
 		protected override void OnDeactivate(EventArgs e) {
 			base.OnDeactivate(e);

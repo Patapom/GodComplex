@@ -30,7 +30,7 @@
 			this.label3 = new System.Windows.Forms.Label();
 			this.tagEditBox = new Brain2.TagEditBox(this.components);
 			this.richTextBoxURL = new System.Windows.Forms.RichTextBox();
-			this.panelHost = new ScrollablePannel();
+			this.panelHost = new Brain2.ScrollablePannel(this.components);
 			this.panelWebPage = new Brain2.PanelMultiBitmaps(this.components);
 			this.panelHost.SuspendLayout();
 			this.SuspendLayout();
@@ -39,7 +39,7 @@
 			// 
 			this.label1.AutoSize = true;
 			this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.label1.Location = new System.Drawing.Point(2, 4);
+			this.label1.Location = new System.Drawing.Point(7, 25);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(78, 29);
 			this.label1.TabIndex = 0;
@@ -51,7 +51,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.richTextBoxTitle.Enabled = false;
 			this.richTextBoxTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.richTextBoxTitle.Location = new System.Drawing.Point(78, 6);
+			this.richTextBoxTitle.Location = new System.Drawing.Point(83, 27);
 			this.richTextBoxTitle.Multiline = false;
 			this.richTextBoxTitle.Name = "richTextBoxTitle";
 			this.richTextBoxTitle.Size = new System.Drawing.Size(934, 26);
@@ -62,7 +62,7 @@
 			// 
 			this.label2.AutoSize = true;
 			this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold);
-			this.label2.Location = new System.Drawing.Point(3, 37);
+			this.label2.Location = new System.Drawing.Point(8, 58);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(45, 20);
 			this.label2.TabIndex = 0;
@@ -72,7 +72,7 @@
 			// 
 			this.label3.AutoSize = true;
 			this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold);
-			this.label3.Location = new System.Drawing.Point(3, 68);
+			this.label3.Location = new System.Drawing.Point(8, 89);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(48, 20);
 			this.label3.TabIndex = 0;
@@ -86,7 +86,7 @@
 			this.tagEditBox.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
 			this.tagEditBox.Enabled = false;
 			this.tagEditBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-			this.tagEditBox.Location = new System.Drawing.Point(52, 64);
+			this.tagEditBox.Location = new System.Drawing.Point(57, 85);
 			this.tagEditBox.Name = "tagEditBox";
 			this.tagEditBox.OwnerForm = null;
 			this.tagEditBox.RecognizedTags = new Brain2.Fiche[0];
@@ -100,7 +100,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.richTextBoxURL.BackColor = System.Drawing.SystemColors.ControlLight;
 			this.richTextBoxURL.Enabled = false;
-			this.richTextBoxURL.Location = new System.Drawing.Point(52, 36);
+			this.richTextBoxURL.Location = new System.Drawing.Point(57, 57);
 			this.richTextBoxURL.Multiline = false;
 			this.richTextBoxURL.Name = "richTextBoxURL";
 			this.richTextBoxURL.ReadOnly = true;
@@ -117,9 +117,9 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.panelHost.AutoScroll = true;
 			this.panelHost.Controls.Add(this.panelWebPage);
-			this.panelHost.Location = new System.Drawing.Point(12, 96);
+			this.panelHost.Location = new System.Drawing.Point(12, 117);
 			this.panelHost.Name = "panelHost";
-			this.panelHost.Size = new System.Drawing.Size(1000, 612);
+			this.panelHost.Size = new System.Drawing.Size(1005, 621);
 			this.panelHost.TabIndex = 2;
 			this.panelHost.TabStop = true;
 			// 
@@ -128,15 +128,16 @@
 			this.panelWebPage.Bitmaps = new System.Drawing.Bitmap[0];
 			this.panelWebPage.Location = new System.Drawing.Point(0, 0);
 			this.panelWebPage.Name = "panelWebPage";
-			this.panelWebPage.Size = new System.Drawing.Size(1000, 612);
+			this.panelWebPage.Size = new System.Drawing.Size(1005, 621);
 			this.panelWebPage.TabIndex = 0;
+			this.panelWebPage.TabStop = true;
 			// 
 			// FicheWebPageAnnotatorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.Gainsboro;
-			this.ClientSize = new System.Drawing.Size(1024, 720);
+			this.ClientSize = new System.Drawing.Size(1024, 750);
 			this.Controls.Add(this.panelHost);
 			this.Controls.Add(this.richTextBoxURL);
 			this.Controls.Add(this.tagEditBox);
