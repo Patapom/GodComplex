@@ -14,9 +14,14 @@ namespace Brain2 {
 
 		protected override bool Sizeable => true;
 		protected override bool CloseOnEscape => true;
-		public override Keys	SHORTCUT_KEY => Keys.None;
+		public override Keys	ShortcutKey => Keys.None;
 
-		public FastTaggerForm( BrainForm _owner, Fiche[] _fiches ) : base( _owner ) {
+		public Fiche[]	Fiches {
+//			get { return this.richTextBoxTags}
+			set { }
+		}
+
+		public FastTaggerForm( BrainForm _owner ) : base( _owner ) {
 			InitializeComponent();
 
 			this.richTextBoxTags.ApplicationForm = _owner;
@@ -24,6 +29,11 @@ namespace Brain2 {
 		}
 
 		protected override void InternalDispose() {
-		} 
+		}
+
+		protected override void OnPaint(PaintEventArgs e) {
+			base.OnPaint(e);
+			e.Graphics.DrawRectangle( Pens.Black, 0, 0, Width-1, Height-1 );
+		}
 	}
 }

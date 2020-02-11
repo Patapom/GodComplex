@@ -21,7 +21,9 @@ namespace Brain2 {
 
 		#region CONSTANTS
 
-		const int	BORDER_SIZE = 8;
+		const int	BORDER_SIZE_TOP = 4;
+		const int	BORDER_SIZE_BOTTOM = 4;
+		const int	BORDER_SIZE_LEFT_RIGHT = 8;
 
 		#endregion
 
@@ -40,11 +42,11 @@ namespace Brain2 {
 	#if EDIT_MODE
 		protected virtual bool	Sizeable { get => true; }
 		protected virtual bool	CloseOnEscape { get => true; }
-		public virtual Keys	SHORTCUT_KEY { get => Keys.None; }
+		public virtual Keys	ShortcutKey { get => Keys.None; }
 	#else
 		protected abstract bool	Sizeable { get; }
 		protected abstract bool	CloseOnEscape { get; }
-		public abstract Keys	SHORTCUT_KEY { get; }
+		public abstract Keys	ShortcutKey { get; }
 	#endif
 
 		#endregion
@@ -148,7 +150,7 @@ namespace Brain2 {
 					Close();
 				else
 					Hide();
-			} else if ( e.KeyCode == SHORTCUT_KEY ) {
+			} else if ( e.KeyCode == ShortcutKey ) {
 				Hide();
 			}
 
@@ -174,19 +176,12 @@ namespace Brain2 {
 		}
 
  		protected override void OnMouseMove(MouseEventArgs e) {
-
-// 			if ( m_mouseDownButtons == MouseButtons.Left ) {
-// 				// Move form
-// 				Size	delta = new Size( e.Location.X - m_mouseDownPosition.X, e.Location.Y - m_mouseDownPosition.Y );
-// 				this.Location = m_mouseDownFormLocation + delta;
-// 			}
-
 			m_hitArea = Interop.HTCAPTION;
 			if ( Sizeable ) {
-				int	borderLeft = e.X < BORDER_SIZE ? 1 : 0;
-				int	borderRight = e.X > Width-BORDER_SIZE ? 2 : 0;
-				int	borderTop = e.Y < BORDER_SIZE ? 4 : 0;
-				int	borderBottom = e.Y > Height-BORDER_SIZE ? 8 : 0;
+				int	borderLeft = e.X < BORDER_SIZE_LEFT_RIGHT ? 1 : 0;
+				int	borderRight = e.X > Width-BORDER_SIZE_LEFT_RIGHT ? 2 : 0;
+				int	borderTop = e.Y < BORDER_SIZE_TOP ? 4 : 0;
+				int	borderBottom = e.Y > Height-BORDER_SIZE_BOTTOM ? 8 : 0;
 
 				switch ( borderLeft | borderRight | borderTop | borderBottom ) {
 					case 1: m_hitArea = Interop.HTLEFT; Cursor = Cursors.SizeWE; break;

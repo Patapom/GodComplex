@@ -64,6 +64,8 @@ namespace Brain2 {
 		// Database
 		FichesDB					m_database;
 
+		Fiche						m_selectedFiche = null;
+
 		// Display
 		Device						m_device = new Device();
 
@@ -88,6 +90,7 @@ namespace Brain2 {
 		FicheWebPageAnnotatorForm	m_ficheWebPageAnnotatorForm = null;
 
 		// Helper forms
+		FastTaggerForm				m_fastTaggerForm = null;
 		NotificationForm			m_notificationForm = null;
 
 		#endregion
@@ -95,6 +98,64 @@ namespace Brain2 {
 		#region PROPERTIES
 
 		public FichesDB				Database { get { return m_database; } }
+
+		/// <summary>
+		/// Gets or sets the selected fiche
+		/// </summary>
+		public Fiche				SelectedFiche {
+			get { return m_selectedFiche; }
+			set {
+				if ( value == m_selectedFiche )
+					return;	// No change...
+
+				IFicheEditor	previousEditor = SelectedFicheEditor;
+
+				m_selectedFiche = value;
+
+				IFicheEditor	currentEditor = SelectedFicheEditor;
+
+				bool	showCurrentEditor = false;
+				if ( previousEditor != currentEditor ) {
+					// Hide previous editor
+					if ( previousEditor != null ) {
+						if ( previousEditor.EditorForm.Visible ) {
+							previousEditor.EditorForm.Hide();
+							showCurrentEditor = true;
+						}
+						previousEditor.EditedFiche = null;
+					}
+				}
+
+				if ( currentEditor != null ) {
+					// Assign the new fiche
+					currentEditor.EditedFiche = m_selectedFiche;
+					if ( showCurrentEditor && !currentEditor.EditorForm.Visible )
+						currentEditor.EditorForm.Show( this );
+				}
+			}
+		}
+
+		/// <summary>
+		/// Gets the editor used to edit the currentyl selected fiche
+		/// </summary>
+		public IFicheEditor			SelectedFicheEditor {
+			get { return GetEditorForFiche( m_selectedFiche ); }
+		}
+		public IFicheEditor			GetEditorForFiche( Fiche _fiche ) {
+			if ( _fiche == null )
+				return null;	// No fiche = no editor
+
+			switch ( _fiche.Type ) {
+				case Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE:
+					return m_ficheWebPageAnnotatorForm;
+
+				case Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE:
+				case Fiche.TYPE.LOCAL_FILE:
+					return m_ficheWebPageEditorForm;
+			}
+
+			throw new Exception( "No editor for fiche type!" );
+		}
 
 		#endregion
 
@@ -241,9 +302,14 @@ this.TopMost = false;
 
 				m_ficheWebPageEditorForm = new FicheWebPageEditorForm( this );
 				m_ficheWebPageEditorForm.Visible = false;
+				m_ficheWebPageEditorForm.VisibleChanged += ficheWebPageEditorForm_VisibleChanged;
 
 				m_ficheWebPageAnnotatorForm = new FicheWebPageAnnotatorForm( this );
 				m_ficheWebPageAnnotatorForm.Visible = false;
+				m_ficheWebPageAnnotatorForm.VisibleChanged += ficheWebPageAnnotatorForm_VisibleChanged;
+
+				m_fastTaggerForm = new FastTaggerForm( this );
+				m_fastTaggerForm.Visible = false;
 
 				m_notificationForm = new NotificationForm( this );
 				m_notificationForm.Visible = false;
@@ -456,7 +522,7 @@ this.TopMost = false;
 					this.SetDesktopBounds( screen.Bounds.X, screen.Bounds.Y, screen.Bounds.Width, screen.Bounds.Height );
 					m_device.ResizeSwapChain( (uint) screen.Bounds.Width, (uint) screen.Bounds.Height );
 
-					this.TopMost = true;
+//					this.TopMost = true;
 
 				} catch ( Exception _e ) {
 					MessageBox( "Error while changing window's location and size!", _e );
@@ -518,6 +584,8 @@ this.TopMost = false;
 
 		#region Fishing Mode
 
+// Check https://stackoverflow.com/questions/4964205/non-transparent-click-through-form-in-net
+
 		bool	m_fishing = false;
 
 		/// <summary>
@@ -576,25 +644,19 @@ this.TopMost = false;
 							break;
 
 						case PreferencesForm.Shortcut.SHORTCUT.PASTE:
-							// Create quick fiche & ask for tags in a very light way
+							// Create a quick fiche & ask for tags in a very light way
 							try {
 								IDataObject	clipboardData = Clipboard.GetDataObject();
 								Fiche	fiche = m_database.Sync_CreateFicheFromClipboard( clipboardData );
 
-								FastTaggerForm	F = new FastTaggerForm( this, new Fiche[] { fiche } );
-												//F.Location = this.Location + this.Size - F.Size;	// Bottom-right of the screen
-												F.CenterOnPoint( Control.MousePosition );			// Center on mouse
-												F.Show( this );
+								SelectedFiche = fiche;
 
-								// Make it the last edited fiche
-								switch ( fiche.Type ) {
-									case Fiche.TYPE.LOCAL_FILE:
-									case Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE:
-										m_ficheWebPageEditorForm.EditedFiche = fiche;
-										break;
-									case Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE:
-										m_ficheWebPageAnnotatorForm.EditedFiche = fiche;
-										break;
+								if ( SelectedFicheEditor.EditorForm.Visible == false ) {
+									m_fastTaggerForm.Fiches = new Fiche[] { fiche };
+//									m_fastTaggerFormF.Location = this.Location + this.Size - F.Size;	// Bottom-right of the screen
+									m_fastTaggerForm.CenterOnPoint( Control.MousePosition );			// Center on mouse
+									if ( !m_fastTaggerForm.Visible )
+										m_fastTaggerForm.Show( this );
 								}
 
 							} catch ( Exception _e ) {
@@ -607,11 +669,6 @@ this.TopMost = false;
 							// Show and create a new empty editable fiche
 							try {
  								Fiche	fiche = m_database.Sync_CreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, "New Fiche", null, null, null );
-
-// FastTaggerForm	F = new FastTaggerForm( this, new Fiche[] { fiche } );
-// F.Show( this );
-// //F.Location = this.Location + this.Size - F.Size;	// Bottom-right of the screen
-// F.CenterOnPoint( Control.MousePosition );			// Center on mouse
 
 								// Make it the last edited fiche
 								m_ficheWebPageEditorForm.EditedFiche = fiche;
@@ -721,7 +778,20 @@ this.TopMost = false;
 				m_preferenceForm.Show( this );
 		}
 
-		void	ToggleShowFicheEditor() {
+		bool	ToggleShowFicheEditor() {
+			if ( SelectedFicheEditor == null )
+				return false;
+
+			Form	currentEditor = SelectedFicheEditor.EditorForm;
+			if ( currentEditor.Visible )
+				currentEditor.Hide();
+			else
+				currentEditor.Show( this );
+
+			return true;
+		}
+
+		void	ToggleShowFichePageEditor() {
 			if ( m_ficheWebPageEditorForm.Visible )
 				m_ficheWebPageEditorForm.Hide();
 			else
@@ -856,12 +926,12 @@ database_Log( FichesDB.LOG_TYPE.ERROR, _error );
 // 					break;
 			}
 
-			if ( e.KeyCode == m_preferenceForm.SHORTCUT_KEY ) {
+			if ( e.KeyCode == m_preferenceForm.ShortcutKey ) {
 				ToggleShowPreferences();
- 			} else if ( e.KeyCode == m_ficheWebPageEditorForm.SHORTCUT_KEY ) {
- 				ToggleShowFicheEditor();
- 			} else if ( e.KeyCode == m_ficheWebPageAnnotatorForm.SHORTCUT_KEY ) {
- 				ToggleShowFicheAnnotator();
+ 			} else if ( e.KeyCode == m_ficheWebPageEditorForm.ShortcutKey ) {
+				// Here we're assuming all editors have the same shortcut, we'll toggle them depending on the currently selected fiche
+				if ( !ToggleShowFicheEditor() )
+ 					ToggleShowFicheAnnotator();	// If we have no currently selected fiche (and thus no editor) then toggle annotator
 			}
 
 //Debug( e.KeyCode.ToString() );
@@ -990,6 +1060,16 @@ database_Log( FichesDB.LOG_TYPE.ERROR, _error );
 			// Update database & UI
 			m_database.OnIdle();
 			m_notificationForm.Animate();
+		}
+
+		private void ficheWebPageAnnotatorForm_VisibleChanged(object sender, EventArgs e) {
+			if ( m_ficheWebPageAnnotatorForm.Visible )
+				m_fastTaggerForm.Hide();	// If a better form is opened
+		}
+
+		private void ficheWebPageEditorForm_VisibleChanged(object sender, EventArgs e) {
+			if ( m_ficheWebPageEditorForm.Visible )
+				m_fastTaggerForm.Hide();
 		}
 
 		#endregion

@@ -93,6 +93,7 @@
     <Compile Include="Forms\FicheWebPageAnnotatorForm.Designer.cs">
       <DependentUpon>FicheWebPageAnnotatorForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\IFicheEditor.cs" />
     <Compile Include="Forms\LogForm.cs">
       <SubType>Form</SubType>
     </Compile>

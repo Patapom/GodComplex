@@ -11,7 +11,7 @@ using System.IO;
 
 namespace Brain2 {
 
-	public partial class FicheWebPageEditorForm : Brain2.ModelessForm {
+	public partial class FicheWebPageEditorForm : Brain2.ModelessForm, IFicheEditor {
 
 		#region CONSTANTS
 
@@ -27,8 +27,9 @@ namespace Brain2 {
 
 		protected override bool Sizeable => true;
 		protected override bool CloseOnEscape => false;
-		public override Keys SHORTCUT_KEY => Keys.F5;
+		public override Keys ShortcutKey => Keys.F5;
 
+		public Form			EditorForm { get {return this; } }
 		public Fiche		EditedFiche {
 			get { return m_fiche; }
 			set {
@@ -81,13 +82,13 @@ namespace Brain2 {
 		}
 
 		private void webEditor_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
-			if ( e.KeyCode == Keys.Escape || e.KeyCode == SHORTCUT_KEY ) {
+			if ( e.KeyCode == Keys.Escape || e.KeyCode == this.ShortcutKey ) {
 				Hide();
 			}
 		}
 
 		protected override void InternalDispose() {
-			throw new Exception( "TODO!" );
+//			throw new Exception( "TODO!" );
 		}
 
 		#endregion

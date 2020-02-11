@@ -28,7 +28,7 @@ namespace Brain2 {
 
 		protected override bool Sizeable => false;
 		protected override bool CloseOnEscape => false;
-		public override Keys SHORTCUT_KEY => Keys.F9;
+		public override Keys ShortcutKey => Keys.F9;
 
 		public string		RootDBFolder {
 			get { return textBoxDatabaseRoot.Text; }
@@ -696,9 +696,11 @@ BrainForm.LogWarning( "Fiche with URL " + existingFiche.URL + " already exists! 
 //							m_database.Async_LoadContentAndSaveFiche( m_fiche, true );
 
 							m_fiche = URLHandler.CreateURLFiche( m_database, m_name, m_URL );
-							m_fiche.GUID = m_GUID;
- 							m_fiche.CreationTime = m_dateAdded;
-							m_fiche.AddTags( parents.ToArray() );
+							if ( m_fiche != null ) {
+								m_fiche.GUID = m_GUID;
+ 								m_fiche.CreationTime = m_dateAdded;
+								m_fiche.AddTags( parents.ToArray() );
+							}
 
 							break;
 						}

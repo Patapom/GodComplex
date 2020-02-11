@@ -213,11 +213,11 @@ namespace Brain2 {
 		}
 
 		// Code from https://stackoverflow.com/questions/21894343/enable-disable-activation-of-a-form
-		private const int WS_EX_NOACTIVATE = 0x08000000;
 		protected override CreateParams CreateParams {
 			get {
 				CreateParams	createParams = base.CreateParams;
-								createParams.ExStyle |= WS_EX_NOACTIVATE;
+								createParams.ExStyle |= Interop.WS_EX_NOACTIVATE;
+								createParams.ExStyle |= Interop.WS_EX_TRANSPARENT;
 				return createParams;
 			}
 		}

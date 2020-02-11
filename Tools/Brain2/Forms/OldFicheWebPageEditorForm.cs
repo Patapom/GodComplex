@@ -27,7 +27,7 @@ namespace Brain2 {
 
 		protected override bool Sizeable => true;
 		protected override bool CloseOnEscape => false;
-		public override Keys SHORTCUT_KEY => Keys.F5;
+		public override Keys ShortcutKey => Keys.F5;
 
 		public Fiche		EditedFiche {
 			get { return m_fiche; }
@@ -81,7 +81,7 @@ namespace Brain2 {
 		}
 
 		private void webEditor_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
-			if ( e.KeyCode == Keys.Escape || e.KeyCode == SHORTCUT_KEY ) {
+			if ( e.KeyCode == Keys.Escape || e.KeyCode == this.ShortcutKey ) {
 				Hide();
 			}
 		}
