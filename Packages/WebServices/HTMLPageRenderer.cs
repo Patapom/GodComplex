@@ -94,12 +94,13 @@ namespace WebServices {
 
 		#region FIELDS
 
-		private int					m_Time_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for 5s
-		private int					m_time_ms_ScrollDown = 250;				// Wait for 100ms before taking a screenshot after a page scroll
+		private int					m_time_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for 5s
+		private int					m_time_ms_ScrollDownPrepare = 250;		// Wait for 250ms before taking a screenshot after a page scroll on ROUND 1
+		private int					m_time_ms_ScrollDown = 100;				// Wait for 100ms before taking a screenshot after a page scroll on ROUND 2
 
-		private int					m_TimeOut_ms_JavascriptNoRender = 1000;	// Default timeout after 1s of a JS command that doesn't trigger a new rendering
-		private int					m_TimeOut_ms_PageRender = 30000;		// Default timeout after 30s for a page rendering
-		private int					m_TimeOut_ms_Screenshot = 10000;			// Default timeout after 1s for a screenshot
+		private int					m_timeOut_ms_JavascriptNoRender = 1000;	// Default timeout after 1s of a JS command that doesn't trigger a new rendering
+		private int					m_timeOut_ms_PageRender = 30000;		// Default timeout after 30s for a page rendering
+		private int					m_timeOut_ms_Screenshot = 10000;		// Default timeout after 1s for a screenshot
 
 		private ChromiumWebBrowser	m_browser = null;
 
@@ -180,7 +181,7 @@ Log( LOG_TYPE.DEBUG, "browser_BrowserInitialized" );
 			m_browser.Load( m_URL );
 
 			// Execute waiting task
-//			var	T = ExecuteTaskOrTimeOut( WaitForPageRendered(), m_TimeOut_ms_PageRender );
+//			var	T = ExecuteTaskOrTimeOut( WaitForPageRendered(), m_timeOut_ms_PageRender );
 			Task	T = new Task( WaitForPageRendered );
 					T.Start();
 		}
@@ -224,7 +225,7 @@ Log( LOG_TYPE.DEBUG, _eventType );
 		/// </summary>
 		async void	WaitForPageRendered() {
 			// Wait until the page is stable a first time...
-			await WaitForStablePage( "WaitForPageRendered() => Wait before qurying content" );
+			await WaitForStablePage( "WaitForPageRendered() => Wait before querying content" );
 
 			// First query the HTML source code and DOM content
 			await QueryContent();
@@ -282,6 +283,10 @@ Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 			}
 		}
 
+		string	JSCodeScroll( uint _Y ) {
+			return "(function() { window.scrollTo( 0," +_Y + " ); })();";
+		}
+
 		/// <summary>
 		/// Do multiple screenshots to capture the entire page
 		/// </summary>
@@ -294,44 +299,47 @@ Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 			try {
 				// Code from https://github.com/WildGenie/OSIRTv2/blob/3e60d3ce908a1d25a7b4633dc9afdd53256cbb4f/OSIRT/Browser/MainBrowser.cs#L300
 //				await m_browser.GetBrowser().MainFrame.EvaluateScriptAsync("(function() { document.documentElement.style.overflow = 'hidden'; })();");
-//				await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( "(function() { document.documentElement.style.overflow = 'hidden'; })();" ), m_TimeOut_ms_JavascriptNoRender );
-				await ExecuteJS( "(function() { document.documentElement.style.overflow = 'hidden'; })();" );
+//				await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( "(function() { document.documentElement.style.overflow = 'hidden'; })();" ), m_timeOut_ms_JavascriptNoRender );
+
+//				await ExecuteJS( "(function() { document.documentElement.style.overflow = 'hidden'; })();" );
 
 				//////////////////////////////////////////////////////////////////////////
 				/// Execute a first rounde to "prep the page"
 				/// 
 				if ( _scrollsCount > 1 ) {
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting {0} scrollings", _scrollsCount );
 					for ( uint scrollIndex=0; scrollIndex < _scrollsCount; scrollIndex++ ) {
 
 						try {
 							/// Request a screenshot
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting screenshot {0}", scrollIndex );
+// Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting screenshot {0}", scrollIndex );
 
- 							await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" );
+ 							Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
+							task.Dispose();
 
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
+// Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
 							//////////////////////////////////////////////////////////////////////////
 							/// Scroll down the page
 							if ( scrollIndex < _scrollsCount-1 ) {
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting scrolling..." );
-								await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();", m_time_ms_ScrollDown );
+// Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting scrolling..." );
+								await ExecuteJS( JSCodeScroll( (uint) ((scrollIndex+1) * viewportHeight) ), m_time_ms_ScrollDownPrepare );
 							}
 
 						} catch ( TimeoutException _e ) {
-Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) TIMEOUT EXCEPTION! " + _e.Message );
+// Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) TIMEOUT EXCEPTION! " + _e.Message );
 //							throw new Exception( "Page rendering timed out" );
 //m_pageError()
 						} catch ( Exception _e ) {
-Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
+// Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 						}
 					}
 
 					// Do another screenshot
- 					await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" );
+ 					await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" );
 
 					// Scroll all the way back up
-					await ExecuteJS( "(function() { window.scroll( 0, 0 ); })();", m_time_ms_ScrollDown );
+					await ExecuteJS( JSCodeScroll( 0 ), m_time_ms_ScrollDownPrepare );
 				}
 
 				//////////////////////////////////////////////////////////////////////////
@@ -345,9 +353,9 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting screenshot {0}", scrollIndex );
 
 // 						Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync();
-// 						if ( (await Task.WhenAny( task, Task.Delay( m_TimeOut_ms_PageRender ) )) == task ) {
+// 						if ( (await Task.WhenAny( task, Task.Delay( m_timeOut_ms_PageRender ) )) == task ) {
 
- 						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_TimeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
+ 						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
 
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
@@ -356,7 +364,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						if ( remainingHeight < bitmap.Height ) {
 							// Clip bitmap and keep only the last relevant lines
 							if ( remainingHeight < 16 ) {
-								bitmap = null;
+								bitmap = null;	// Ignore super small slices
 							} else {
 								using ( System.Drawing.Bitmap oldBitmap = bitmap ) {
 									bitmap = new System.Drawing.Bitmap( oldBitmap.Width, (int) remainingHeight, oldBitmap.PixelFormat );
@@ -364,13 +372,6 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 										G.DrawImage( oldBitmap, 0, remainingHeight - oldBitmap.Height );
 									}
 								}
-//using (Bitmap src = GetCurrentViewScreenshot())
-// 						using (Bitmap target = new Bitmap(cropRect.Width, cropRect.Height))
-// 						using (Graphics g = Graphics.FromImage(target))
-// 						{
-// 							g.DrawImage(src, new Rectangle(0, 0, target.Width, target.Height), cropRect, GraphicsUnit.Pixel);
-// 							cache.AddImage(count, target);
-// 						}								}
 							}
 						}
 
@@ -381,15 +382,15 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 							} catch ( Exception _e ) {
 								throw new Exception( "Failed to create image from web page bitmap: \r\n" + _e.Message, _e );
 							} finally {
-								task.Result.Dispose();	// Always dispose of the bitmap anyway!
+								bitmap.Dispose();	// Always dispose of the bitmap anyway!
 							}
 						}
 
 						//////////////////////////////////////////////////////////////////////////
 						/// Scroll down the page
 						if ( scrollIndex < _scrollsCount-1 ) {
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting scrolling..." );
-							await ExecuteJS( "(function() { window.scroll(0," + ((scrollIndex+1) * viewportHeight) + "); })();", m_time_ms_ScrollDown );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting scrolling to position {0}...", ((scrollIndex+1) * viewportHeight) );
+							await ExecuteJS( JSCodeScroll( (uint) ((scrollIndex+1) * viewportHeight) ), m_time_ms_ScrollDown );
 						}
 
 					} catch ( TimeoutException _e ) {
@@ -429,7 +430,7 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 			return await ExecuteJS( _JS, 0 );
 		}
 		async Task<JavascriptResponse>	ExecuteJS( string _JS, int _delay_ms ) {
-			Task<JavascriptResponse>	task = (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS, null ), m_TimeOut_ms_JavascriptNoRender, "EvaluateScriptAsync " + _JS )) as Task<JavascriptResponse>;
+			Task<JavascriptResponse>	task = (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS, null ), m_timeOut_ms_JavascriptNoRender, "EvaluateScriptAsync " + _JS )) as Task<JavascriptResponse>;
 
 			if ( _delay_ms > 0 ) {
 				await Task.Delay( _delay_ms );
@@ -446,7 +447,7 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Waiting {1}", _waiter, counter++ );
 
 				double	elapsedTimeSinceLastPageEvent = m_hasPageEvents ? (DateTime.Now - m_lastPageEvent).TotalMilliseconds : 0;
-				if ( elapsedTimeSinceLastPageEvent > m_Time_ms_StablePage )
+				if ( elapsedTimeSinceLastPageEvent > m_time_ms_StablePage )
 					return;	// Page seems stable enough...
 
 //				Application.DoEvents();
@@ -457,7 +458,7 @@ Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Exiting after {1} loops!"
 		}
 
 		async Task	WaitForStablePage( string _waiter ) {
-			await ExecuteTaskOrTimeOut( AsyncWaitForStablePage( _waiter ), m_TimeOut_ms_PageRender, "AsyncWaitForStablePage()" );
+			await ExecuteTaskOrTimeOut( AsyncWaitForStablePage( _waiter ), m_timeOut_ms_PageRender, "AsyncWaitForStablePage()" );
 		}
 
 		public void Dispose() {
