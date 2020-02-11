@@ -95,8 +95,7 @@ namespace WebServices {
 		#region FIELDS
 
 		private int					m_time_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for 5s
-		private int					m_time_ms_ScrollDownPrepare = 250;		// Wait for 250ms before taking a screenshot after a page scroll on ROUND 1
-		private int					m_time_ms_ScrollDown = 100;				// Wait for 100ms before taking a screenshot after a page scroll on ROUND 2
+		private int					m_time_ms_ScrollDown = 250;				// Wait for 250ms before taking a screenshot after a page scroll on ROUND 2
 
 		private int					m_timeOut_ms_JavascriptNoRender = 1000;	// Default timeout after 1s of a JS command that doesn't trigger a new rendering
 		private int					m_timeOut_ms_PageRender = 30000;		// Default timeout after 30s for a page rendering
@@ -323,7 +322,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting {0} scrollings", _
 							/// Scroll down the page
 							if ( scrollIndex < _scrollsCount-1 ) {
 // Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting scrolling..." );
-								await ExecuteJS( JSCodeScroll( (uint) ((scrollIndex+1) * viewportHeight) ), m_time_ms_ScrollDownPrepare );
+								await ExecuteJS( JSCodeScroll( (uint) ((scrollIndex+1) * viewportHeight) ), m_time_ms_ScrollDown );
 							}
 
 						} catch ( TimeoutException _e ) {
@@ -339,7 +338,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting {0} scrollings", _
  					await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" );
 
 					// Scroll all the way back up
-					await ExecuteJS( JSCodeScroll( 0 ), m_time_ms_ScrollDownPrepare );
+					await ExecuteJS( JSCodeScroll( 0 ), m_time_ms_ScrollDown );
 				}
 
 				//////////////////////////////////////////////////////////////////////////
