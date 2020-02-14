@@ -135,6 +135,18 @@ namespace Brain2 {
 			_hMonitor = MonitorFromPoint( pt, MONITOR_DEFAULTTONEAREST );
 		}
 
+		public static Rectangle	GetDesktopBounds() {
+			Point	min = new Point(  10000,  10000 );
+			Point	max = new Point( -10000, -10000 );
+			foreach ( Screen screen in Screen.AllScreens ) {
+				min.X = Math.Min( min.X, screen.Bounds.X );
+				min.Y = Math.Min( min.Y, screen.Bounds.Y );
+				max.X = Math.Max( max.X, screen.Bounds.Right );
+				max.Y = Math.Max( max.Y, screen.Bounds.Bottom );
+			}
+			return new Rectangle( min.X, min.Y, max.X - min.X, max.Y - min.Y );
+		}
+
 		#endregion
 
 		#region Hot Key Management

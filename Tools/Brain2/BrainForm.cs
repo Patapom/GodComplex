@@ -78,7 +78,7 @@ namespace Brain2 {
 		DateTime					m_lastFrameTime;
 
 		// Modeless forms
-		LogForm						m_logForm = new LogForm();
+		LogForm						m_logForm = null;
 
 		bool						m_showPreferenceFormOnShowMain = false;
 		PreferencesForm				m_preferenceForm = null;
@@ -295,7 +295,12 @@ this.TopMost = false;
 				Fiche.ChunkWebPageSnapshot.ms_defaultWebPageHeight = (uint) primaryScreenRect.Height;
 				Fiche.ChunkWebPageSnapshot.ms_maxWebPagePieces = (uint) Math.Ceiling( 20000.0 / primaryScreenRect.Height );
 
+				Rectangle	desktopBounds = Interop.GetDesktopBounds();
+
 				// Create the modeless forms
+				m_logForm = new LogForm();
+				m_logForm.Location = new Point( desktopBounds.Right - m_logForm.Width, desktopBounds.Bottom - m_logForm.Height );	// Spawn in bottom-right corner of the desktop to avoid being annoying...
+
 				m_preferenceForm = new PreferencesForm( this );
 				m_preferenceForm.RootDBFolderChanged += preferenceForm_RootDBFolderChanged;
 				m_preferenceForm.Visible = false;

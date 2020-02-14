@@ -226,10 +226,9 @@ Log( LOG_TYPE.DEBUG, _eventType );
 			// Wait until the page is stable a first time...
 			await WaitForStablePage( "WaitForPageRendered() => Wait before querying content" );
 
-			// First query the HTML source code and DOM content
-			await QueryContent();
-
+			//////////////////////////////////////////////////////////////////////////
 			// Ask for the page's height (not always reliable, especially on infinite scrolling feeds like facebook or twitter!)
+			//
 			JavascriptResponse	JSResult = await ExecuteJS( "(function() { var body = document.body, html = document.documentElement; return Math.max( body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight ); } )();" );
 			if ( JSResult.Result == null ) {
 Log( LOG_TYPE.DEBUG, "JS scrollHeight returned null => 2nd call" );
@@ -245,12 +244,24 @@ Log( LOG_TYPE.ERROR, "JS scrollHeight returned null => Exception!" );
 			}
 			int	scrollHeight = (int) JSResult.Result;
 
+			//////////////////////////////////////////////////////////////////////////
+			// Ask for DOM content and attempt at extracting a workable viewport size
+			//
+			JSResult = await ExecuteJS( JSCodeListDOMFixedElements() );
+
+			//////////////////////////////////////////////////////////////////////////
 			// Perform as many screenshots as necessary to capture the entire page
+			//
 			int	viewportHeight = m_browser.Size.Height;
 			int	screenshotsCount = (int) Math.Ceiling( (double) scrollHeight / viewportHeight );
 Log( LOG_TYPE.DEBUG, "Page scroll height = " + scrollHeight + " - Screenshots Count = " + screenshotsCount );
 
 			await DoScreenshots( screenshotsCount, scrollHeight );
+
+			//////////////////////////////////////////////////////////////////////////
+			// Query the HTML source code and DOM content
+			//
+			await QueryContent();
 		}
 
 		/// <summary>
@@ -280,10 +291,6 @@ Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 			} catch ( Exception _e ) {
 				m_pageError( -1, "An error occurred while attempting to retrieve HTML source for URL \"" + m_URL + "\": \r\n" + _e.Message );
 			}
-		}
-
-		string	JSCodeScroll( uint _Y ) {
-			return "(function() { window.scrollTo( 0," +_Y + " ); })();";
 		}
 
 		/// <summary>
@@ -337,8 +344,8 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting {0} scrollings", _
 					// Do another screenshot
  					await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" );
 
-					// Scroll all the way back up
-					await ExecuteJS( JSCodeScroll( 0 ), m_time_ms_ScrollDown );
+					// Scroll all the way back up and wait longer
+					await ExecuteJS( JSCodeScroll( 0 ), 4 * m_time_ms_ScrollDown );
 				}
 
 				//////////////////////////////////////////////////////////////////////////
@@ -496,6 +503,140 @@ Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Exiting after {1} loops!"
 
 System.Diagnostics.Debug.WriteLine( _text );
 		}
+
+		#region Javascript Code
+
+		/// <summary>
+		/// Makes the page scroll down to the provided position
+		/// The expected return value should be undefined
+		/// </summary>
+		/// <param name="_Y"></param>
+		/// <returns></returns>
+		string	JSCodeScroll( uint _Y ) {
+			return "(function() { window.scrollTo( 0," +_Y + " ); })();";
+		}
+
+		/// <summary>
+		/// Lists all the leaf DOM elements in the document
+		/// The expected return value should be a JSON string of an array of leaf elements with information for each of them
+		/// </summary>
+		/// <returns></returns>
+		string	JSCodeListDOMLeafElements() {
+			return
+@"
+// From https://stackoverflow.com/questions/22289391/how-to-create-an-array-of-leaf-nodes-of-an-html-dom-using-javascript
+function getLeafNodes( _root ) {
+    var nodes = Array.prototype.slice.call( _root.getElementsByTagName( '*' ), 0 );
+    var leafNodes = nodes.filter( function( _element ) {
+        return !_element.hasChildNodes();
+    });
+    return leafNodes;
+}
+
+function IsFixedElement( _element ) {
+	var	position = window.getComputedStyle( leafNode ).position;
+	return position == 'sticky' || position == 'fixed';
+}
+
+(function() { 
+	// Enumerate leaf DOM elements
+	var	leafNodes = getLeafNodes( document.body );
+//return leafNodes.length;
+
+	// Query information for each
+	var	leafNodeInformation = [];
+	for ( var i=0; i < leafNodes.length; i++ ) {
+		var	leafNode = leafNodes[i];
+
+		var	leafNodeInfo = {
+			bounds : leafNode.getBoundingClientRect(),
+			fixed : IsFixedElement( leafNode ),			// True if the element is fixed
+			index : 0									// Index of the element in the DOM
+		};
+
+		leafNodeInformation.push( leafNodeInfo );
+	}
+
+	// Convert into JSON
+	return JSON.stringify( leafNodeInformation );
+} )();
+";
+		}
+
+		/// <summary>
+		/// Lists all the *fixed* DOM elements in the document
+		/// The expected return value should be a JSON string of an array of elements with that have a fixed position and their bounding rectangle
+		/// </summary>
+		/// <returns></returns>
+		string	JSCodeListDOMFixedElements() {
+			return
+@"
+// From https://stackoverflow.com/questions/22289391/how-to-create-an-array-of-leaf-nodes-of-an-html-dom-using-javascript
+function getLeafNodes( _root ) {
+    var nodes = Array.prototype.slice.call( _root.getElementsByTagName( '*' ), 0 );
+    var leafNodes = nodes.filter( function( _element ) {
+        return !_element.hasChildNodes();
+    });
+    return leafNodes;
+}
+
+function IsFixedElement( _element ) {
+	var	position = window.getComputedStyle( leafNode ).position;
+	return position == 'sticky' || position == 'fixed';
+}
+
+function GetParentFixedElement( _element ) {
+	if ( _element == null )
+		return null;
+
+	if ( IsFixedElement( _element ) )
+		return _element;
+
+	return GetParentFixedElement( _element.parentNode );
+}
+
+(function() { 
+	// Enumerate leaf DOM elements
+	var	leafNodes = getLeafNodes( document.body );
+//return leafNodes.length;
+
+	// Query information for each
+	var	leafNodeInformation = [];
+	for ( var i=0; i < leafNodes.length; i++ ) {
+		var	leafNode = leafNodes[i];
+		var	fixedParentNode = GetParentFixedElement( leafNode );
+		if ( fixedParentNode == null )
+			continue;	// Not a fixed node
+
+		var	leafNodeInfo = {
+			bounds : fixedParentNode.getBoundingClientRect(),
+		};
+
+		leafNodeInformation.push( leafNodeInfo );
+	}
+
+	// Convert into JSON
+	return JSON.stringify( leafNodeInformation );
+} )();
+";
+		}
+
+		/// Récupère un DOM element via son selector
+		/// document.querySelector( "selector" )
+		///
+		/// Récupère les child elements
+		/// document.querySelector( "selector" ).children
+		/// 
+		/// Récupère le bounding rect
+		/// document.querySelector( "selector" ).getBoundingClientRect()
+		///
+		/// Exemple de selector:
+		/// "#react-root > div > div > div > main > div > div > div > div.css-1dbjc4n.r-14lw9ot.r-1tlfku8.r-1ljd8xs.r-13l2t4g.r-1phboty.r-1jgb5lz.r-11wrixw.r-61z16t.r-1ye8kvj.r-13qz1uu.r-184en5c > div > div.css-1dbjc4n.r-aqfbo4.r-14lw9ot.r-my5ep6.r-rull8r.r-qklmqi.r-gtdqiz.r-ipm5af.r-1g40b8q"
+
+
+
+
+		#endregion
 
 		#endregion
 	}

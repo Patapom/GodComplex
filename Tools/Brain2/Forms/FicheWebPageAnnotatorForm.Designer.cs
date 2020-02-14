@@ -55,7 +55,7 @@
 			this.richTextBoxTitle.Multiline = false;
 			this.richTextBoxTitle.Name = "richTextBoxTitle";
 			this.richTextBoxTitle.Size = new System.Drawing.Size(934, 26);
-			this.richTextBoxTitle.TabIndex = 0;
+			this.richTextBoxTitle.TabIndex = 1;
 			this.richTextBoxTitle.Text = "";
 			// 
 			// label2
@@ -91,7 +91,7 @@
 			this.tagEditBox.OwnerForm = null;
 			this.tagEditBox.RecognizedTags = new Brain2.Fiche[0];
 			this.tagEditBox.Size = new System.Drawing.Size(960, 26);
-			this.tagEditBox.TabIndex = 2;
+			this.tagEditBox.TabIndex = 0;
 			this.tagEditBox.TabStop = true;
 			// 
 			// richTextBoxURL
