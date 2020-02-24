@@ -333,9 +333,13 @@ this.TopMost = false;
 					}
 				}
 
-				m_database.LoadFichesDescription( rootDBFolder );
+				m_database.LoadFichesDescriptions( rootDBFolder );
 
-			} catch ( FichesDB.DatabaseLoadException _e ) {
+
+SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://twitter.com/HMaler/status/1217484876372480008" ) );
+
+			}
+			catch ( FichesDB.DatabaseLoadException _e ) {
 				// Log errors...
 				foreach ( Exception e in _e.m_errors ) {
 					LogError( e );
@@ -656,7 +660,7 @@ this.TopMost = false;
 
 								SelectedFiche = fiche;
 
-								if ( SelectedFicheEditor.EditorForm.Visible == false ) {
+								if ( !SelectedFicheEditor.EditorForm.Visible ) {
 									m_fastTaggerForm.Fiches = new Fiche[] { fiche };
 //									m_fastTaggerFormF.Location = this.Location + this.Size - F.Size;	// Bottom-right of the screen
 									m_fastTaggerForm.CenterOnPoint( Control.MousePosition );			// Center on mouse

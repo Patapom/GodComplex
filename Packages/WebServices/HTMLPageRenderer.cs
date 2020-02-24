@@ -248,6 +248,14 @@ Log( LOG_TYPE.ERROR, "JS scrollHeight returned null => Exception!" );
 			// Ask for DOM content and attempt at extracting a workable viewport size
 			//
 			JSResult = await ExecuteJS( JSCodeListDOMFixedElements() );
+			if ( JSResult.Success && JSResult.Result is string ) {
+				JSON			parser = new JSON();
+				JSON.JSONObject	root = null;
+				using ( System.IO.StringReader R = new System.IO.StringReader( JSResult.Result as string ) ) {
+					root = parser.ReadJSON( R );
+					écrire des fonctions d'accès simples genre root["path.truc.bidule"]
+				}
+			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Perform as many screenshots as necessary to capture the entire page
@@ -333,11 +341,11 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting {0} scrollings", _
 							}
 
 						} catch ( TimeoutException _e ) {
-// Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) TIMEOUT EXCEPTION! " + _e.Message );
+Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) TIMEOUT EXCEPTION! " + _e.Message );
 //							throw new Exception( "Page rendering timed out" );
 //m_pageError()
 						} catch ( Exception _e ) {
-// Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
+Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 						}
 					}
 
@@ -569,8 +577,54 @@ function IsFixedElement( _element ) {
 		/// </summary>
 		/// <returns></returns>
 		string	JSCodeListDOMFixedElements() {
-			return
-@"
+return @"
+// This function is used to know if an element is set with a 'fixed' position, which is what we're looking for: fixed elements that may block the viewport
+function IsFixedElement( _element ) {
+	var	position = window.getComputedStyle( _element ).position;
+	return position == 'sticky' || position == 'fixed';
+}
+
+function RecurseGetFixedNodes( _element ) {
+	if ( IsFixedElement( _element ) )
+		return [ _element ];
+
+	// Query information for each child
+	var	childNodes = _element.children;
+	var	fixedChildNodes = [];
+	for ( var i=0; i < childNodes.length; i++ ) {
+		fixedChildNodes = fixedChildNodes.concat( RecurseGetFixedNodes( childNodes[i] ) );
+	}
+
+	return fixedChildNodes;
+}
+
+(function() { 
+	// Recursively enumerate fixed DOM elements
+	var	leafNodes = RecurseGetFixedNodes( document.body );
+//return leafNodes.length;
+
+	// Query information for each
+	var	leafNodeInformation = [];
+	for ( var i=0; i < leafNodes.length; i++ ) {
+		var	leafNode = leafNodes[i];
+		var	nodeBounds = leafNode.getBoundingClientRect();
+
+		var	leafNodeInfo = {
+			bounds : { x: nodeBounds.x, y: nodeBounds.y, w: nodeBounds.width, h: nodeBounds.height },
+		};
+
+		leafNodeInformation.push( leafNodeInfo );
+	}
+
+	// Convert into JSON
+	return JSON.stringify( leafNodeInformation );
+} )();
+";
+		}
+
+// Some invalid example: correctly queries leaves but useless since we need to climb back up!
+		string	JSCodeListDOMFixedElements_GetLeavesThenGoBackUp() {
+			return @"
 // From https://stackoverflow.com/questions/22289391/how-to-create-an-array-of-leaf-nodes-of-an-html-dom-using-javascript
 function getLeafNodes( _root ) {
     var nodes = Array.prototype.slice.call( _root.getElementsByTagName( '*' ), 0 );
@@ -581,7 +635,7 @@ function getLeafNodes( _root ) {
 }
 
 function IsFixedElement( _element ) {
-	var	position = window.getComputedStyle( leafNode ).position;
+	var	position = window.getComputedStyle( _element ).position;
 	return position == 'sticky' || position == 'fixed';
 }
 

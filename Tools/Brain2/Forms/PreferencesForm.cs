@@ -289,236 +289,13 @@ namespace Brain2 {
 			}
 		}
 
-		#region JSON Parsing
-
-		enum JSONState {
-			ROOT,
-			DICTIONARY_EXPECT_KEY,
-			DICTIONARY_EXPECT_VALUE,
-			DICTIONARY_EXPECT_KEY_SEPARATOR,			// Read key, expecting separator
-			DICTIONARY_EXPECT_VALUE_SEPARATOR_OR_END,	// Read value, expecting separator or collection end
-			ARRAY_EXPECT_ELEMENT,
-			ARRAY_EXPECT_SEPARATOR_OR_END,
-		}
-		[System.Diagnostics.DebuggerDisplay( "{m_state} Object={m_object}" )]
-		class JSONObject {
-			public JSONObject	m_previous = null;
-			public JSONState	m_state;
-			public object		m_object = null;
-			public string		m_currentKey = null;	// Last parsed key when parsing collections
-			public JSONObject( JSONObject _previous, JSONState _newState, object _object ) {
-				m_previous = _previous;
-				m_state = _newState;
-				m_object = _object;
-			}
-
-			public Dictionary<string,object>	AsDictionary { get {return m_object as Dictionary<string,object>; } }
-			public bool							IsDictionary { get { return AsDictionary != null; } }
-			public JSONObject					this[string _dictionaryKey] { get { return AsDictionary[_dictionaryKey] as JSONObject; } }
-
-			public List<object>					AsArray { get {return m_object as List<object>; } }
-			public bool							IsArray { get { return AsArray != null; } }
-			public JSONObject					this[int _index] { get { return AsArray[_index] as JSONObject; } }
-		}
-
-		JSONObject	ReadJSON( StreamReader _reader ) {
-			JSONObject	root = new JSONObject( null, JSONState.DICTIONARY_EXPECT_VALUE, new Dictionary<string,object>() );
-						root.m_currentKey = "root";
-
-// For debugging purpose => writes the stream read so far into a string so we can see where it crashed
-StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
-//StringBuilder	sb = null;
-
-			JSONObject	current = root;
-			bool		needToExit = false;
-			while ( !_reader.EndOfStream && !needToExit ) {
-				char	C = (char) _reader.Read();
-				if ( sb != null ) sb.Append( C );
-
-				switch ( C ) {
-					case '{': {
-						// Enter a new dictionary
-						JSONObject	v = new JSONObject( current, JSONState.DICTIONARY_EXPECT_KEY, new Dictionary<string,object>() );
-
-						switch ( current.m_state ) {
-							case JSONState.DICTIONARY_EXPECT_VALUE:
-								current.AsDictionary.Add( current.m_currentKey, v );
-								current.m_state = JSONState.DICTIONARY_EXPECT_VALUE_SEPARATOR_OR_END;
-								current = v;
-								break;
-
-							case JSONState.ARRAY_EXPECT_ELEMENT:
-								current.AsArray.Add( v );
-								current.m_state = JSONState.ARRAY_EXPECT_SEPARATOR_OR_END;
-								current = v;
-								break;
-
-							default:
-								throw new Exception( "Encountered dictionary while not expecting a value!" );
-						}
-						break;
-					}
-
-					case '}': {
-						if ( current.m_state != JSONState.DICTIONARY_EXPECT_KEY && current.m_state != JSONState.DICTIONARY_EXPECT_VALUE_SEPARATOR_OR_END )
-							throw new Exception( "Exiting a collection early!" );
-						current = current.m_previous;	// Restore previous object
-						break;
-					}
-
-					case '[': {
-						if ( current.m_state != JSONState.DICTIONARY_EXPECT_VALUE )
-							throw new Exception( "Encountered array while not expecting a value!" );
-
-						// Enter a new array
-						current = new JSONObject( current, JSONState.ARRAY_EXPECT_ELEMENT, new List<object>() );
-						break;
-					}
-
-					case ']': {
-						if ( current.m_state != JSONState.ARRAY_EXPECT_ELEMENT && current.m_state != JSONState.ARRAY_EXPECT_SEPARATOR_OR_END )
-							throw new Exception( "Exiting an array early!!" );
-
-						JSONObject	value = current;
-
-						// Restore previous object
-						current = current.m_previous;
-						if ( current.m_state != JSONState.DICTIONARY_EXPECT_VALUE )
-							throw new Exception( "Finished parsing an array that is not an expected value!" );
-
-						// Just parsed an array value
-						current.AsDictionary.Add( current.m_currentKey, value );
-						current.m_state = JSONState.DICTIONARY_EXPECT_VALUE_SEPARATOR_OR_END;
-						current.m_currentKey = null;
-						break;
-					}
-
-					case ' ':
-					case '\t':
-					case '\r':
-					case '\n':
-						// Just skip...
-						break;
-
-					case ':':
-						if ( current.m_state != JSONState.DICTIONARY_EXPECT_KEY_SEPARATOR )
-							throw new Exception( "Encountered separator not in dictionary!" );
-
-						// Now expecting a value!
-						current.m_state = JSONState.DICTIONARY_EXPECT_VALUE;
-						break;
-
-					case ',':
-						switch ( current.m_state ) {
-							case JSONState.DICTIONARY_EXPECT_VALUE_SEPARATOR_OR_END:
-								// Now expecting a key again!
-								current.m_state = JSONState.DICTIONARY_EXPECT_KEY;
-								break;
-
-							case JSONState.ARRAY_EXPECT_SEPARATOR_OR_END:
-								// Now expecting an element again!
-								current.m_state = JSONState.ARRAY_EXPECT_ELEMENT;
-								break;
-
-							default:
-								throw new Exception( "Encountered separator not in dictionary!" );
-						}
-						break;
-
-					case '"': {
-						if ( current.m_state != JSONState.DICTIONARY_EXPECT_KEY && current.m_state != JSONState.DICTIONARY_EXPECT_VALUE )
-							throw new Exception( "Encountered string not in dictionary key or value state!" );
-
-						string	s = ReadString( C, _reader, sb );
-						if ( current.m_state == JSONState.DICTIONARY_EXPECT_KEY ) {
-							// Just parsed a key
-							current.m_currentKey = s;
-							current.m_state = JSONState.DICTIONARY_EXPECT_KEY_SEPARATOR;
-
-							// Handle special case of end data we don't want to parse...
-							if ( s == "sync_metadata" ) {
-								needToExit = true;	// Early exit!
-							}
-
-						} else if ( current.m_state == JSONState.DICTIONARY_EXPECT_VALUE ) {
-							// Just parsed a value
-							current.AsDictionary.Add( current.m_currentKey, s );
-							current.m_state = JSONState.DICTIONARY_EXPECT_VALUE_SEPARATOR_OR_END;
-							current.m_currentKey = null;
-						}
-						break;
-					}
-
-					case '0':
-					case '1':
-					case '2':
-					case '3':
-					case '4':
-					case '5':
-					case '6':
-					case '7':
-					case '8':
-					case '9':
-						// Ignore numbers... (only encountered when parsing the "version"
-						if ( current.m_state != JSONState.DICTIONARY_EXPECT_VALUE && current.m_state != JSONState.DICTIONARY_EXPECT_VALUE_SEPARATOR_OR_END )
-							throw new Exception( "Encountered number not in dictionary value state!" );
-						current.m_state = JSONState.DICTIONARY_EXPECT_VALUE_SEPARATOR_OR_END;
-						break;
-
-					default:
-						throw new Exception( "Unexpected character '" + C + "'!" );
-				}
-			}
-
-			return root;
-		}
-
-		StringBuilder	m_stringBuilder = new StringBuilder();
-		string	ReadString( char _firstChar, StreamReader _reader, StringBuilder _sb ) {
-			m_stringBuilder.Clear();
-
-			char	C = (char) _reader.Read();
-			while ( C != '"' ) {
-
-				if ( C == '\\' ) {
-					// Read escaped character
-					char	escaped = (char) _reader.Read();
-					switch( escaped ) {
-						case '\\': C = '\\'; break;
-						case 'r': C = '\r'; break;
-						case 'n': C = '\n'; break;
-						case '"': C = '"'; break;
-						case 't': C = '\t'; break;
-						case 'u': {
-							string	strUnicode = "" + (char) _reader.Read() + (char) _reader.Read() + (char) _reader.Read() + (char) _reader.Read();
-							int		unicode = 0;
-							if ( int.TryParse( strUnicode, System.Globalization.NumberStyles.HexNumber, Application.CurrentCulture, out unicode ) ) {
-								C = (char) unicode;
-							}
-							break;
-						}
-
-						default: throw new Exception( "Unrecognized escaped character \"" + C + escaped + "\"!" );
-					}
-				}
-
-				m_stringBuilder.Append( C );
-				if ( _sb != null ) _sb.Append( C );
-
-				C = (char) _reader.Read();
-			}
-
-			return m_stringBuilder.ToString();
-		}
-
-		#endregion
-
 		int	ImportBookmarksChrome( FileInfo _fileName, List< Fiche > _createdTags, List< Fiche > _complexNameTags ) {
 			// Attempt to parse JSON file
-			JSONObject	root = null;
+			WebServices.JSON			parser = new WebServices.JSON();
+			WebServices.JSON.JSONObject	root = null;
 			try {
 				using ( StreamReader R = _fileName.OpenText() ) {
-					root = ReadJSON( R );
+					root = parser.ReadJSON( R );
 				}
 			} catch ( Exception _e ) {
 				throw new Exception( "Failed to parse JSON file!", _e );
@@ -531,7 +308,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 			try {
 				root = root["root"]["roots"];	// Fetch the actual root
 				foreach ( object value in root.AsDictionary.Values ) {
-					JSONObject	rootFolder = value as JSONObject;
+					WebServices.JSON.JSONObject	rootFolder = value as WebServices.JSON.JSONObject;
 					if ( rootFolder != null ) {
 						// Add a new root folder containing bookmarks
 						bookmarks.Add( new Bookmark( m_owner.Database, null, rootFolder, bookmarks ) );
@@ -710,7 +487,7 @@ BrainForm.LogWarning( "Fiche with URL " + existingFiche.URL + " already exists! 
 				}
 			}
 
-			public Bookmark( FichesDB _database, Bookmark _parent, JSONObject _JSON, List< Bookmark > _bookmarks ) {
+			public Bookmark( FichesDB _database, Bookmark _parent, WebServices.JSON.JSONObject _JSON, List< Bookmark > _bookmarks ) {
 				m_database = _database;
 				m_parent = _parent;
 				if ( _JSON == null || !_JSON.IsDictionary )
@@ -750,7 +527,7 @@ BrainForm.LogWarning( "Fiche with URL " + existingFiche.URL + " already exists! 
 							break;
 
 						case "children":
-							RecurseImportBookmarks( this, dictionary[key] as JSONObject, _bookmarks );
+							RecurseImportBookmarks( this, dictionary[key] as WebServices.JSON.JSONObject, _bookmarks );
 							break;
 
 						case "type":
@@ -763,13 +540,13 @@ BrainForm.LogWarning( "Fiche with URL " + existingFiche.URL + " already exists! 
 
 						default:
 							// Try import children...
-							RecurseImportBookmarks( this, dictionary[key] as JSONObject, _bookmarks );
+							RecurseImportBookmarks( this, dictionary[key] as WebServices.JSON.JSONObject, _bookmarks );
 							break;
 					}
 				}
 			}
 
-			public void	RecurseImportBookmarks( Bookmark _parent, JSONObject _object, List< Bookmark > _bookmarks ) {
+			public void	RecurseImportBookmarks( Bookmark _parent, WebServices.JSON.JSONObject _object, List< Bookmark > _bookmarks ) {
 				if ( _object == null )
 					return;
 //					throw new Exception( "Invalid JSON object!" );
@@ -778,7 +555,7 @@ BrainForm.LogWarning( "Fiche with URL " + existingFiche.URL + " already exists! 
 					// Create all bookmark objects in the dictionary
 					Dictionary< string, object >	dictionary = _object.AsDictionary;
 					foreach ( string key in dictionary.Keys ) {
-						JSONObject	bookmarkObject = dictionary[key] as JSONObject;
+						WebServices.JSON.JSONObject	bookmarkObject = dictionary[key] as WebServices.JSON.JSONObject;
 						if ( bookmarkObject == null )
 							continue;	// Can't parse value
 
@@ -790,7 +567,7 @@ BrainForm.LogWarning( "Fiche with URL " + existingFiche.URL + " already exists! 
 					// Create all bookmark objects in the array
 					List< object >	array = _object.AsArray;
 					foreach ( object element in array ) {
-						JSONObject	bookmarkObject = element as JSONObject;
+						WebServices.JSON.JSONObject	bookmarkObject = element as WebServices.JSON.JSONObject;
 						if ( bookmarkObject == null )
 							continue;	// Can't parse value
 

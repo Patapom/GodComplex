@@ -477,7 +477,7 @@ namespace Brain2 {
 		// 				throw new Exception( "Errors while saving database:" );
 		// 		}
 
-		public void	LoadFichesDescription( DirectoryInfo _rootFolder ) {
+		public void	LoadFichesDescriptions( DirectoryInfo _rootFolder ) {
 			List< Exception >	errors = new List<Exception>();
 			try {
 				if ( _rootFolder == null || !_rootFolder.Exists )

@@ -87,6 +87,7 @@
   <ItemGroup>
     <Compile Include="HTMLPageRenderer - Copy.cs" />
     <Compile Include="HTMLPageRenderer.cs" />
+    <Compile Include="JSON.cs" />
     <Compile Include="HTTPServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
