@@ -253,7 +253,7 @@ Log( LOG_TYPE.ERROR, "JS scrollHeight returned null => Exception!" );
 				JSON.JSONObject	root = null;
 				using ( System.IO.StringReader R = new System.IO.StringReader( JSResult.Result as string ) ) {
 					root = parser.ReadJSON( R );
-					écrire des fonctions d'accès simples genre root["path.truc.bidule"]
+//					écrire des fonctions d'accès simples genre root["path.truc.bidule"]
 				}
 			}
 
@@ -577,6 +577,8 @@ function IsFixedElement( _element ) {
 		/// </summary>
 		/// <returns></returns>
 		string	JSCodeListDOMFixedElements() {
+return Properties.Resources.Test;
+/*
 return @"
 // This function is used to know if an element is set with a 'fixed' position, which is what we're looking for: fixed elements that may block the viewport
 function IsFixedElement( _element ) {
@@ -584,9 +586,18 @@ function IsFixedElement( _element ) {
 	return position == 'sticky' || position == 'fixed';
 }
 
+// Returns the top parent node that contains only this child node (meaning we stop going up to the parent if the parent has more than one child)
+function GetParentWithSingleChild( _element ) {
+	var	parent = _element.parentNode;
+	if ( parent == null || parent.children.length > 1 )
+		return _element;	// Stop at this element...
+
+	return GetParentWithSingleChild( parent );
+}
+
 function RecurseGetFixedNodes( _element ) {
 	if ( IsFixedElement( _element ) )
-		return [ _element ];
+		return [ GetParentWithSingleChild( _element ) ];
 
 	// Query information for each child
 	var	childNodes = _element.children;
@@ -598,28 +609,41 @@ function RecurseGetFixedNodes( _element ) {
 	return fixedChildNodes;
 }
 
+function RemoveFixedNodes( _root ) {
+	if ( _root == null )
+		_root = document.body;
+
+	RecurseGetFixedNodes( _root ).forEach( _element => _element.remove() );
+}
+
 (function() { 
 	// Recursively enumerate fixed DOM elements
 	var	leafNodes = RecurseGetFixedNodes( document.body );
 //return leafNodes.length;
 
-	// Query information for each
-	var	leafNodeInformation = [];
-	for ( var i=0; i < leafNodes.length; i++ ) {
-		var	leafNode = leafNodes[i];
-		var	nodeBounds = leafNode.getBoundingClientRect();
+	// Remove them from the DOM
+	leafNodes.forEach( _element => _elemente.remove() );
 
-		var	leafNodeInfo = {
-			bounds : { x: nodeBounds.x, y: nodeBounds.y, w: nodeBounds.width, h: nodeBounds.height },
-		};
+	// Enumerate all non empty nodes that contain either text or an image
+	
 
-		leafNodeInformation.push( leafNodeInfo );
-	}
-
-	// Convert into JSON
-	return JSON.stringify( leafNodeInformation );
+//	// Query information for each
+//	var	leafNodeInformation = [];
+//	for ( var i=0; i < leafNodes.length; i++ ) {
+//		var	leafNode = leafNodes[i];
+//		var	nodeBounds = leafNode.getBoundingClientRect();
+//
+//		var	leafNodeInfo = {
+//			bounds : { x: nodeBounds.x, y: nodeBounds.y, w: nodeBounds.width, h: nodeBounds.height },
+//		};
+//
+//		leafNodeInformation.push( leafNodeInfo );
+//	}
+//
+//	// Convert into JSON
+//	return JSON.stringify( leafNodeInformation );
 } )();
-";
+";*/
 		}
 
 // Some invalid example: correctly queries leaves but useless since we need to climb back up!
