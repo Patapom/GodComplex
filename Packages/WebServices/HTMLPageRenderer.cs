@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
+using System.Drawing;
+using SharpMath;
 
 using CefSharp;
 using CefSharp.OffScreen;
@@ -94,8 +96,9 @@ namespace WebServices {
 
 		#region FIELDS
 
-		private int					m_time_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for 5s
-		private int					m_time_ms_ScrollDown = 250;				// Wait for 250ms before taking a screenshot after a page scroll on ROUND 2
+		private int					m_delay_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for 5s
+		private int					m_delay_ms_ScrollDown = 250;			// Wait for 250ms before taking a screenshot after a page scroll on ROUND 2
+		private int					m_delay_ms_CleanDOM = 1000;				// Wait for 1000ms after cleaning DOM
 
 		private int					m_timeOut_ms_JavascriptNoRender = 1000;	// Default timeout after 1s of a JS command that doesn't trigger a new rendering
 		private int					m_timeOut_ms_PageRender = 30000;		// Default timeout after 30s for a page rendering
@@ -165,7 +168,7 @@ namespace WebServices {
  			if ( _browserViewportHeight == 0 )
  				_browserViewportHeight = (int) (_browserViewportWidth * 1.6180339887498948482045868343656);
 
-			m_browser.Size = new System.Drawing.Size( _browserViewportWidth, _browserViewportHeight );
+			m_browser.Size = new Size( _browserViewportWidth, _browserViewportHeight );
 
 			m_browser.BrowserInitialized += browser_BrowserInitialized;
 		}
@@ -245,19 +248,6 @@ Log( LOG_TYPE.ERROR, "JS scrollHeight returned null => Exception!" );
 			int	scrollHeight = (int) JSResult.Result;
 
 			//////////////////////////////////////////////////////////////////////////
-			// Ask for DOM content and attempt at extracting a workable viewport size
-			//
-			JSResult = await ExecuteJS( JSCodeListDOMFixedElements() );
-			if ( JSResult.Success && JSResult.Result is string ) {
-				JSON			parser = new JSON();
-				JSON.JSONObject	root = null;
-				using ( System.IO.StringReader R = new System.IO.StringReader( JSResult.Result as string ) ) {
-					root = parser.ReadJSON( R );
-//					écrire des fonctions d'accès simples genre root["path.truc.bidule"]
-				}
-			}
-
-			//////////////////////////////////////////////////////////////////////////
 			// Perform as many screenshots as necessary to capture the entire page
 			//
 			int	viewportHeight = m_browser.Size.Height;
@@ -317,8 +307,9 @@ Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 
 //				await ExecuteJS( "(function() { document.documentElement.style.overflow = 'hidden'; })();" );
 
+#if false
 				//////////////////////////////////////////////////////////////////////////
-				/// Execute a first rounde to "prep the page"
+				/// Execute a first round to "prep the page"
 				/// 
 				if ( _scrollsCount > 1 ) {
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting {0} scrollings", _scrollsCount );
@@ -328,7 +319,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting {0} scrollings", _
 							/// Request a screenshot
 // Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting screenshot {0}", scrollIndex );
 
- 							Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
+ 							Task<Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<Bitmap>;
 							task.Dispose();
 
 // Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
@@ -337,7 +328,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting {0} scrollings", _
 							/// Scroll down the page
 							if ( scrollIndex < _scrollsCount-1 ) {
 // Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting scrolling..." );
-								await ExecuteJS( JSCodeScroll( (uint) ((scrollIndex+1) * viewportHeight) ), m_time_ms_ScrollDown );
+								await ExecuteJS( JSCodeScroll( (uint) ((scrollIndex+1) * viewportHeight) ), m_delay_ms_ScrollDown );
 							}
 
 						} catch ( TimeoutException _e ) {
@@ -353,9 +344,9 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
  					await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" );
 
 					// Scroll all the way back up and wait longer
-					await ExecuteJS( JSCodeScroll( 0 ), 4 * m_time_ms_ScrollDown );
+					await ExecuteJS( JSCodeScroll( 0 ), 4 * m_delay_ms_ScrollDown );
 				}
-
+#endif
 				//////////////////////////////////////////////////////////////////////////
 				/// Do a 2nd batch where we actually store the screenshots!
 				///
@@ -363,26 +354,34 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 
 					try {
 						//////////////////////////////////////////////////////////////////////////
+						/// Clean the DOM and retrieve workable area
+						/// 
+						RectangleF	viewport = await CleanDOMAndReturnMainContentRectangle();
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Cleaning DOM and getting viewport ({0}, {1}, {2}, {3})", viewport.X, viewport.Y, viewport.Width, viewport.Height );
+
+viewport.Offset( 0, -scrollIndex * viewportHeight );
+
+						//////////////////////////////////////////////////////////////////////////
 						/// Request a screenshot
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting screenshot {0}", scrollIndex );
 
-// 						Task<System.Drawing.Bitmap>	task = m_browser.ScreenshotAsync();
+// 						Task<Bitmap>	task = m_browser.ScreenshotAsync();
 // 						if ( (await Task.WhenAny( task, Task.Delay( m_timeOut_ms_PageRender ) )) == task ) {
 
- 						Task<System.Drawing.Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<System.Drawing.Bitmap>;
+ 						Task<Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<Bitmap>;
 
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
-						System.Drawing.Bitmap	bitmap = task.Result;
+						Bitmap	bitmap = task.Result;
 						int	remainingHeight = _scrollHeight - scrollIndex * viewportHeight;
 						if ( remainingHeight < bitmap.Height ) {
 							// Clip bitmap and keep only the last relevant lines
 							if ( remainingHeight < 16 ) {
 								bitmap = null;	// Ignore super small slices
 							} else {
-								using ( System.Drawing.Bitmap oldBitmap = bitmap ) {
-									bitmap = new System.Drawing.Bitmap( oldBitmap.Width, (int) remainingHeight, oldBitmap.PixelFormat );
-									using ( System.Drawing.Graphics G = System.Drawing.Graphics.FromImage( bitmap ) ) {
+								using ( Bitmap oldBitmap = bitmap ) {
+									bitmap = new Bitmap( oldBitmap.Width, (int) remainingHeight, oldBitmap.PixelFormat );
+									using ( Graphics G = Graphics.FromImage( bitmap ) ) {
 										G.DrawImage( oldBitmap, 0, remainingHeight - oldBitmap.Height );
 									}
 								}
@@ -392,6 +391,12 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						if ( bitmap != null ) {
 							try {
 								ImageUtility.ImageFile image = new ImageUtility.ImageFile( bitmap, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+
+image.DrawLine( float4.UnitX, new float2( viewport.X, viewport.Y ), new float2( viewport.X + viewport.Width, viewport.Y ) );
+image.DrawLine( float4.UnitX, new float2( viewport.X + viewport.Width, viewport.Y ), new float2( viewport.X + viewport.Width, viewport.Y + viewport.Height ) );
+image.DrawLine( float4.UnitX, new float2( viewport.X + viewport.Width, viewport.Y + viewport.Height ), new float2( viewport.X, viewport.Y + viewport.Height ) );
+image.DrawLine( float4.UnitX, new float2( viewport.X, viewport.Y + viewport.Height ), new float2( viewport.X, viewport.Y ) );
+
 								m_pageRendered( (uint) scrollIndex, image );
 							} catch ( Exception _e ) {
 								throw new Exception( "Failed to create image from web page bitmap: \r\n" + _e.Message, _e );
@@ -404,7 +409,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						/// Scroll down the page
 						if ( scrollIndex < _scrollsCount-1 ) {
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting scrolling to position {0}...", ((scrollIndex+1) * viewportHeight) );
-							await ExecuteJS( JSCodeScroll( (uint) ((scrollIndex+1) * viewportHeight) ), m_time_ms_ScrollDown );
+							await ExecuteJS( JSCodeScroll( (uint) ((scrollIndex+1) * viewportHeight) ), m_delay_ms_ScrollDown );
 						}
 
 					} catch ( TimeoutException _e ) {
@@ -421,6 +426,43 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 
 			} catch ( Exception _e ) {
 				m_pageError( -1, "An error occurred while attempting to render a page screenshot for URL \"" + m_URL + "\": \r\n" + _e.Message );
+			}
+		}
+
+		/// <summary>
+		/// Cleans the DOM of annoying content like fixed banners or popups and returns a rectangle containing the main content of the web page
+		/// </summary>
+		async Task<RectangleF>	CleanDOMAndReturnMainContentRectangle() {
+
+			JavascriptResponse	JSResult = await ExecuteJS( JSCodeIsolateMainContent() );
+			if ( !JSResult.Success )
+				throw new Exception( "JS request failed: DOM not cleared and no workable viewport dimension was returned... Reason: " + JSResult.Message );
+			if ( !(JSResult.Result is string) ) {
+				Log( LOG_TYPE.WARNING, "Failed to retrieve workable rectangle for page's main content: defaulting to entire browser window..." );
+				return RectangleF.Empty;
+			}
+
+			// Wait for a while before taking the screenshot...
+			await Delay_ms( m_delay_ms_CleanDOM );
+
+			// Parse the resulting bounding rectangle
+			try {
+				JSON			parser = new JSON();
+				JSON.JSONObject	root = null;
+				using ( System.IO.StringReader R = new System.IO.StringReader( JSResult.Result as string ) ) {
+					root = parser.ReadJSON( R )["root"];
+
+					RectangleF	result = new RectangleF();
+					result.X = (float) root["x"].AsDouble;
+					result.Y = (float) root["y"].AsDouble;
+					result.Width = (float) root["width"].AsDouble;
+					result.Height = (float) root["height"].AsDouble;
+
+					return result;
+				}
+			} catch ( Exception _e ) {
+				Log( LOG_TYPE.ERROR, "Failed to parse resulting page's main rectangle because of \"{0}\" : defaulting to entire browser window...", _e.Message );
+				return RectangleF.Empty;
 			}
 		}
 
@@ -447,10 +489,14 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 			Task<JavascriptResponse>	task = (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS, null ), m_timeOut_ms_JavascriptNoRender, "EvaluateScriptAsync " + _JS )) as Task<JavascriptResponse>;
 
 			if ( _delay_ms > 0 ) {
-				await Task.Delay( _delay_ms );
+				await Delay_ms( _delay_ms );
 			}
 
 			return task.Result;
+		}
+
+		async Task	Delay_ms( int _delay_ms ) {
+			await Task.Delay( _delay_ms );
 		}
 
 		async Task	AsyncWaitForStablePage( string _waiter ) {
@@ -461,7 +507,7 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Waiting {1}", _waiter, counter++ );
 
 				double	elapsedTimeSinceLastPageEvent = m_hasPageEvents ? (DateTime.Now - m_lastPageEvent).TotalMilliseconds : 0;
-				if ( elapsedTimeSinceLastPageEvent > m_time_ms_StablePage )
+				if ( elapsedTimeSinceLastPageEvent > m_delay_ms_StablePage )
 					return;	// Page seems stable enough...
 
 //				Application.DoEvents();
@@ -572,12 +618,12 @@ function IsFixedElement( _element ) {
 		}
 
 		/// <summary>
-		/// Lists all the *fixed* DOM elements in the document
-		/// The expected return value should be a JSON string of an array of elements with that have a fixed position and their bounding rectangle
+		/// Isolates the main window with content
+		/// The expected return value should be a JSON string of the bounding rectangle of the main element
 		/// </summary>
 		/// <returns></returns>
-		string	JSCodeListDOMFixedElements() {
-return Properties.Resources.Test;
+		string	JSCodeIsolateMainContent() {
+return Properties.Resources.IsolateMainContent;
 /*
 return @"
 // This function is used to know if an element is set with a 'fixed' position, which is what we're looking for: fixed elements that may block the viewport

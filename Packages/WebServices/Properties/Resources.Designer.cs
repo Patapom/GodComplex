@@ -67,13 +67,16 @@ namespace WebServices.Properties {
         ///	return position == &apos;sticky&apos; || position == &apos;fixed&apos;;
         ///}
         ///
-        ///// Returns the top parent node that contains only this child node (meaning we stop going up to the parent if the parent has more than one child)
-        ///function GetParentWithSingleChild( _element ) {
-        /// [rest of string was truncated]&quot;;.
+        ///// Returns true if the element is not visible (e.g. simply hidden or out of screen)
+        ///function IsInvisibleElement( _element ) {
+        ///	if ( _element.hidden )
+        ///		return true;	// Obvious...
+        ///
+        ///	var	recta [rest of string was truncated]&quot;;.
         /// </summary>
-        internal static string Test {
+        internal static string IsolateMainContent {
             get {
-                return ResourceManager.GetString("Test", resourceCulture);
+                return ResourceManager.GetString("IsolateMainContent", resourceCulture);
             }
         }
     }

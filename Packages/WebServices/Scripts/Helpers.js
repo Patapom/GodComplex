@@ -6,27 +6,39 @@ function IsFixedElement( _element ) {
 
 // Returns true if the element is not visible (e.g. simply hidden or out of screen)
 function IsInvisibleElement( _element ) {
-	if ( _element.hidden )
+	if ( _element.hidden ) {
+console.log( "Element " + _element.id + " removed because hidden..." );
 		return true;	// Obvious...
+	}
 
 	var	rectangle = _element.getBoundingClientRect();
 	var	r = window.scrollX + rectangle.right;
 	var	b = window.scrollY + rectangle.bottom;
-	if ( r <= 0 || b <= 0 )
+	if ( r <= 0 || b <= 0 ) {
+console.log( "Element " + _element.id + " son of " + _element.parentNode.id + " removed because outside top-left screen..." );
 		return true;	// Outside of screen
+	}
 
 	var	l = window.scrollX + rectangle.left;
 //	var	t = window.scrollY + rectangle.top;
-	if ( l >= window.width )
+	if ( l >= window.width ) {
+console.log( "Element " + _element.id + " removed because outside right screen..." );
 		return true;	// Outside of screen
+	}
 
 	return false;	// Element is visible!
 }
 
-// Returns true if the element's size is not a bullshit size
-function CheckSize( _node ) {
+// Returns true if the element is valid
+function IsValidNode( _node ) {
+	if ( _node == null )
+		return false;
+	if ( _node.getBoundingClientRect === undefined )
+		return true;	// Text nodes don't have this function...
+
+	// Check for size => super small elements are usually placeholders
 	var	rect = _node.getBoundingClientRect();
-console.log( "Examining node " + _node + " (ID = " + _node.id + ") => (" + rect.width + ", " + rect.height + ")" );
+//console.log( "Examining node " + _node + " (ID = " + _node.id + ") => (" + rect.width + ", " + rect.height + ")" );
 	return rect.width > 4 && rect.height > 4;
 }
 
@@ -36,13 +48,10 @@ function IsContentNode( _node ) {
 		return false;
 
 	if ( _node.nodeType != 3 ) {
-		// Check obvious image & link types
-		if ( !CheckSize( _node ) )
-			return false;	// Bullshit placeholder node or something!
-
 		// Detect obvious nodes
 		switch ( _node.tagName ) {
 			case "A":
+			case "LINK":
 			case "IMG":
 				return true;
 		}
@@ -50,17 +59,13 @@ function IsContentNode( _node ) {
 		return false;	// Not a content node...
 	}
 
-	// Check text nodes
-	if ( !CheckSize( _node.parentNode ) )
-		return false;	// Bullshit placeholder node or something!
-
 	var	nodeText = _node.nodeValue;
 	if ( nodeText == null )
 		return false;	// Curiously, a text node with no text...
 
 	// Trim text of all whitespaces to make sure the text is significant and not a placeholder...
 	nodeText = nodeText.trim();
-	return nodeText.length > 0;
+	return nodeText.length > 4;
 }
 
 // Returns the top parent node that contains only this child node (meaning we stop going up to the parent if the parent has more than one child)
@@ -70,31 +75,6 @@ function GetParentWithSingleChild( _element ) {
 		return _element;	// Stop at this element...
 
 	return GetParentWithSingleChild( parent );
-}
-
-// Returns the FIRST top-most element that contains ALL elements that have content (i.e. image or text)
-function RecurseRetrieveTopMostContentContainer( _node ) {
-	if ( IsContentNode( _node ) )
-		return _node;	// A content-containing node is its own container...
-
-	// Check children
-	var	topContainer = null;
-	var	childNodes = _node.childNodes;
-	for ( var i = 0; i < childNodes.length; i++ ) {
-		var	childContainer = RecurseRetrieveTopMostContentContainer( childNodes[i] );
-		if ( childContainer == null )
-			continue;	// Child doesn't have any content...
-
-		if ( topContainer == null ) {
-			topContainer = childContainer;	// First child with content...
-		} else if ( childContainer != topContainer ) {
-			// Found another child with content... This means WE are the container for these 2 children...
-			topContainer = _node;
-			break;
-		}
-	}
-
-	return topContainer;
 }
 
 // Recursively populates a list with the top-most unique parent of elements that pass the specified filter
@@ -120,23 +100,9 @@ function RemoveFixedNodes( _root ) {
 	RecurseGetSpecificNodes( _root, IsFixedElement ).forEach( _element => _element.remove() );
 }
 
-function RemoveInvisibleNodes(_root) {
-	if ( _root == null )
-		_root = document.body;
-
-	RecurseGetSpecificNodes( _root, IsInvisibleElement ).forEach( _element => _element.remove() );
-}
-
-(function () {
-	// Remove fixed and invisible DOM elements
-	RemoveFixedNodes( document.body );
-	RemoveInvisibleNodes( document.body );
-
-//console.log( "Prout!" );
-
-	// Enumerate all non empty nodes that contain either text or an image
-	var	topMostContainer = RecurseRetrieveTopMostContentContainer( document.body );
-return topMostContainer;
-	return topMostContainer != null ? topMostContainer.getBoundingClientRect() : null;
-
-})();
+//function RemoveInvisibleNodes(_root) {
+//	if ( _root == null )
+//		_root = document.body;
+//
+//	RecurseGetSpecificNodes( _root, IsInvisibleElement ).forEach( _element => _element.remove() );
+//}

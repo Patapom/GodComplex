@@ -23,6 +23,7 @@ namespace WebServices {
 		#region METHODS
 
 		public enum JSONState {
+			NONE,
 			ROOT,
 			DICTIONARY_EXPECT_KEY,
 			DICTIONARY_EXPECT_VALUE,
@@ -48,11 +49,14 @@ namespace WebServices {
 			public bool							IsDictionary { get { return AsDictionary != null; } }
 			public JSONObject					this[string _dictionaryKey] { get { return AsDictionary[_dictionaryKey] as JSONObject; } }
 
-			public List<object>					AsArray { get {return m_object as List<object>; } }
+			public List<object>					AsArray { get { return m_object as List<object>; } }
 			public bool							IsArray { get { return AsArray != null; } }
 			public JSONObject					this[int _index] { get { return AsArray[_index] as JSONObject; } }
 
-			public double						AsDouble { get {return (double) m_object; } }
+			public string						AsString { get { return m_object as string; } }
+			public bool							IsString { get { return m_object is string; } }
+
+			public double						AsDouble { get { return (double) m_object; } }
 			public bool							IsDouble { get { return m_object is double; } }
 		}
 
@@ -183,7 +187,8 @@ StringBuilder	sb = new StringBuilder();
 
 						} else if ( current.m_state == JSONState.DICTIONARY_EXPECT_VALUE ) {
 							// Just parsed a value
-							current.AsDictionary.Add( current.m_currentKey, s );
+							JSONObject	stringObject = new JSONObject( null, JSONState.NONE, s );
+							current.AsDictionary.Add( current.m_currentKey, stringObject );
 							current.m_state = JSONState.DICTIONARY_EXPECT_VALUE_SEPARATOR_OR_END;
 							current.m_currentKey = null;
 						}
@@ -198,7 +203,8 @@ StringBuilder	sb = new StringBuilder();
 
 						double	value = ReadDouble( C, _reader, sb );
 
-						current.AsDictionary.Add( current.m_currentKey, value );
+						JSONObject	doubleObject = new JSONObject( null, JSONState.NONE, value );
+						current.AsDictionary.Add( current.m_currentKey, doubleObject );
 						current.m_state = JSONState.DICTIONARY_EXPECT_VALUE_SEPARATOR_OR_END;
 						current.m_currentKey = null;
 						break;
