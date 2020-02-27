@@ -1,4 +1,39 @@
-﻿// This function is used to know if an element is set with a 'fixed' position, which is what we're looking for: fixed elements that may block the viewport
+﻿// Code from https://stackoverflow.com/questions/5706837/get-unique-selector-of-element-in-jquery
+//
+function getXPath(node, path) {
+	path = path || [];
+	if(node.parentNode) {
+		path = getXPath(node.parentNode, path);
+	}
+
+	if(node.previousSibling) {
+		var count = 1;
+		var sibling = node.previousSibling
+		do {
+		if(sibling.nodeType == 1 && sibling.nodeName == node.nodeName) {count++;}
+		sibling = sibling.previousSibling;
+		} while(sibling);
+		if(count == 1) {count = null;}
+	} else if(node.nextSibling) {
+		var sibling = node.nextSibling;
+		do {
+		if(sibling.nodeType == 1 && sibling.nodeName == node.nodeName) {
+			var count = 1;
+			sibling = null;
+		} else {
+			var count = null;
+			sibling = sibling.previousSibling;
+		}
+		} while(sibling);
+	}
+
+	if(node.nodeType == 1) {
+		path.push(node.nodeName.toLowerCase() + (node.id ? "[@id='"+node.id+"']" : count > 0 ? "["+count+"]" : ''));
+	}
+	return path;
+}
+
+// This function is used to know if an element is set with a 'fixed' position, which is what we're looking for: fixed elements that may block the viewport
 function IsFixedElement( _element ) {
 	var position = window.getComputedStyle( _element ).position;
 	return position == 'sticky' || position == 'fixed';
@@ -7,22 +42,40 @@ function IsFixedElement( _element ) {
 // Returns true if the element is not visible (e.g. simply hidden or out of screen)
 function IsInvisibleElement( _element ) {
 	if ( _element.hidden ) {
-console.log( "Element " + _element.id + " removed because hidden..." );
+//console.log( "Element is hidden..." );
 		return true;	// Obvious...
 	}
 
-	var	rectangle = _element.getBoundingClientRect();
-	var	r = window.scrollX + rectangle.right;
-	var	b = window.scrollY + rectangle.bottom;
-	if ( r <= 0 || b <= 0 ) {
-console.log( "Element " + _element.id + " son of " + _element.parentNode.id + " removed because outside top-left screen..." );
-		return true;	// Outside of screen
+	// Check style for invisibility
+	if ( _element.getComputedStyle !== undefined ) {
+		var style = window.getComputedStyle( _element );
+		if ( style.display == "none" || style.visibility == "hidden" ) {
+//console.log( "Element " + _element.id + " removed because display style is either display:none or visibility:hidden..." );
+			return true;
+		}
 	}
 
-	var	l = window.scrollX + rectangle.left;
+	if ( _element.getBoundingClientRect === undefined )
+		return false;
+
+	var	rectangle = _element.getBoundingClientRect();
+//console.log( "Rectangle = (" + rectangle.left + ", " + rectangle.top + ", " + rectangle.width + ", " + rectangle.height + ") with scroll offset, bottom = " + (rectangle.bottom + window.scrollY) );
+
+//	var	r = window.scrollX + rectangle.right;
+//	var	b = window.scrollY + rectangle.bottom;
+//	var	l = window.scrollX + rectangle.left;
 //	var	t = window.scrollY + rectangle.top;
-	if ( l >= window.width ) {
-console.log( "Element " + _element.id + " removed because outside right screen..." );
+	var	r = rectangle.right;
+	var	b = rectangle.bottom;
+	var	l = rectangle.left;
+	var	t = rectangle.top;
+
+	if ( r <= 0 || b <= 0 ) {
+//console.log( "Outside top-left screen..." );
+		return true;	// Outside of screen
+	}
+	if ( l >= window.width || t >= window.height ) {
+//console.log( "Outside bottom-right screen..." );
 		return true;	// Outside of screen
 	}
 
@@ -42,7 +95,7 @@ function IsValidNode( _node ) {
 	return rect.width > 4 && rect.height > 4;
 }
 
-// Returns true if the node is a content node
+// Returns true if the node is a content node (i.e. either a link, some text or an image)
 function IsContentNode( _node ) {
 	if ( _node == null )
 		return false;
@@ -65,7 +118,7 @@ function IsContentNode( _node ) {
 
 	// Trim text of all whitespaces to make sure the text is significant and not a placeholder...
 	nodeText = nodeText.trim();
-	return nodeText.length > 4;
+	return nodeText.length > 0;
 }
 
 // Returns the top parent node that contains only this child node (meaning we stop going up to the parent if the parent has more than one child)
@@ -92,17 +145,3 @@ function RecurseGetSpecificNodes( _element, _filter ) {
 
 	return result;
 }
-
-function RemoveFixedNodes( _root ) {
-	if ( _root == null )
-		_root = document.body;
-
-	RecurseGetSpecificNodes( _root, IsFixedElement ).forEach( _element => _element.remove() );
-}
-
-//function RemoveInvisibleNodes(_root) {
-//	if ( _root == null )
-//		_root = document.body;
-//
-//	RecurseGetSpecificNodes( _root, IsInvisibleElement ).forEach( _element => _element.remove() );
-//}

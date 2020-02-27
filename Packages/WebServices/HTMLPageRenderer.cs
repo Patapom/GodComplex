@@ -230,6 +230,11 @@ Log( LOG_TYPE.DEBUG, _eventType );
 			await WaitForStablePage( "WaitForPageRendered() => Wait before querying content" );
 
 			//////////////////////////////////////////////////////////////////////////
+			// Include general JS helpers
+			//
+			await ExecuteJS( Properties.Resources.Helpers );
+
+			//////////////////////////////////////////////////////////////////////////
 			// Ask for the page's height (not always reliable, especially on infinite scrolling feeds like facebook or twitter!)
 			//
 			JavascriptResponse	JSResult = await ExecuteJS( "(function() { var body = document.body, html = document.documentElement; return Math.max( body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight ); } )();" );
