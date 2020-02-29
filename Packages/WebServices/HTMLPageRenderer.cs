@@ -68,8 +68,9 @@ namespace WebServices {
 		/// Used to notify a new piece of the web page is available in the form of a rendering
 		/// </summary>
 		/// <param name="_imageIndex">Index of the piece of image that is available</param>
+		/// <param name="_contentRectangle">The rectangle where the image should be placed to represent its original web page location</param>
 		/// <param name="_imageWebPage">The piece of rendering of the web page</param>
-		public delegate void	WebPageRendered( uint _imageIndex, ImageUtility.ImageFile _imageWebPage );
+		public delegate void	WebPageRendered( uint _imageIndex, Rectangle _contentRectangle, ImageUtility.ImageFile _imageWebPage );
 
 		/// <summary>
 		/// Used to notify the web page was successfully loaded
@@ -96,7 +97,7 @@ namespace WebServices {
 
 		#region FIELDS
 
-		private int					m_delay_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for 5s
+		private int					m_delay_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for over 5s
 		private int					m_delay_ms_ScrollDown = 250;			// Wait for 250ms before taking a screenshot after a page scroll on ROUND 2
 		private int					m_delay_ms_CleanDOM = 1000;				// Wait for 1000ms after cleaning DOM
 
@@ -189,8 +190,15 @@ Log( LOG_TYPE.DEBUG, "browser_BrowserInitialized" );
 		}
 
 		private void browser_LoadError(object sender, LoadErrorEventArgs e) {
-Log( LOG_TYPE.DEBUG, "browser_LoadError: " + e.ErrorText );
+Log( LOG_TYPE.DEBUG, "browser_LoadError: " + e.ErrorText + " on URL " + e.FailedUrl );
 
+			if ( !m_URL.ToLower().StartsWith( e.FailedUrl.ToLower() ) )
+				return;	// Not our URL! Not our concern...
+
+// 			switch ( e.ErrorCode ) {
+// 				case CefErrorCode.Aborted:
+// 					break;
+// 			}
 			switch ( (uint) e.ErrorCode ) {
 				case 0xffffffe5U:
 					return;	// Ignore...
@@ -303,7 +311,9 @@ Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 		async Task	DoScreenshots( int _scrollsCount, int _scrollHeight ) {
 			_scrollsCount = Math.Min( m_maxScreenshotsCount, _scrollsCount );
 
+			int	viewportWidth = m_browser.Size.Width;
 			int	viewportHeight = m_browser.Size.Height;
+			Rectangle	defaultTotalContentRectangle = new Rectangle( 0, 0, viewportWidth, _scrollHeight );	// Large rectangle covering several times the browser's rectangle
 
 			try {
 				// Code from https://github.com/WildGenie/OSIRTv2/blob/3e60d3ce908a1d25a7b4633dc9afdd53256cbb4f/OSIRT/Browser/MainBrowser.cs#L300
@@ -361,48 +371,75 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 						//////////////////////////////////////////////////////////////////////////
 						/// Clean the DOM and retrieve workable area
 						/// 
-						RectangleF	viewport = await CleanDOMAndReturnMainContentRectangle();
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Cleaning DOM and getting viewport ({0}, {1}, {2}, {3})", viewport.X, viewport.Y, viewport.Width, viewport.Height );
+						RectangleF	contentRectangleF = await CleanDOMAndReturnMainContentRectangle();
+						Rectangle	contentRectangle = new Rectangle(	(int) Mathf.Floor( contentRectangleF.X ), (int) Mathf.Floor( contentRectangleF.Y ),
+																		(int) (1 + Mathf.Ceiling( contentRectangleF.Right ) - Mathf.Floor( contentRectangleF.X ) ),
+																		(int) (1 + Mathf.Ceiling( contentRectangleF.Bottom ) - Mathf.Floor( contentRectangleF.Y ) )
+																	);
+						if ( contentRectangle.IsEmpty ) {
+							// Use default rectangle covering the entire screen...
+							contentRectangle = defaultTotalContentRectangle;
+							contentRectangle.Offset( 0, -scrollIndex * viewportHeight );
+						}
 
-viewport.Offset( 0, -scrollIndex * viewportHeight );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Cleaning DOM and getting viewport ({0}, {1}, {2}, {3})", contentRectangle.X, contentRectangle.Y, contentRectangle.Width, contentRectangle.Height );
 
 						//////////////////////////////////////////////////////////////////////////
 						/// Request a screenshot
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting screenshot {0}", scrollIndex );
-
-// 						Task<Bitmap>	task = m_browser.ScreenshotAsync();
-// 						if ( (await Task.WhenAny( task, Task.Delay( m_timeOut_ms_PageRender ) )) == task ) {
-
- 						Task<Bitmap>	task = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<Bitmap>;
+ 						Task<Bitmap>	taskScreenshot = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<Bitmap>;
 
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
-						Bitmap	bitmap = task.Result;
-						int	remainingHeight = _scrollHeight - scrollIndex * viewportHeight;
-						if ( remainingHeight < bitmap.Height ) {
-							// Clip bitmap and keep only the last relevant lines
-							if ( remainingHeight < 16 ) {
-								bitmap = null;	// Ignore super small slices
-							} else {
-								using ( Bitmap oldBitmap = bitmap ) {
-									bitmap = new Bitmap( oldBitmap.Width, (int) remainingHeight, oldBitmap.PixelFormat );
-									using ( Graphics G = Graphics.FromImage( bitmap ) ) {
-										G.DrawImage( oldBitmap, 0, remainingHeight - oldBitmap.Height );
-									}
+						//////////////////////////////////////////////////////////////////////////
+						/// Clip bitmap with intersection of content and viewport rectangles
+						/// 
+						Rectangle	viewportRectangle = new Rectangle( 0, 0, viewportWidth, viewportHeight );
+						Rectangle	clippedContentRectangle = contentRectangle;
+									clippedContentRectangle.Intersect( viewportRectangle );
+
+						Bitmap		bitmap = null;
+						if ( clippedContentRectangle.Width == viewportWidth && clippedContentRectangle.Height == viewportHeight ) {
+							// No need to clip anything... Use full bitmap!
+							bitmap = taskScreenshot.Result;
+						} else if ( clippedContentRectangle.Width > 16 && clippedContentRectangle.Height > 16 ) {
+							// Clip to sub-rectangle
+							using ( Bitmap oldBitmap = taskScreenshot.Result ) {
+								bitmap = new Bitmap( (int) clippedContentRectangle.Width, (int) clippedContentRectangle.Height, oldBitmap.PixelFormat );
+								using ( Graphics G = Graphics.FromImage( bitmap ) ) {
+									G.DrawImage( oldBitmap, -clippedContentRectangle.X, -clippedContentRectangle.Y );
 								}
 							}
 						}
 
+// 						Bitmap	bitmap = task.Result;
+// 						int	remainingHeight = _scrollHeight - scrollIndex * viewportHeight;
+// 						if ( remainingHeight < bitmap.Height ) {
+// 							// Clip bitmap and keep only the last relevant lines
+// 							if ( remainingHeight < 16 ) {
+// 								bitmap = null;	// Ignore super small slices
+// 							} else {
+// 								using ( Bitmap oldBitmap = bitmap ) {
+// 									bitmap = new Bitmap( oldBitmap.Width, (int) remainingHeight, oldBitmap.PixelFormat );
+// 									using ( Graphics G = Graphics.FromImage( bitmap ) ) {
+// 										G.DrawImage( oldBitmap, 0, remainingHeight - oldBitmap.Height );
+// 									}
+// 								}
+// 							}
+// 						}
+
+						//////////////////////////////////////////////////////////////////////////
+						/// Forward bitmap to caller
+						///
 						if ( bitmap != null ) {
 							try {
 								ImageUtility.ImageFile image = new ImageUtility.ImageFile( bitmap, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
 
-image.DrawLine( float4.UnitX, new float2( viewport.X, viewport.Y ), new float2( viewport.X + viewport.Width, viewport.Y ) );
-image.DrawLine( float4.UnitX, new float2( viewport.X + viewport.Width, viewport.Y ), new float2( viewport.X + viewport.Width, viewport.Y + viewport.Height ) );
-image.DrawLine( float4.UnitX, new float2( viewport.X + viewport.Width, viewport.Y + viewport.Height ), new float2( viewport.X, viewport.Y + viewport.Height ) );
-image.DrawLine( float4.UnitX, new float2( viewport.X, viewport.Y + viewport.Height ), new float2( viewport.X, viewport.Y ) );
+								// We need the absolute content rectangle, in other words the location of this image chunk as it would be in the web page from the topmost and left most location...
+								Rectangle	absoluteContentRectangle = clippedContentRectangle;
+											absoluteContentRectangle.Offset( 0, scrollIndex * viewportHeight );
 
-								m_pageRendered( (uint) scrollIndex, image );
+								m_pageRendered( (uint) scrollIndex, absoluteContentRectangle, image );
+
 							} catch ( Exception _e ) {
 								throw new Exception( "Failed to create image from web page bitmap: \r\n" + _e.Message, _e );
 							} finally {
@@ -447,7 +484,7 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 				return RectangleF.Empty;
 			}
 
-			// Wait for a while before taking the screenshot...
+			// Wait for a while before continuing
 			await Delay_ms( m_delay_ms_CleanDOM );
 
 			// Parse the resulting bounding rectangle
@@ -509,7 +546,7 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 
 			int	counter = 0;
 			while ( counter < MAX_COUNTER ) {
-Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Waiting {1}", _waiter, counter++ );
+//Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Waiting {1}", _waiter, counter++ );
 
 				double	elapsedTimeSinceLastPageEvent = m_hasPageEvents ? (DateTime.Now - m_lastPageEvent).TotalMilliseconds : 0;
 				if ( elapsedTimeSinceLastPageEvent > m_delay_ms_StablePage )
@@ -519,7 +556,7 @@ Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Waiting {1}", _waiter, co
 				await Task.Delay( 250 );  // We do need these delays. Some pages, like facebook, may need to load viewport content.
 			}
 
-Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Exiting after {1} loops!", _waiter, counter );
+//Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Exiting after {1} loops!", _waiter, counter );
 		}
 
 		async Task	WaitForStablePage( string _waiter ) {
