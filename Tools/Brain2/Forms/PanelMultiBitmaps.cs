@@ -10,12 +10,25 @@ using System.Drawing;
 namespace Brain2
 {
 	public class PanelMultiBitmaps : Panel {
-		private Bitmap[]		m_bitmaps = new Bitmap[0];
-		public Bitmap[]		Bitmaps {
+
+		#region NESTED TYPES
+
+		public class BitmapWithRectangle {
+			public Rectangle	m_displayRectangle;
+			public Bitmap		m_bitmap;
+		}
+
+		#endregion
+
+		#region FIELDS
+
+		private BitmapWithRectangle[]	m_bitmaps = new BitmapWithRectangle[0];
+
+		public BitmapWithRectangle[]	Bitmaps {
 			get { return m_bitmaps; }
 			set {
 				if ( value == null )
-					value = new Bitmap[0];
+					value = new BitmapWithRectangle[0];
 				if ( value == m_bitmaps )
 					return;
 
@@ -25,20 +38,25 @@ namespace Brain2
 			}
 		}
 
-		public Rectangle	TotalSize {
+		public Rectangle	TotalRectangle {
 			get {
-				Rectangle	result = new Rectangle();
-				result.X = 0;
-				result.Y = 0;
-				foreach ( Bitmap B in m_bitmaps ) {
-					if ( B.Width > result.Width )
-						result.Width = B.Width;	// Keep largest width
-					result.Height += B.Height;
+				int	minX = 10000;
+				int	minY = 10000;
+				int	maxX = -10000;
+				int	maxY = -10000;
+				foreach ( BitmapWithRectangle B in m_bitmaps ) {
+					minX = Math.Min( minX, B.m_displayRectangle.Left );
+					minY = Math.Min( minY, B.m_displayRectangle.Top );
+					maxX = Math.Max( maxX, B.m_displayRectangle.Right );
+					maxY = Math.Max( maxY, B.m_displayRectangle.Bottom );
 				}
 
+				Rectangle	result = new Rectangle( minX, minY, maxX - minX, maxY - minY );
 				return result;
 			}
 		}
+
+		#endregion
 
 		public PanelMultiBitmaps() {
 			InitializeComponent();
@@ -128,22 +146,36 @@ namespace Brain2
 				return;
 			}
 
-			int	Y = 0;
+//			int	Y = 0;
 			for ( int bitmapIndex=0; bitmapIndex < m_bitmaps.Length; bitmapIndex++ ) {
-				Bitmap	B = m_bitmaps[bitmapIndex];
+				BitmapWithRectangle	B = m_bitmaps[bitmapIndex];
 
-				Rectangle	bitmapRect = new Rectangle( 0, Y, B.Width, B.Height );
-				Rectangle	clippedRect = Rectangle.Intersect( bitmapRect, e.ClipRectangle );
-				if ( clippedRect.Width > 0 && clippedRect.Height > 0 ) {
-					Rectangle	sourceRect = bitmapRect;
-								sourceRect.X -= clippedRect.X;
-								sourceRect.Y -= clippedRect.Y;
+				if ( B.m_bitmap != null ) {
+					e.Graphics.DrawImage( B.m_bitmap, B.m_displayRectangle.Location );
+				} else {
+					e.Graphics.DrawRectangle( Pens.Red, B.m_displayRectangle );
 
-//					e.Graphics.DrawImage( B, clippedRect, sourceRect, GraphicsUnit.Pixel );
-					e.Graphics.DrawImage( B, 0, Y );
+					string	textError = "Null bitmap...";
+					SizeF	textSize = e.Graphics.MeasureString( textError, this.Font );
+					e.Graphics.DrawString( textError, this.Font, Brushes.Red, B.m_displayRectangle.Location + new Size( B.m_displayRectangle.Width - (int) textSize.Width, B.m_displayRectangle.Height - (int) textSize.Height ) );
 				}
+//			if ( image.m_image == null ) {
+//				BrainForm.LogError( new Exception( "FicheWebPageAnnotatorForm => Null image file in web page snapshot chunk! Can't create bitmap..." ) );
+//				continue;
+//			}
 
-				Y += B.Height;
+// 				Rectangle	bitmapRect = new Rectangle( 0, Y, B.Width, B.Height );
+// 				Rectangle	clippedRect = Rectangle.Intersect( bitmapRect, e.ClipRectangle );
+// 				if ( clippedRect.Width > 0 && clippedRect.Height > 0 ) {
+// 					Rectangle	sourceRect = bitmapRect;
+// 								sourceRect.X -= clippedRect.X;
+// 								sourceRect.Y -= clippedRect.Y;
+// 
+// //					e.Graphics.DrawImage( B, clippedRect, sourceRect, GraphicsUnit.Pixel );
+// 					e.Graphics.DrawImage( B, 0, Y );
+// 				}
+// 
+// 				Y += B.Height;
 			}
 		}
 	}

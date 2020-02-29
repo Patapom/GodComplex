@@ -71,7 +71,7 @@ namespace Brain2 {
 						},
 
 						// On page rendered => Update content
-						( uint _imageIndex, ImageUtility.ImageFile _imageWebPage ) => {
+						( uint _imageIndex, System.Drawing.Rectangle _contentRectangle, ImageUtility.ImageFile _imageWebPage ) => {
 							m_fiche.Lock( Fiche.STATUS.UPDATING, () => {
 
 								if ( _imageWebPage.PixelFormat != ImageUtility.PIXEL_FORMAT.BGR8 ) {
@@ -82,7 +82,7 @@ namespace Brain2 {
 								}
 
 								// Create image chunk
-								m_fiche.CreateImageChunk( _imageIndex, new ImageUtility.ImageFile[] { _imageWebPage }, ImageUtility.ImageFile.FILE_FORMAT.JPEG );
+								m_fiche.CreateImageChunk( _imageIndex, new System.Drawing.Rectangle[] { _contentRectangle }, new ImageUtility.ImageFile[] { _imageWebPage }, Fiche.ChunkWebPageSnapshot.DEFAULT_COMPRESSION_FORMAT );
 
 								// Create thumbnail
 								if ( _imageIndex == 0 ) {

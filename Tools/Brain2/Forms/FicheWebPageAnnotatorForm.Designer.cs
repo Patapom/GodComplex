@@ -125,7 +125,6 @@
 			// 
 			// panelWebPage
 			// 
-			this.panelWebPage.Bitmaps = new System.Drawing.Bitmap[0];
 			this.panelWebPage.Location = new System.Drawing.Point(0, 0);
 			this.panelWebPage.Name = "panelWebPage";
 			this.panelWebPage.Size = new System.Drawing.Size(1005, 621);

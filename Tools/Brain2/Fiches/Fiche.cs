@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Drawing;
 
 using SharpMath;
 using ImageUtility;
@@ -142,18 +143,107 @@ namespace Brain2 {
 		[System.Diagnostics.DebuggerDisplay( "{m_images} images" )]
 		public class ChunkWebPageSnapshot : ChunkBase {
 
-// 			public const uint	DEFAULT_WEBPAGE_WIDTH = 1280;	// Default screenshot width
-// 			public const uint	DEFAULT_WEBPAGE_PIECE_HEIGHT = (uint) (Mathf.PHI * DEFAULT_WEBPAGE_WIDTH);	// Golden rectangle = 2071
-//			public const uint	MAX_WEBPAGE_PIECES = 10;		// So up to 20710 in height
-
-			private const uint	PLACEHOLDER_WIDTH = 256;
-			private const uint	PLACEHOLDER_HEIGHT = (uint) (Mathf.PHI * PLACEHOLDER_WIDTH);
-
+			private const uint						PLACEHOLDER_WIDTH = 256;
+			private const uint						PLACEHOLDER_HEIGHT = (uint) (Mathf.PHI * PLACEHOLDER_WIDTH);
+			internal const ImageFile.FILE_FORMAT	DEFAULT_COMPRESSION_FORMAT = ImageFile.FILE_FORMAT.JPEG;
 			private static readonly ColorProfile	DEFAULT_PROFILE = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
 
-			private ImageFile.FILE_FORMAT	m_imagesFormat = ImageFile.FILE_FORMAT.JPEG;
-			private ImageFile[]				m_images = new ImageFile[0];
-			private byte[][]				m_compressedImages = new byte[0][];
+			[System.Diagnostics.DebuggerDisplay( "{m_contentRectangle.Width}x{m_contentRectangle.Height} {m_compressedImageFormat} {m_compressedImage != null ? \"Compressed\" : \"Failed to Compress\"}" )]
+			public class WebPageImagePart : IDisposable {
+				public Rectangle				m_contentRectangle = Rectangle.Empty;
+				public ImageFile				m_image = null;
+				public ImageFile.FILE_FORMAT	m_compressedImageFormat;
+				public byte[]					m_compressedImage = null;
+
+				internal WebPageImagePart( Rectangle _contentRectangle, ImageFile _image, ImageFile.FILE_FORMAT _compressedImageFormat ) {
+					if ( _image == null )
+						throw new Exception( "Invalid image part!" );
+
+					m_contentRectangle = _contentRectangle;
+					m_image = _image;
+					m_compressedImageFormat = _compressedImageFormat;
+
+					// Compress the image
+					try {
+						NativeByteArray content = null;
+						switch ( m_compressedImageFormat ) {
+							case ImageFile.FILE_FORMAT.PNG:
+								content = m_image.Save( ImageFile.FILE_FORMAT.PNG, ImageFile.SAVE_FLAGS.SF_PNG_Z_BEST_COMPRESSION );
+								break;
+
+							case ImageFile.FILE_FORMAT.JPEG:
+								content = m_image.Save( ImageFile.FILE_FORMAT.JPEG, ImageFile.SAVE_FLAGS.SF_JPEG_QUALITYNORMAL );
+								break;
+
+							default:
+								content = m_image.Save( m_compressedImageFormat, ImageFile.SAVE_FLAGS.NONE );
+								break;
+						}
+
+						if ( content == null )
+							throw new Exception( "Failed to save image using \"" + m_compressedImageFormat + "\" format! Image library returned null..." );
+
+						m_compressedImage = content.AsByteArray;
+						content.Dispose();
+
+					} catch ( Exception _e ) {
+						throw new Exception( "An error occurred during image compression!", _e );
+					}
+				}
+
+				internal WebPageImagePart( BinaryReader _reader, bool _decompressImage ) {
+					Read( _reader, _decompressImage );
+				}
+
+				internal void	Write( BinaryWriter _writer ) {
+					_writer.Write( m_contentRectangle.X );
+					_writer.Write( m_contentRectangle.Y );
+					_writer.Write( m_contentRectangle.Width );
+					_writer.Write( m_contentRectangle.Height );
+
+					_writer.Write( (int) m_compressedImageFormat );
+
+					if ( m_compressedImage == null ) {
+						_writer.Write( (int) 0 );
+						return;
+					}
+
+					// Save compressed image
+					_writer.Write( m_compressedImage.Length );
+					_writer.Write( m_compressedImage );
+				}
+
+				internal void	Read( BinaryReader _reader, bool _decompressImage ) {
+					m_contentRectangle = new Rectangle( _reader.ReadInt32(), _reader.ReadInt32(), _reader.ReadInt32(), _reader.ReadInt32() );
+					m_compressedImageFormat = (ImageFile.FILE_FORMAT) _reader.ReadInt32();
+
+					// Read compressed image
+					int	compressedImageLength = _reader.ReadInt32();
+					m_compressedImage = new byte[compressedImageLength];
+					_reader.Read( m_compressedImage, 0, compressedImageLength );
+
+					if ( !_decompressImage )
+						return;
+
+					// Attempt to read the image file
+					try {
+						using ( NativeByteArray imageContent = new NativeByteArray( m_compressedImage ) ) {
+							m_image = new ImageFile( imageContent, m_compressedImageFormat );
+						}
+					} catch ( Exception _e ) {
+						throw new Exception( "An error occurred while attempting to decompress image from byte[] (length = " + compressedImageLength + " format = " + m_compressedImageFormat + ")", _e );
+					}
+				}
+
+				public void Dispose() {
+					if ( m_image != null )
+						m_image.Dispose();
+					m_image = null;
+					m_contentRectangle = Rectangle.Empty;
+				}
+			}
+
+			private WebPageImagePart[]		m_images = new WebPageImagePart[0];
 
 			// These are the default rendering sizes of a web-page capture
 			// The user would expect these to be set to their screen's dimensions...
@@ -165,7 +255,7 @@ namespace Brain2 {
 			/// <summary>
 			/// Content is fully loaded whenever its compressed images are available
 			/// </summary>
-			public override bool IsFullyLoaded => m_compressedImages.Length == 0 || m_compressedImages[0] != null;
+			public override bool IsFullyLoaded => m_images.Length == 0 || m_images[0].m_compressedImage != null;
 
 			/// <summary>
 			/// Will be of type ImageFile[]
@@ -175,7 +265,11 @@ namespace Brain2 {
 					if ( m_images.Length > 0 && m_images[0] == null ) {
 						// Create placeholders for now & launch loading process...
 						for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
-							m_images[imageIndex] = new ImageFile( PLACEHOLDER_WIDTH, PLACEHOLDER_HEIGHT, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );
+							m_images[imageIndex] = new WebPageImagePart(
+								new Rectangle( 0, (int) (imageIndex * PLACEHOLDER_HEIGHT), (int) PLACEHOLDER_WIDTH, (int) PLACEHOLDER_HEIGHT ),
+								new ImageFile( PLACEHOLDER_WIDTH, PLACEHOLDER_HEIGHT, PIXEL_FORMAT.BGR8, DEFAULT_PROFILE ),
+								DEFAULT_COMPRESSION_FORMAT
+							);
 						}
 
 						m_owner.m_database.Async_LoadChunk( this, () => {
@@ -189,21 +283,17 @@ namespace Brain2 {
 
 			public ChunkWebPageSnapshot( Fiche _owner, ulong _offset, uint _size ) : base( _owner, _offset, _size ) {
 			}
-			public ChunkWebPageSnapshot( Fiche _owner, uint _imageStartIndex, ImageFile[] _images, ImageFile.FILE_FORMAT _targetFormat ) : base( _owner, ~0UL, 0 ) {
-				UpdateImages( _imageStartIndex, _images, _targetFormat );
+			public ChunkWebPageSnapshot( Fiche _owner, uint _imageStartIndex, Rectangle[] _contentRectangles, ImageFile[] _images, ImageFile.FILE_FORMAT _targetFormat ) : base( _owner, ~0UL, 0 ) {
+				UpdateImages( _imageStartIndex, _contentRectangles, _images, _targetFormat );
 			}
 
-			public void	UpdateImages( uint _imageStartIndex, ImageFile[] _images, ImageFile.FILE_FORMAT _targetFormat ) {
-				m_imagesFormat = _targetFormat;
-
-				int			newSize = Mathf.Max( m_images.Length, (int) _imageStartIndex + _images.Length );
-				ImageFile[]	newImages = new ImageFile[newSize];
-				byte[][]	newCompressedImages = new byte[newSize][];
+			public void	UpdateImages( uint _imageStartIndex, Rectangle[] _contentRectangles, ImageFile[] _images, ImageFile.FILE_FORMAT _compressedFormat ) {
+				int					newSize = Mathf.Max( m_images.Length, (int) _imageStartIndex + _images.Length );
+				WebPageImagePart[]	newImages = new WebPageImagePart[newSize];
 
 				// Copy existing images
 				for ( uint imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
 					newImages[imageIndex] = m_images[imageIndex];
-					newCompressedImages[imageIndex] = m_compressedImages[imageIndex];
 				}
 
 				// Replace with new images
@@ -215,13 +305,16 @@ namespace Brain2 {
 					if ( _images[imageIndex] == null )
 						throw new Exception( "Invalid image! Fiche web images must not be null!" );
 
-					newImages[_imageStartIndex + imageIndex] = _images[imageIndex];
-					newCompressedImages[_imageStartIndex + imageIndex] = null;	// Clear existing compressed image since the image changed
+					try {
+						newImages[_imageStartIndex + imageIndex] = new WebPageImagePart( _contentRectangles[imageIndex], _images[imageIndex], _compressedFormat );
+					} catch ( Exception _e ) {
+						// Something went wrong!
+						m_owner.Database.AsyncMain_ReportFicheStatus( m_owner, FichesDB.FICHE_REPORT_STATUS.ERROR, "An error occurred while saving a part of the web page image! " + _e.Message );
+					}
 				}
 
 				// Replace old array
 				m_images = newImages;
-				m_compressedImages = newCompressedImages;
 
 				// Notify?
 				m_owner.NotifyWebPageImageChanged( this );
@@ -232,96 +325,28 @@ namespace Brain2 {
 			/// </summary>
 			public void	UnloadImages() {
 				for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
-					ImageFile	image = m_images[imageIndex];
-					if ( image != null )
-						image.Dispose();
-
+					if ( m_images[imageIndex] != null ) {
+						m_images[imageIndex].Dispose();
+					}
 					m_images[imageIndex] = null;
+				}
+			}
+
+			public override void Write( BinaryWriter _writer ) {
+				// Write image parts
+				_writer.Write( m_images.Length );
+				for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
+					m_images[imageIndex].Write( _writer );
 				}
 			}
 
 			public override void Read(BinaryReader _reader) {
 				UnloadImages();
 
-				// Only read images format, images count & create empty arrays
-				m_imagesFormat = (ImageFile.FILE_FORMAT) _reader.ReadUInt32();
-				m_images = new ImageFile[_reader.ReadInt32()];
-				m_compressedImages = new byte[m_images.Length][];
+				// Only read images count & create empty array
+				m_images = new WebPageImagePart[_reader.ReadInt32()];
 
 				// The rest of the read is performed asynchronously whenever "Content" is accessed (lazy initialization)
-			}
-
-// 			public override void LastChanceReadBeforeWrite(BinaryReader _reader) {
-// 				// Fully read the old chunk's content
-// 				using ( ChunkWebPageSnapshot oldChunk = new ChunkWebPageSnapshot( null, m_offset, m_size ) ) {
-// 
-// 					oldChunk.Threaded_LoadContent( _reader, false );
-// 
-// 					// Transfer the old chunk's content into the new chunk (unless we have new content)
-// 					int	minLength = Math.Min( m_images.Length, oldChunk.m_images.Length );
-// 					for ( int imageIndex=0; imageIndex < minLength; imageIndex++ ) {
-// 						if ( m_compressedImages[imageIndex] == null && m_images[imageIndex] == null ) {
-// 							m_compressedImages[imageIndex] = oldChunk.m_compressedImages[imageIndex];
-// 						}
-// 					}
-// 				}
-// 			}
-
-			public override void Write(BinaryWriter _writer) {
-				// Write images format & image count
-				_writer.Write( (uint) m_imagesFormat );
-				_writer.Write( m_images.Length );
-
-				// Write actual compressed content
-				for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
-					byte[]	compressedImage = m_compressedImages[imageIndex];
-					if ( compressedImage == null ) {
-						// Compress the image
-						try {
-							ImageFile	image = m_images[imageIndex];
-							if ( image == null )
-								throw new Exception( "Missing image to compress! We should have either been provided with compressed content or a valid image!" );
-
-							NativeByteArray content = null;
-							switch ( m_imagesFormat ) {
-								case ImageFile.FILE_FORMAT.PNG:
-									content = image.Save( ImageFile.FILE_FORMAT.PNG, ImageFile.SAVE_FLAGS.SF_PNG_Z_BEST_COMPRESSION );
-									break;
-
-								case ImageFile.FILE_FORMAT.JPEG:
-									content = image.Save( ImageFile.FILE_FORMAT.JPEG, ImageFile.SAVE_FLAGS.SF_JPEG_QUALITYNORMAL );
-									break;
-
-								default:
-									content = image.Save( m_imagesFormat, ImageFile.SAVE_FLAGS.NONE );
-									break;
-							}
-
-							if ( content == null )
-								throw new Exception( "Failed to save image using \"" + m_imagesFormat + "\" format! Image library returned null..." );
-
-							// Write actual compressed content
-							_writer.Write( content.Length );
-
-							compressedImage = content.AsByteArray;
-
-							content.Dispose();
-
-						} catch ( Exception _e ) {
-							// Something went wrong!
-							m_owner.Database.AsyncMain_ReportFicheStatus( m_owner, FichesDB.FICHE_REPORT_STATUS.ERROR, "An error occurred while saving a part of the web page image! " + _e.Message );
-						}
-					}
-
-					// Save compressed image
-					if ( compressedImage == null ) {
-						_writer.Write( (int) 0 );
-						continue;
-					}
-
-					_writer.Write( compressedImage.Length );
-					_writer.Write( compressedImage );
-				}
 			}
 
 			internal override void	Threaded_LoadContent( BinaryReader _reader, bool _prepareContent ) {
@@ -330,42 +355,29 @@ namespace Brain2 {
 					// Use the "light" regular reader that will initialize the array of images
 					Read( _reader );
 
-					// Read compressed data
+// 					if ( m_compressedImages[imageIndex].Length == 0 ) {
+// 						// Create an error placeholder
+// 						uint	imageWidth = m_images.Length > 0 && m_images[0] != null ? m_images[0].Width : PLACEHOLDER_WIDTH;
+// 						m_images[imageIndex] = new ImageFile( imageWidth, (uint) (Mathf.PHI * imageWidth), PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );
+// 						m_images[imageIndex].Clear( float4.One );
+// 						m_images[imageIndex].DrawLine( new float4( 1, 0, 0, 1 ), new float2( 0, 0 ), new float2( m_images[imageIndex].Width-1, m_images[imageIndex].Height-1 ) );
+// 						m_images[imageIndex].DrawLine( new float4( 1, 0, 0, 1 ), new float2( 0, m_images[imageIndex].Height-1 ), new float2( m_images[imageIndex].Width-1, 0 ) );
+// 						continue;
+// 					}
+// 
+// 					if ( m_images[imageIndex] != null ) {
+// 						// Dispose of any existing image first...
+// 						m_images[imageIndex].Dispose();
+// 						m_images[imageIndex] = null;
+// 					}
+
+					// Read image parts
 					for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
-						int	compressedImageLength = _reader.ReadInt32();
-						m_compressedImages[imageIndex] = new byte[compressedImageLength];
-						_reader.Read( m_compressedImages[imageIndex], 0, compressedImageLength );
-					}
-
-					if ( _prepareContent ) {
-						// Decompress images
-						for ( int imageIndex=0; imageIndex < m_images.Length; imageIndex++ ) {
-							if ( m_compressedImages[imageIndex].Length == 0 ) {
-								// Create an error placeholder
-								uint	imageWidth = m_images.Length > 0 && m_images[0] != null ? m_images[0].Width : PLACEHOLDER_WIDTH;
-								m_images[imageIndex] = new ImageFile( imageWidth, (uint) (Mathf.PHI * imageWidth), PIXEL_FORMAT.BGR8, DEFAULT_PROFILE );
-								m_images[imageIndex].Clear( float4.One );
-								m_images[imageIndex].DrawLine( new float4( 1, 0, 0, 1 ), new float2( 0, 0 ), new float2( m_images[imageIndex].Width-1, m_images[imageIndex].Height-1 ) );
-								m_images[imageIndex].DrawLine( new float4( 1, 0, 0, 1 ), new float2( 0, m_images[imageIndex].Height-1 ), new float2( m_images[imageIndex].Width-1, 0 ) );
-								continue;
-							}
-
-							if ( m_images[imageIndex] != null ) {
-								// Dispose of any existing image first...
-								m_images[imageIndex].Dispose();
-								m_images[imageIndex] = null;
-							}
-
-							// Attempt to read the image file
-							try {
-								using ( NativeByteArray imageContent = new NativeByteArray( m_compressedImages[imageIndex] ) ) {
-									m_images[imageIndex] = new ImageFile( imageContent, m_imagesFormat );
-								}
-
-							} catch ( Exception _e ) {
-								m_owner.Database.AsyncMain_LogError( "Failed to read a part of the web image chunk:" + _e.Message );
-								m_images[imageIndex] = null;
-							}
+						try {
+							m_images[imageIndex] = new WebPageImagePart( _reader, _prepareContent );
+						} catch ( Exception _e ) {
+							m_images[imageIndex] = null;
+							throw new Exception( "Failed to read part " + imageIndex + " of the web image chunk", _e );
 						}
 					}
 
@@ -657,10 +669,10 @@ namespace Brain2 {
 		/// </summary>
 		/// <remarks>Will launch an asynchronous loading of the image and return a placeholder whenever the image is actually loaded and ready.
 		/// You should subscribe to the WebPageImageChanged event to update the image once it's available</remarks>
-		public ImageFile[]			WebPageImages {
+		public ChunkWebPageSnapshot.WebPageImagePart[]	WebPageImages {
 			get {
 				ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
-				return chunk != null ? chunk.Content as ImageFile[] : null;
+				return chunk != null ? chunk.Content as ChunkWebPageSnapshot.WebPageImagePart[] : null;
 			}
 		}
 
@@ -989,12 +1001,12 @@ namespace Brain2 {
 		/// Create the image chunk and feed it our image
 		/// </summary>
 		/// <param name="_imagesWebPage"></param>
-		internal void	CreateImageChunk( uint _imageStartIndex, ImageFile[] _imagesWebPage, ImageFile.FILE_FORMAT _targetFormat ) {
+		internal void	CreateImageChunk( uint _imageStartIndex, Rectangle[] _contentRectangles, ImageFile[] _imagesWebPage, ImageFile.FILE_FORMAT _targetFormat ) {
 			ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
 			if ( chunk == null ) {
-				chunk = new ChunkWebPageSnapshot( this, _imageStartIndex, _imagesWebPage, _targetFormat );
+				chunk = new ChunkWebPageSnapshot( this, _imageStartIndex, _contentRectangles, _imagesWebPage, _targetFormat );
 			} else {
-				chunk.UpdateImages( _imageStartIndex, _imagesWebPage, _targetFormat );
+				chunk.UpdateImages( _imageStartIndex, _contentRectangles, _imagesWebPage, _targetFormat );
 			}
 		}
 

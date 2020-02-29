@@ -133,7 +133,7 @@ namespace Brain2 {
 		}
 
 		public delegate void	WebPageSourceAvailable( string _title, string _HTMLContent, System.Xml.XmlDocument _DOMElements );
-		public delegate void	WebPagePieceRendered( uint _webPagePieceIndex, ImageUtility.ImageFile _imageWebPage );
+		public delegate void	WebPagePieceRendered( uint _webPagePieceIndex, Rectangle _contentRectangle, ImageUtility.ImageFile _imageWebPage );
 		public delegate void	WebPageSuccess();
 		public delegate void	WebPageError( WEB_ERROR_TYPE _error, int _errorCode, string _message );
 		public delegate void	Log( LOG_TYPE _type, string _message );
@@ -154,8 +154,8 @@ namespace Brain2 {
 				},
 
 				// Occurs whenever a piece of the web page was successfully rendered
-				( uint _webPagePieceIndex, ImageUtility.ImageFile _imageWebPage ) => {
-					_onPagePieceRendered( _webPagePieceIndex, _imageWebPage );
+				( uint _webPagePieceIndex, Rectangle _contentRectangle, ImageUtility.ImageFile _imageWebPage ) => {
+					_onPagePieceRendered( _webPagePieceIndex, _contentRectangle, _imageWebPage );
 				},
 
 				// Occurs when the page successfully rendered
@@ -310,7 +310,7 @@ namespace Brain2 {
 
 			// Notify
 			_onSourceAvailable( dummyTitle, dummyHTML, null );
-			_onPieceRendered( 0, dummyPage );
+			_onPieceRendered( 0, new Rectangle( 0, 0, (int) Fiche.ChunkWebPageSnapshot.ms_defaultWebPageWidth, (int) Fiche.ChunkWebPageSnapshot.ms_defaultWebPageHeight ), dummyPage );
 			_onSuccess();
 		}
 		#endregion

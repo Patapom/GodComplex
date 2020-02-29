@@ -21,7 +21,7 @@ namespace Brain2 {
 
 		private Fiche		m_fiche = null;
 
-		private Dictionary< ImageUtility.ImageFile, Bitmap >	m_imageFile2Bitmap = new Dictionary<ImageUtility.ImageFile, Bitmap>();
+		private Dictionary< Fiche.ChunkWebPageSnapshot.WebPageImagePart, PanelMultiBitmaps.BitmapWithRectangle >	m_webPageImagePart2Bitmap = new Dictionary<Fiche.ChunkWebPageSnapshot.WebPageImagePart, PanelMultiBitmaps.BitmapWithRectangle>();
 
 		#endregion
 
@@ -69,24 +69,31 @@ namespace Brain2 {
 			}
 		}
 
-		public Bitmap[]		Bitmaps {
+		public PanelMultiBitmaps.BitmapWithRectangle[]	Bitmaps {
 			get {
 				if ( m_fiche == null )
 					return null;
 
 				// Assign as many bitmaps as the web page requires
-				ImageUtility.ImageFile[]	images = m_fiche.WebPageImages;
+				Fiche.ChunkWebPageSnapshot.WebPageImagePart[]	images = m_fiche.WebPageImages;
 				if ( images == null )
 					return null;	// Can occur when the fiche just got created and is currently loading... (no image chunk yet!)
 
-				List<Bitmap>	bitmaps = new List<Bitmap>();
-				foreach ( ImageUtility.ImageFile image in images ) {
-					Bitmap	bitmap = null;
+				// Extract bitmaps
+				List<PanelMultiBitmaps.BitmapWithRectangle>	bitmaps = new List<PanelMultiBitmaps.BitmapWithRectangle>();
+				foreach ( Fiche.ChunkWebPageSnapshot.WebPageImagePart image in images ) {
+					if ( image == null )
+						continue;
+
+					PanelMultiBitmaps.BitmapWithRectangle	bitmap = null;
 					try {
-						if ( !m_imageFile2Bitmap.TryGetValue( image, out bitmap ) ) {
+						if ( !m_webPageImagePart2Bitmap.TryGetValue( image, out bitmap ) ) {
 							// Convert to bitmap
-							bitmap = image.AsBitmap;
-							m_imageFile2Bitmap.Add( image, bitmap );
+							bitmap = new PanelMultiBitmaps.BitmapWithRectangle() {
+								m_displayRectangle = image.m_contentRectangle,
+								m_bitmap = image.m_image != null ? image.m_image.AsBitmap : null
+							};
+							m_webPageImagePart2Bitmap.Add( image, bitmap );
 						}
 						bitmaps.Add( bitmap );
 					} catch ( Exception _e ) {
@@ -109,6 +116,8 @@ namespace Brain2 {
 			tagEditBox.OwnerForm = this;
 
 			panelHost.m_childPanel = panelWebPage;
+
+			panelWebPage.Focus();
 		}
 
 		private void webEditor_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
@@ -122,10 +131,10 @@ namespace Brain2 {
 		}
 
 		void	DisposeFicheBitmaps() {
-			foreach ( Bitmap B in m_imageFile2Bitmap.Values ) {
-				B.Dispose();
+			foreach ( PanelMultiBitmaps.BitmapWithRectangle B in m_webPageImagePart2Bitmap.Values ) {
+				B.m_bitmap.Dispose();
 			}
-			m_imageFile2Bitmap.Clear();
+			m_webPageImagePart2Bitmap.Clear();
 			panelWebPage.Bitmaps = null;
 		}
 
@@ -161,10 +170,10 @@ namespace Brain2 {
 				return;
 			}
 
-System.Diagnostics.Debug.WriteLine( "New web page images need to be displayed!" );
+//System.Diagnostics.Debug.WriteLine( "New web page images need to be displayed!" );
 //			panelWebPage.BackgroundImage = _sender.WebPageImage.AsBitmap;
 
-			Bitmap[]	bitmaps = this.Bitmaps;
+			PanelMultiBitmaps.BitmapWithRectangle[]	bitmaps = this.Bitmaps;
 			if ( bitmaps == null )
 				return;
 
@@ -172,11 +181,9 @@ System.Diagnostics.Debug.WriteLine( "New web page images need to be displayed!" 
 
 			// Make sure the panel is at least as large as the host
 			// It can be much bigger but can't be smaller
-			Size	panelSize = panelWebPage.TotalSize.Size;
-			panelSize.Width = Math.Max( panelHost.Width, panelSize.Width );
-			panelSize.Height = Math.Max( panelHost.Height, panelSize.Height );
-
-			panelWebPage.Size = panelSize;
+			Rectangle	pageRectangle = panelWebPage.TotalRectangle;
+			panelWebPage.Width = Math.Max( panelHost.Width, pageRectangle.Right );
+			panelWebPage.Height = Math.Max( panelHost.Height, pageRectangle.Bottom );
 			panelWebPage.Invalidate();
 		}
 

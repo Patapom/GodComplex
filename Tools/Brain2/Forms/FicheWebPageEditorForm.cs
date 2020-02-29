@@ -29,7 +29,7 @@ namespace Brain2 {
 		protected override bool CloseOnEscape => false;
 		public override Keys ShortcutKey => Keys.F5;
 
-		public Form			EditorForm { get {return this; } }
+		public Form			EditorForm { get { return this; } }
 		public Fiche		EditedFiche {
 			get { return m_fiche; }
 			set {

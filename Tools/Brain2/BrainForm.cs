@@ -242,21 +242,11 @@ Debug( "_____________________________" );
 //Hide();
 
 				// Ask factory to create the best fiche for our data
-				Fiche	fiche = m_database.Sync_CreateFicheFromClipboard( _data );
+				SelectedFiche = m_database.Sync_CreateFicheFromClipboard( _data );
 
 				// Start edition
-				switch ( fiche.Type ) {
-					case Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE:
-					case Fiche.TYPE.LOCAL_FILE:
-						m_ficheWebPageEditorForm.EditedFiche = fiche;
-						m_ficheWebPageEditorForm.Show( this );
-						break;
-
-					case Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE:
-						m_ficheWebPageAnnotatorForm.EditedFiche = fiche;
-						m_ficheWebPageAnnotatorForm.Show( this );
-						break;
-				}
+				if ( SelectedFicheEditor != null && !SelectedFicheEditor.EditorForm.Visible )
+					SelectedFicheEditor.EditorForm.Show();
 
 //Show();
 
@@ -336,8 +326,18 @@ this.TopMost = false;
 				m_database.LoadFichesDescriptions( rootDBFolder );
 
 
-SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://twitter.com/HMaler/status/1217484876372480008" ) );
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://twitter.com/HMaler/status/1217484876372480008" ) );	// OK!
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://stackoverflow.com/questions/4964205/non-transparent-click-through-form-in-net" ) );	// OK!
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "http://www.patapom.com/" ) );	// OK!
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.monde-diplomatique.fr/2020/03/HOLLAR/61546" ) );	// OK!
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://docs.google.com/document/d/1_iJeEDcoDJS8EUyaprAL4Eu67Tbox_DnYnzQPFiTsa0/edit#heading=h.bktvm5f5g3wf" ) );	// OK!
 
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.breakin.se/mc-intro/" ) );			// Black background issue
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://en.wikipedia.org/wiki/Quantum_mind" ) );	// Viewport size issue => clipping to height = 0 sur subsequent scrolls
+SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.frontiersin.org/articles/10.3389/fpsyg.2017.02124/full" ) );	// Même souci que wikipedia!
+
+
+m_logForm.Show();
 			}
 			catch ( FichesDB.DatabaseLoadException _e ) {
 				// Log errors...
