@@ -158,6 +158,7 @@ namespace WebServices {
 // 			host = new HostHandler(this);
 
 			m_browser = new ChromiumWebBrowser( "", browserSettings );
+			m_browser.BrowserInitialized += browser_BrowserInitialized;
 			m_browser.LifeSpanHandler = new LifeSpanHandler();
 
 			// https://github.com/cefsharp/CefSharp/wiki/General-Usage#handlers
@@ -170,8 +171,6 @@ namespace WebServices {
  				_browserViewportHeight = (int) (_browserViewportWidth * 1.6180339887498948482045868343656);
 
 			m_browser.Size = new Size( _browserViewportWidth, _browserViewportHeight );
-
-			m_browser.BrowserInitialized += browser_BrowserInitialized;
 		}
 
 		private void browser_BrowserInitialized(object sender, EventArgs e) {
@@ -395,7 +394,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
  						int			remainingHeight = _scrollHeight - scrollIndex * viewportHeight;
 									remainingHeight = Math.Min( viewportHeight, remainingHeight );
 
-						Rectangle	viewportRectangle = new Rectangle( 0, 0, viewportWidth, remainingHeight );
+						Rectangle	viewportRectangle = new Rectangle( 0, viewportHeight - remainingHeight, viewportWidth, remainingHeight );
 						Rectangle	clippedContentRectangle = contentRectangle;
 									clippedContentRectangle.Intersect( viewportRectangle );
 
@@ -417,22 +416,6 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 							}
 						}
 
-// 						Bitmap	bitmap = task.Result;
-// 						int	remainingHeight = _scrollHeight - scrollIndex * viewportHeight;
-// 						if ( remainingHeight < bitmap.Height ) {
-// 							// Clip bitmap and keep only the last relevant lines
-// 							if ( remainingHeight < 16 ) {
-// 								bitmap = null;	// Ignore super small slices
-// 							} else {
-// 								using ( Bitmap oldBitmap = bitmap ) {
-// 									bitmap = new Bitmap( oldBitmap.Width, (int) remainingHeight, oldBitmap.PixelFormat );
-// 									using ( Graphics G = Graphics.FromImage( bitmap ) ) {
-// 										G.DrawImage( oldBitmap, 0, remainingHeight - oldBitmap.Height );
-// 									}
-// 								}
-// 							}
-// 						}
-
 						//////////////////////////////////////////////////////////////////////////
 						/// Forward bitmap to caller
 						///
@@ -442,7 +425,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 
 								// We need the absolute content rectangle, in other words the location of this image chunk as it would be in the web page from the topmost and left most location...
 								Rectangle	absoluteContentRectangle = clippedContentRectangle;
-											absoluteContentRectangle.Offset( 0, scrollIndex * viewportHeight );
+											absoluteContentRectangle.Offset( 0, scrollIndex * viewportHeight - viewportRectangle.Y );
 
 								m_pageRendered( (uint) scrollIndex, absoluteContentRectangle, image );
 
@@ -456,8 +439,9 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						//////////////////////////////////////////////////////////////////////////
 						/// Scroll down the page
 						if ( scrollIndex < _scrollsCount-1 ) {
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting scrolling to position {0}...", ((scrollIndex+1) * viewportHeight) );
-							await ExecuteJS( JSCodeScroll( (uint) ((scrollIndex+1) * viewportHeight) ), m_delay_ms_ScrollDown );
+							int	scrollPosition = Math.Min( _scrollHeight, (scrollIndex+1) * viewportHeight );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting scrolling to position {0}...", scrollPosition );
+							await ExecuteJS( JSCodeScroll( (uint) scrollPosition ), m_delay_ms_ScrollDown );
 						}
 
 					} catch ( TimeoutException _e ) {
