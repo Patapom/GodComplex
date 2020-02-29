@@ -332,9 +332,9 @@ this.TopMost = false;
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.monde-diplomatique.fr/2020/03/HOLLAR/61546" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://docs.google.com/document/d/1_iJeEDcoDJS8EUyaprAL4Eu67Tbox_DnYnzQPFiTsa0/edit#heading=h.bktvm5f5g3wf" ) );	// OK!
 
-//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.breakin.se/mc-intro/" ) );			// Black background issue
-//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://en.wikipedia.org/wiki/Quantum_mind" ) );	// Viewport size issue => clipping to height = 0 sur subsequent scrolls
-SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.frontiersin.org/articles/10.3389/fpsyg.2017.02124/full" ) );	// Même souci que wikipedia!
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.frontiersin.org/articles/10.3389/fpsyg.2017.02124/full" ) );	// Même souci que wikipedia!
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://en.wikipedia.org/wiki/Quantum_mind" ) );	// Crash bitmap copy
+SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.breakin.se/mc-intro/" ) );	// Clipped bitmap
 
 
 m_logForm.Show();
@@ -646,10 +646,11 @@ m_logForm.Show();
 					switch ( shortcut.m_type ) {
 						case PreferencesForm.Shortcut.SHORTCUT.TOGGLE:
 							// Toggle visibility
-							if ( Visible )
+							if ( Visible ) {
 								Hide();
-							else
+							} else {
 								Show();
+							}
 							break;
 
 						case PreferencesForm.Shortcut.SHORTCUT.PASTE:

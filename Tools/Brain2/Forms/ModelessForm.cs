@@ -82,26 +82,14 @@ namespace Brain2 {
 			this.Location = topLeft;
 		}
 
-// 		public new void	Show() {
-// 			base.Show();
-// 			Capture = true;
-// 
-// 			if ( m_relativeLocation.Width < 0 ) {
-// 				// Initial condition => Reset to center
-// 				m_relativeLocation.Width = (m_owner.Width - Width) / 2;
-// 				m_relativeLocation.Height = (m_owner.Height - Height) / 2;
-// 			}
-// 
-// 			Point	newLocation = m_owner.Location + m_relativeLocation;
-// 			newLocation.X = Math.Max( 0, Math.Min( m_owner.Width - Width, newLocation.X ) );
-// 			newLocation.Y = Math.Max( 0, Math.Min( m_owner.Height - Width, newLocation.Y ) );
-// 			this.Location = newLocation;
-// 		}
-// 
-// 		public new void Hide() {
-// 			Capture = false;
-// 			base.Hide();
-// 		}
+		protected override void OnFormClosing(FormClosingEventArgs e) {
+			if ( e.CloseReason == CloseReason.UserClosing ) {
+				e.Cancel = true;
+				Hide();
+			}
+
+			base.OnFormClosing(e);
+		}
 
 		protected override void OnShown(EventArgs e) {
 			if ( m_owner == null )

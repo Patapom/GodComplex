@@ -106,6 +106,7 @@ namespace Brain2
 			// 
 			// PanelMultiBitmaps
 			// 
+			this.BackColor = System.Drawing.Color.White;
 			this.TabStop = true;
 			this.ResumeLayout(false);
 
@@ -113,13 +114,21 @@ namespace Brain2
 
 		SolidBrush	m_brushEmptyPage;
 		void		Init() {
-			m_brushEmptyPage = new SolidBrush( Color.White );
+//			m_brushEmptyPage = new SolidBrush( Color.White );
 
 // 			SetStyle( ControlStyles.Selectable, true );
 // 			SetStyle( ControlStyles.ResizeRedraw, true );
 // 			SetStyle( ControlStyles.EnableNotifyMessage, true );
 // 			SetStyle( ControlStyles.ContainerControl, false );
 			this.DoubleBuffered = true;
+		}
+
+		protected override void OnBackColorChanged(EventArgs e) {
+			base.OnBackColorChanged(e);
+
+			if ( m_brushEmptyPage != null )
+				m_brushEmptyPage.Dispose();
+			m_brushEmptyPage = new SolidBrush( this.BackColor );
 		}
 
 		#endregion
@@ -141,8 +150,8 @@ namespace Brain2
 		protected override void OnPaint( PaintEventArgs e ) {
 			base.OnPaint( e );
 
+			e.Graphics.FillRectangle( m_brushEmptyPage, e.ClipRectangle );
 			if ( m_bitmaps.Length == 0 ) {
-				e.Graphics.FillRectangle( m_brushEmptyPage, e.ClipRectangle );
 				return;
 			}
 
