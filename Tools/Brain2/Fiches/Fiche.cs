@@ -31,6 +31,7 @@ namespace Brain2 {
 			UPDATING,			// In the process of being updated
 			SAVING,				// In the process of being saved
 			LOADING,			// In the process of being loaded
+			ACCESSING,			// In the process of being accessed by a user
 		}
 
 		public enum TYPE {
@@ -671,8 +672,14 @@ namespace Brain2 {
 		/// You should subscribe to the WebPageImageChanged event to update the image once it's available</remarks>
 		public ChunkWebPageSnapshot.WebPageImagePart[]	WebPageImages {
 			get {
-				ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
-				return chunk != null ? chunk.Content as ChunkWebPageSnapshot.WebPageImagePart[] : null;
+				ChunkWebPageSnapshot.WebPageImagePart[]	result = null;
+
+				Lock( STATUS.ACCESSING, () => {
+					ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
+					result = chunk != null ? chunk.Content as ChunkWebPageSnapshot.WebPageImagePart[] : null;
+				} );
+
+				return result;
 			}
 		}
 
@@ -682,8 +689,14 @@ namespace Brain2 {
 		/// <remarks>Will launch an asynchronous loading of the image and return a placeholder whenever the image is actually loaded and ready</remarks>
 		public ImageFile			ThumbnailImage {
 			get {
-				ChunkThumbnail	chunk = FindChunkByType<ChunkThumbnail>();
-				return chunk != null ? chunk.Content as ImageFile : null;
+				ImageFile	result = null;
+
+				Lock( STATUS.ACCESSING, () => {
+					ChunkThumbnail	chunk = FindChunkByType<ChunkThumbnail>();
+					result = chunk != null ? chunk.Content as ImageFile : null;
+				} );
+
+				return result;
 			}
 		}
 

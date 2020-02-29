@@ -104,6 +104,7 @@
 			this.richTextBoxURL.Multiline = false;
 			this.richTextBoxURL.Name = "richTextBoxURL";
 			this.richTextBoxURL.ReadOnly = true;
+			this.richTextBoxURL.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
 			this.richTextBoxURL.Size = new System.Drawing.Size(960, 26);
 			this.richTextBoxURL.TabIndex = 1;
 			this.richTextBoxURL.Text = "";
@@ -125,6 +126,8 @@
 			// 
 			// panelWebPage
 			// 
+			this.panelWebPage.BackColor = System.Drawing.Color.White;
+			this.panelWebPage.Bitmaps = new Brain2.PanelMultiBitmaps.BitmapWithRectangle[0];
 			this.panelWebPage.Location = new System.Drawing.Point(0, 0);
 			this.panelWebPage.Name = "panelWebPage";
 			this.panelWebPage.Size = new System.Drawing.Size(1005, 621);
