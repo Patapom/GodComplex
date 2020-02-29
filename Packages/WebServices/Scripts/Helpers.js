@@ -33,6 +33,15 @@ function getXPath(node, path) {
 	return path;
 }
 
+// Returns the height of the page
+function GetPageHeight() {
+	var body = document.body, html = document.documentElement;
+	if ( html !== undefined && html != null ) {
+		return Math.max( body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight );
+	}
+	return Math.max( body.scrollHeight, body.offsetHeight );;
+}
+
 // This function is used to know if an element is set with a 'fixed' position, which is what we're looking for: fixed elements that may block the viewport
 function IsFixedElement( _element ) {
 	var position = window.getComputedStyle( _element ).position;

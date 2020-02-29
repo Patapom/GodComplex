@@ -59,7 +59,16 @@ function RemoveFixedNodes( _root ) {
 
 	// Enumerate all non empty nodes that contain either text or an image
 	var	topMostContainer = RecurseRetrieveTopMostContentContainer( document.body );
+	if ( topMostContainer == null )
+		return null;
+
+	var	containerRect = topMostContainer.getBoundingClientRect();
+	if ( topMostContainer == document.body ) {
+		// Patch rectangle for body element
+		containerRect.height = GetPageHeight();
+		containerRect.bottom = containerRect.top + containerRect.height;
+	}
 //return topMostContainer;
-	return topMostContainer != null ? JSON.stringify( topMostContainer.getBoundingClientRect() ) : null;
+	return JSON.stringify( containerRect );
 
 })();

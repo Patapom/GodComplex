@@ -245,20 +245,15 @@ Log( LOG_TYPE.DEBUG, _eventType );
 			//////////////////////////////////////////////////////////////////////////
 			// Ask for the page's height (not always reliable, especially on infinite scrolling feeds like facebook or twitter!)
 			//
-			JavascriptResponse	JSResult = await ExecuteJS( "(function() { var body = document.body, html = document.documentElement; return Math.max( body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight ); } )();" );
-			if ( JSResult.Result == null ) {
-Log( LOG_TYPE.DEBUG, "JS scrollHeight returned null => 2nd call" );
-				JSResult = await ExecuteJS( "(function() { var body = document.body; return Math.max( body.scrollHeight, body.offsetHeight ); } )();" );
-				if ( JSResult.Result == null ) {
-Log( LOG_TYPE.DEBUG, "JS scrollHeight returned null => 3rd call" );
-					JSResult = await ExecuteJS( "(function() { var html = document.documentElement; return Math.max( html.clientHeight, html.scrollHeight, html.offsetHeight ); } )();" );
-					if ( JSResult.Result == null ) {
-Log( LOG_TYPE.ERROR, "JS scrollHeight returned null => Exception!" );
-						throw new Exception( "None of the 3 attempts at querying page height was successful!" );
-					}
-				}
-			}
+			JavascriptResponse	JSResult = await ExecuteJS( "GetPageHeight();" );
 			int	scrollHeight = (int) JSResult.Result;
+
+			// Ask for background color
+			Color	backgroundColor = Color.White;
+			JSResult = await ExecuteJS( "(function() { return window.getComputedStyle( document.body ).backgroundColor.toString(); })();" );
+			if ( JSResult.Success ) {
+//				backgroundColor = 
+			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Perform as many screenshots as necessary to capture the entire page
@@ -267,19 +262,20 @@ Log( LOG_TYPE.ERROR, "JS scrollHeight returned null => Exception!" );
 			int	screenshotsCount = (int) Math.Ceiling( (double) scrollHeight / viewportHeight );
 Log( LOG_TYPE.DEBUG, "Page scroll height = " + scrollHeight + " - Screenshots Count = " + screenshotsCount );
 
-			await DoScreenshots( screenshotsCount, scrollHeight );
+			using ( Brush backgroundBrush = new SolidBrush( backgroundColor ) )
+				await DoScreenshots( screenshotsCount, scrollHeight, backgroundBrush );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Query the HTML source code and DOM content
 			//
-			await QueryContent();
+			await QueryContent( backgroundColor );
 		}
 
 		/// <summary>
 		/// Reads back HTML content and do a screenshot
 		/// </summary>
 		/// <returns></returns>
-		async Task	QueryContent() {
+		async Task	QueryContent( Color _backgroundColor ) {
 			try {
 Log( LOG_TYPE.DEBUG, "QueryContent for " + m_URL );
 
@@ -292,6 +288,7 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved HTML code " + (source.Length <
 
 				JavascriptResponse	JSResult = await ExecuteJS( "(function() { return document.title; } )();" );
 				string	pageTitle = JSResult.Result as string;
+			
 
 // @TODO: Parse DOM!
 Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
@@ -308,11 +305,11 @@ Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 		/// Do multiple screenshots to capture the entire page
 		/// </summary>
 		/// <returns></returns>
-		async Task	DoScreenshots( int _scrollsCount, int _scrollHeight ) {
+		async Task	DoScreenshots( int _scrollsCount, int _scrollHeight, Brush _backgroundBrush ) {
 			_scrollsCount = Math.Min( m_maxScreenshotsCount, _scrollsCount );
 
-			int	viewportWidth = m_browser.Size.Width;
-			int	viewportHeight = m_browser.Size.Height;
+			int			viewportWidth = m_browser.Size.Width;
+			int			viewportHeight = m_browser.Size.Height;
 			Rectangle	defaultTotalContentRectangle = new Rectangle( 0, 0, viewportWidth, _scrollHeight );	// Large rectangle covering several times the browser's rectangle
 
 			try {
@@ -384,16 +381,21 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Cleaning DOM and getting viewport ({0}, {1}, {2}, {3})", contentRectangle.X, contentRectangle.Y, contentRectangle.Width, contentRectangle.Height );
 
+
 						//////////////////////////////////////////////////////////////////////////
 						/// Request a screenshot
  						Task<Bitmap>	taskScreenshot = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<Bitmap>;
 
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
+
 						//////////////////////////////////////////////////////////////////////////
 						/// Clip bitmap with intersection of content and viewport rectangles
 						/// 
-						Rectangle	viewportRectangle = new Rectangle( 0, 0, viewportWidth, viewportHeight );
+ 						int			remainingHeight = _scrollHeight - scrollIndex * viewportHeight;
+									remainingHeight = Math.Min( viewportHeight, remainingHeight );
+
+						Rectangle	viewportRectangle = new Rectangle( 0, 0, viewportWidth, remainingHeight );
 						Rectangle	clippedContentRectangle = contentRectangle;
 									clippedContentRectangle.Intersect( viewportRectangle );
 
@@ -404,8 +406,12 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						} else if ( clippedContentRectangle.Width > 16 && clippedContentRectangle.Height > 16 ) {
 							// Clip to sub-rectangle
 							using ( Bitmap oldBitmap = taskScreenshot.Result ) {
-								bitmap = new Bitmap( (int) clippedContentRectangle.Width, (int) clippedContentRectangle.Height, oldBitmap.PixelFormat );
+//								bitmap = new Bitmap( (int) clippedContentRectangle.Width, (int) clippedContentRectangle.Height, oldBitmap.PixelFormat );
+								bitmap = new Bitmap( (int) clippedContentRectangle.Width, (int) clippedContentRectangle.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb );
 								using ( Graphics G = Graphics.FromImage( bitmap ) ) {
+									if ( oldBitmap.PixelFormat == System.Drawing.Imaging.PixelFormat.Format32bppPArgb ) {
+										G.FillRectangle( _backgroundBrush, 0, 0, bitmap.Width, bitmap.Height );
+									}
 									G.DrawImage( oldBitmap, -clippedContentRectangle.X, -clippedContentRectangle.Y );
 								}
 							}
