@@ -271,36 +271,6 @@ Log( LOG_TYPE.DEBUG, "Page scroll height = " + scrollHeight + " - Screenshots Co
 		}
 
 		/// <summary>
-		/// Reads back HTML content and do a screenshot
-		/// </summary>
-		/// <returns></returns>
-		async Task	QueryContent( Color _backgroundColor ) {
-			try {
-Log( LOG_TYPE.DEBUG, "QueryContent for " + m_URL );
-
-				// From Line 162 https://github.com/WildGenie/OSIRTv2/blob/3e60d3ce908a1d25a7b4633dc9afdd53256cbb4f/OSIRT/Browser/MainBrowser.cs#L300
-				string	source = await m_browser.GetBrowser().MainFrame.GetSourceAsync();
-				if ( source == null )
-					throw new Exception( "Failed to retrieve HTML source!" );
-
-Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved HTML code " + (source.Length < 100 ? source : source.Remove( 100 )) );
-
-				JavascriptResponse	JSResult = await ExecuteJS( "(function() { return document.title; } )();" );
-				string	pageTitle = JSResult.Result as string;
-			
-				JSResult = await ExecuteJS( Properties.Resources.RetrieveDOMElements );
-// @TODO: Parse DOM!
-//Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
-
-				// Notify source is ready
-				m_pageSourceAvailable( pageTitle, source, null );
-
-			} catch ( Exception _e ) {
-				m_pageError( -1, "An error occurred while attempting to retrieve HTML source for URL \"" + m_URL + "\": \r\n" + _e.Message );
-			}
-		}
-
-		/// <summary>
 		/// Do multiple screenshots to capture the entire page
 		/// </summary>
 		/// <returns></returns>
@@ -317,6 +287,14 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved HTML code " + (source.Length <
 //				await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( "(function() { document.documentElement.style.overflow = 'hidden'; })();" ), m_timeOut_ms_JavascriptNoRender );
 
 //				await ExecuteJS( "(function() { document.documentElement.style.overflow = 'hidden'; })();" );
+
+				// Retrieve initial scroll value
+				int					initialScrollY = 0;
+				JavascriptResponse	JSResult = await ExecuteJS( "window.scrollY;" );
+				if ( JSResult.Success ) {
+					initialScrollY = (int) JSResult.Result;
+	 			}
+
 
 #if false
 				//////////////////////////////////////////////////////////////////////////
@@ -339,7 +317,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting {0} scrollings", _
 							/// Scroll down the page
 							if ( scrollIndex < _scrollsCount-1 ) {
 // Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 1) Requesting scrolling..." );
-								await ExecuteJS( JSCodeScroll( (uint) ((scrollIndex+1) * viewportHeight) ), m_delay_ms_ScrollDown );
+								await ExecuteJS( JSCodeScroll( (uint) (initialScrollY + (scrollIndex+1) * viewportHeight) ), m_delay_ms_ScrollDown );
 							}
 
 						} catch ( TimeoutException _e ) {
@@ -355,7 +333,7 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
  					await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" );
 
 					// Scroll all the way back up and wait longer
-					await ExecuteJS( JSCodeScroll( 0 ), 4 * m_delay_ms_ScrollDown );
+					await ExecuteJS( JSCodeScroll( initialScrollY ), 4 * m_delay_ms_ScrollDown );
 				}
 #endif
 				//////////////////////////////////////////////////////////////////////////
@@ -375,7 +353,7 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 						if ( contentRectangle.IsEmpty ) {
 							// Use default rectangle covering the entire screen...
 							contentRectangle = defaultTotalContentRectangle;
-							contentRectangle.Offset( 0, -scrollIndex * viewportHeight );
+							contentRectangle.Offset( 0, -(initialScrollY + scrollIndex * viewportHeight) );
 						}
 
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Cleaning DOM and getting viewport ({0}, {1}, {2}, {3})", contentRectangle.X, contentRectangle.Y, contentRectangle.Width, contentRectangle.Height );
@@ -391,7 +369,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						//////////////////////////////////////////////////////////////////////////
 						/// Clip bitmap with intersection of content and viewport rectangles
 						/// 
- 						int			remainingHeight = _scrollHeight - scrollIndex * viewportHeight;
+ 						int			remainingHeight = _scrollHeight - (initialScrollY + scrollIndex * viewportHeight);
 									remainingHeight = Math.Min( viewportHeight, remainingHeight );
 
 						Rectangle	viewportRectangle = new Rectangle( 0, viewportHeight - remainingHeight, viewportWidth, remainingHeight );
@@ -439,7 +417,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						//////////////////////////////////////////////////////////////////////////
 						/// Scroll down the page
 						if ( scrollIndex < _scrollsCount-1 ) {
-							int	scrollPosition = Math.Min( _scrollHeight, (scrollIndex+1) * viewportHeight );
+							int	scrollPosition = Math.Min( _scrollHeight, initialScrollY + (scrollIndex+1) * viewportHeight );
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting scrolling to position {0}...", scrollPosition );
 							await ExecuteJS( JSCodeScroll( (uint) scrollPosition ), m_delay_ms_ScrollDown );
 						}
@@ -458,6 +436,36 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 
 			} catch ( Exception _e ) {
 				m_pageError( -1, "An error occurred while attempting to render a page screenshot for URL \"" + m_URL + "\": \r\n" + _e.Message );
+			}
+		}
+
+		/// <summary>
+		/// Reads back HTML content and do a screenshot
+		/// </summary>
+		/// <returns></returns>
+		async Task	QueryContent( Color _backgroundColor ) {
+			try {
+Log( LOG_TYPE.DEBUG, "QueryContent for " + m_URL );
+
+				// From Line 162 https://github.com/WildGenie/OSIRTv2/blob/3e60d3ce908a1d25a7b4633dc9afdd53256cbb4f/OSIRT/Browser/MainBrowser.cs#L300
+				string	source = await m_browser.GetBrowser().MainFrame.GetSourceAsync();
+				if ( source == null )
+					throw new Exception( "Failed to retrieve HTML source!" );
+
+Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved HTML code " + (source.Length < 100 ? source : source.Remove( 100 )) );
+
+				JavascriptResponse	JSResult = await ExecuteJS( "(function() { return document.title; } )();" );
+				string	pageTitle = JSResult.Result as string;
+			
+				JSResult = await ExecuteJS( Properties.Resources.RetrieveDOMElements );
+// @TODO: Parse DOM!
+//Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
+
+				// Notify source is ready
+				m_pageSourceAvailable( pageTitle, source, null );
+
+			} catch ( Exception _e ) {
+				m_pageError( -1, "An error occurred while attempting to retrieve HTML source for URL \"" + m_URL + "\": \r\n" + _e.Message );
 			}
 		}
 
