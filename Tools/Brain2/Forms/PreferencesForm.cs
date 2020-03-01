@@ -131,6 +131,7 @@ namespace Brain2 {
 		}
 
 		private Shortcut[]	m_shortcuts = new Shortcut[] {
+//			new Shortcut() { m_type = Shortcut.SHORTCUT.TOGGLE,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.Space },	// Unfortunately already used by Windows for some useless stuff... :/
 			new Shortcut() { m_type = Shortcut.SHORTCUT.TOGGLE,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.X },
 			new Shortcut() { m_type = Shortcut.SHORTCUT.PASTE,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.V },
 			new Shortcut() { m_type = Shortcut.SHORTCUT.NEW,	m_modifier = Interop.NativeModifierKeys.Win, m_key = Keys.N },

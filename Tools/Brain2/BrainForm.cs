@@ -327,6 +327,8 @@ this.TopMost = false;
 
 
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://twitter.com/HMaler/status/1217484876372480008" ) );	// OK!
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://twitter.com/SylvieGaillard/status/1211726353726394379" ) );	// OK!
+				
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://stackoverflow.com/questions/4964205/non-transparent-click-through-form-in-net" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "http://www.patapom.com/" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.monde-diplomatique.fr/2020/03/HOLLAR/61546" ) );	// OK!
@@ -334,7 +336,11 @@ this.TopMost = false;
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.breakin.se/mc-intro/" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.frontiersin.org/articles/10.3389/fpsyg.2017.02124/full" ) );	// OK!
 
-SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://en.wikipedia.org/wiki/Quantum_mind" ) );	// Crash bitmap copy
+// Ici on a un crash de temps en temps quand la fiche est sauvée et que les images sont disposed alors que l'éditeur tente de les lire pour en faire des bitmaps! C'est très très chiant à repro!
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://en.wikipedia.org/wiki/Quantum_mind" ) );	// Crash bitmap copy
+
+// Ici on a un souci de raccord, probablement car on est déjà offset dans la page car le lien est dans un thread et qu'il se mélange les pinceaux avec l'offset de base?
+SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://twitter.com/MFrippon/status/1134377488233226245" ) );
 
 
 m_logForm.Show();
