@@ -10,10 +10,10 @@ function RecurseRetrieveTopMostContentContainer( _node, _path ) {
 	}
 	if ( IsContentNode( _node ) ) {
 //console.log( "Node " + _path + " is content" );
-	if ( IsInvisibleElement( _node ) ) {
+		if ( IsInvisibleElement( _node ) ) {
 //console.log( "Node " + _path + " is invisible" );
-		return null;
-	}
+			return null;
+		}
 		return _node;	// A content-containing node is its own container...
 	}
 

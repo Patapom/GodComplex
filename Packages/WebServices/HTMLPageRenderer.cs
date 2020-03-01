@@ -288,9 +288,9 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved HTML code " + (source.Length <
 				JavascriptResponse	JSResult = await ExecuteJS( "(function() { return document.title; } )();" );
 				string	pageTitle = JSResult.Result as string;
 			
-
+				JSResult = await ExecuteJS( Properties.Resources.RetrieveDOMElements );
 // @TODO: Parse DOM!
-Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
+//Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
 
 				// Notify source is ready
 				m_pageSourceAvailable( pageTitle, source, null );

@@ -104,18 +104,19 @@ function IsValidNode( _node ) {
 	return rect.width > 4 && rect.height > 4;
 }
 
-// Returns true if the node is a content node (i.e. either a link, some text or an image)
+// Returns a positive value if the node is a content node (i.e. either a link, some text or an image)
 function IsContentNode( _node ) {
 	if ( _node == null )
-		return false;
+		return 0;
 
 	if ( _node.nodeType != 3 ) {
 		// Detect obvious nodes
 		switch ( _node.tagName ) {
 			case "A":
 			case "LINK":
+				return 1;
 			case "IMG":
-				return true;
+				return 2;
 		}
 
 		return false;	// Not a content node...
@@ -123,11 +124,11 @@ function IsContentNode( _node ) {
 
 	var	nodeText = _node.nodeValue;
 	if ( nodeText == null )
-		return false;	// Curiously, a text node with no text...
+		return 0;	// Curiously, a text node with no text...
 
 	// Trim text of all whitespaces to make sure the text is significant and not a placeholder...
 	nodeText = nodeText.trim();
-	return nodeText.length > 0;
+	return nodeText.length > 0 ? 3 : 0;
 }
 
 // Returns the top parent node that contains only this child node (meaning we stop going up to the parent if the parent has more than one child)
