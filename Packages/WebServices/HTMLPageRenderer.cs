@@ -246,6 +246,7 @@ Log( LOG_TYPE.DEBUG, _eventType );
 			//
 			JavascriptResponse	JSResult = await ExecuteJS( "GetPageHeight();" );
 			int	scrollHeight = (int) JSResult.Result;
+//Console.WriteLine( "Scroll height = " + scrollHeight );
 
 			// Ask for background color
 			Color	backgroundColor = Color.White;
@@ -482,6 +483,8 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 		/// <returns></returns>
 		async Task<XmlDocument>	RetrieveDOMContent( int _initialScrollY ) {
 
+//Console.WriteLine( "InitialY = " + _initialScrollY );
+
 			// Execute DOM retrieval script
 			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.RetrieveDOMElements );
 			if ( !JSResult.Success )
@@ -521,6 +524,8 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 							(float) element["h"].AsDouble
 						);
 						clientRect.Offset( 0, -_initialScrollY );
+
+//Console.WriteLine( "Rectangle Y = " + clientRect.Y );
 
 						xmlElement.SetAttribute( "path", element["path"].AsString );
 						xmlElement.SetAttribute( "type", elementTypeName );

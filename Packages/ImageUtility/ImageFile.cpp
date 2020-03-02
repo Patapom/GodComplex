@@ -131,18 +131,18 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 		source->ConvertFrom( this, PIXEL_FORMAT::BGRA8 );
 	}
 
-	System::Drawing::Bitmap^	result = gcnew System::Drawing::Bitmap( W, H, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+	const U8*		sourceScan0Ptr = (U8*) source->Bits.ToPointer();
 
-	const U8*		sourcePtr = (U8*) source->Bits.ToPointer();
-
+	System::Drawing::Bitmap^				result = gcnew System::Drawing::Bitmap( W, H, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
 	System::Drawing::Imaging::BitmapData^	lockedBitmap = result->LockBits( System::Drawing::Rectangle( 0, 0, W, H ), System::Drawing::Imaging::ImageLockMode::WriteOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
 
-	pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
+	pin_ptr<void>	targetScan0Ptr = lockedBitmap->Scan0.ToPointer();
 
 	if ( source->PixelFormat == PIXEL_FORMAT::BGRA8 ) {
 		// 32 bpp
 		for ( int Y=0; Y < H; Y++ ) {
-			Byte*	targetPtr = reinterpret_cast<Byte*>(scan0Ptr) + Y * lockedBitmap->Stride;
+			const U8*	sourcePtr = sourceScan0Ptr + Y * source->Pitch;
+			Byte*		targetPtr = reinterpret_cast<Byte*>(targetScan0Ptr) + Y * lockedBitmap->Stride;
 			for ( int X=0; X < W; X++ ) {
 				*targetPtr++ = *sourcePtr++;	// B
 				*targetPtr++ = *sourcePtr++;	// G
@@ -153,7 +153,8 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 	} else {
 		// 24 bpp
 		for ( int Y=0; Y < H; Y++ ) {
-			Byte*	targetPtr = reinterpret_cast<Byte*>(scan0Ptr) + Y * lockedBitmap->Stride;
+			const U8*	sourcePtr = sourceScan0Ptr + Y * source->Pitch;
+			Byte*	targetPtr = reinterpret_cast<Byte*>(targetScan0Ptr) + Y * lockedBitmap->Stride;
 			for ( int X=0; X < W; X++ ) {
 				*targetPtr++ = *sourcePtr++;	// B
 				*targetPtr++ = *sourcePtr++;	// G

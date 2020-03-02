@@ -19,17 +19,17 @@ function RecurseRetrieveContent( _node, _elementsDictionary ) {
 			var	clientRectangle = contentNode.getBoundingClientRect();
 
 			// Convert to absolute position
-			clientRectangle.left += window.scrollX;
-			clientRectangle.top += window.scrollY;
+			var	absoluteLeft = clientRectangle.left + window.scrollX;
+			var	absoluteTop = clientRectangle.top + window.scrollY;
 
-//console.log( "Node " + contentNode.path + " - Type " + contentType + " (" + clientRectangle.left + ", " + clientRectangle.top + ", " + clientRectangle.width + ", " + clientRectangle.height + ")"
+//console.log( "NEW Node " + contentNode.path + " - Type " + contentType + " (" + absoluteLeft + ", " + absoluteTop + ", " + clientRectangle.width + ", " + clientRectangle.height + ")"
 //		 + " Tag = " + contentNode.tagName + " HTML = " + contentNode.outerHTML );
 
 			var	contentElementDescriptor = {
 				path : contentNode.path,
 				type : contentType,
-				x : clientRectangle.left,
-				y : clientRectangle.top,
+				x : absoluteLeft,
+				y : absoluteTop,
 				w : clientRectangle.width,
 				h : clientRectangle.height,
 			};

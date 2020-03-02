@@ -331,8 +331,8 @@ this.TopMost = false;
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://twitter.com/MFrippon/status/1134377488233226245" ) );	// OK!
 				
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://stackoverflow.com/questions/4964205/non-transparent-click-through-form-in-net" ) );	// OK!
-SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "http://www.patapom.com/" ) );	// OK!
-//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.monde-diplomatique.fr/2020/03/HOLLAR/61546" ) );	// OK!
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "http://www.patapom.com/" ) );	// OK!
+SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.monde-diplomatique.fr/2020/03/HOLLAR/61546" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://docs.google.com/document/d/1_iJeEDcoDJS8EUyaprAL4Eu67Tbox_DnYnzQPFiTsa0/edit#heading=h.bktvm5f5g3wf" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.breakin.se/mc-intro/" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.frontiersin.org/articles/10.3389/fpsyg.2017.02124/full" ) );	// OK!
@@ -340,6 +340,8 @@ SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCa
 // Ici on a un crash de temps en temps quand la fiche est sauvée et que les images sont disposed alors que l'éditeur tente de les lire pour en faire des bitmaps! C'est très très chiant à repro!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://en.wikipedia.org/wiki/Quantum_mind" ) );	// Crash bitmap copy
 
+// Content rectangles still off
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "http://variances.eu/?p=3221" ) );
 
 
 m_logForm.Show();
