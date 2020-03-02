@@ -456,17 +456,71 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved HTML code " + (source.Length <
 
 				JavascriptResponse	JSResult = await ExecuteJS( "(function() { return document.title; } )();" );
 				string	pageTitle = JSResult.Result as string;
-			
-				JSResult = await ExecuteJS( Properties.Resources.RetrieveDOMElements );
-// @TODO: Parse DOM!
-//Log( LOG_TYPE.WARNING, "QueryContent() => @TODO: Parse DOM!" );
+
+				// Retrive DOM elements
+				XmlDocument	DOMContent = await RetrieveDOMContent();
+
+Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM", DOMContent["root"].ChildNodes.Count );
 
 				// Notify source is ready
-				m_pageSourceAvailable( pageTitle, source, null );
+				m_pageSourceAvailable( pageTitle, source, DOMContent );
 
 			} catch ( Exception _e ) {
-				m_pageError( -1, "An error occurred while attempting to retrieve HTML source for URL \"" + m_URL + "\": \r\n" + _e.Message );
+				m_pageError( -1, "An error occurred while attempting to retrieve HTML source and DOM content elements for URL \"" + m_URL + "\": \r\n" + _e.Message );
 			}
+		}
+
+		/// <summary>
+		/// Lists all the content elements in the DOM (images, links and text) 
+		/// </summary>
+		/// <returns></returns>
+		async Task<XmlDocument>	RetrieveDOMContent() {
+			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.RetrieveDOMElements );
+			if ( !JSResult.Success )
+				throw new Exception( "Failed to execute retrieval of DOM content elements: " + JSResult.Message );
+
+			XmlDocument	result = null;
+			try {
+				JSON			parser = new JSON();
+				JSON.JSONObject	root = null;
+				using ( System.IO.StringReader R = new System.IO.StringReader( JSResult.Result as string ) ) {
+					root = parser.ReadJSON( R )["root"];
+
+					if ( !root.IsArray )
+						throw new Exception( "Expected an array of element descriptors. Found " + root.m_object );
+
+					result = new XmlDocument();
+					XmlElement	xmlRoot = result.CreateElement( "root" );
+					result.AppendChild( xmlRoot );
+
+					foreach ( JSON.JSONObject element in root.AsArray ) {
+						XmlElement	xmlElement = result.CreateElement( "element" );
+						xmlRoot.AppendChild( xmlElement );
+
+						int		elementType = ((int) element["type"].AsDouble);
+						string	elementTypeName = "UNKNOWN";
+						switch ( elementType ) {
+							case 1: elementTypeName = "LINK"; break;
+							case 2: elementTypeName = "IMAGE"; break;
+							case 3: elementTypeName = "TEXT"; break;
+						}
+
+						xmlElement.SetAttribute( "path", element["path"].AsString );
+						xmlElement.SetAttribute( "type", elementTypeName );
+						xmlElement.SetAttribute( "x", element["x"].AsDouble.ToString() );
+						xmlElement.SetAttribute( "y", element["y"].AsDouble.ToString() );
+						xmlElement.SetAttribute( "w", element["w"].AsDouble.ToString() );
+						xmlElement.SetAttribute( "h", element["h"].AsDouble.ToString() );
+						if ( elementType == 1 ) {
+							xmlElement.SetAttribute( "URL", element["URL"].AsString );
+						}
+					}
+				}
+			} catch ( Exception _e ) {
+				throw new Exception( "Failed to build XML Document from JSON object of DOM content elements: " + _e.Message );
+			}
+
+			return result;
 		}
 
 		/// <summary>

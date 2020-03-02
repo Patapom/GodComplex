@@ -21,7 +21,7 @@ console.log( "Node " + _node.path + " is content" );
 		var	clientRectangle = contentNode.getBoundingClientRect();
 			clientRectangle.top += window.scrollY;
 
-		_elementsDictionary[contentNode] = {
+		var	contentElementDescriptor = {
 			path : contentNode.path,
 			type : contentType,
 			x : clientRectangle.left,
@@ -29,6 +29,12 @@ console.log( "Node " + _node.path + " is content" );
 			w : clientRectangle.width,
 			h : clientRectangle.height,
 		};
+		if ( contentType == 1 ) {
+			// Keep URL for links
+			contentElementDescriptor.URL = contentNode.href;
+		}
+
+		_elementsDictionary[contentNode] = contentElementDescriptor;
 	}
 
 	// Check children
@@ -46,6 +52,12 @@ console.log( "Node " + _node.path + " is content" );
 	var	contentElements = {};
 	RecurseRetrieveContent( document.body, contentElements );
 
-	return JSON.stringify( contentElements );
+	// Return only the values
+	var	contentElementsArray = [];
+	for ( var key in contentElements ) {
+		contentElementsArray.push( contentElements[key] );
+	}
+
+	return JSON.stringify( contentElementsArray );
 
 })();
