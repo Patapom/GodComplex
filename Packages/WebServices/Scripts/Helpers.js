@@ -119,7 +119,9 @@ function IsContentNode( _node ) {
 				return 2;
 		}
 
-		return false;	// Not a content node...
+console.log( "Unrecognized tag \"" + _node.tagName + "\"!" );
+
+		return 0;	// Not a content node...
 	}
 
 	var	nodeText = _node.nodeValue;

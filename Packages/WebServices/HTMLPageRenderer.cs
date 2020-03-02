@@ -255,6 +255,14 @@ Log( LOG_TYPE.DEBUG, _eventType );
 			}
 
 			//////////////////////////////////////////////////////////////////////////
+			// Retrieve initial scroll value
+			int					initialScrollY = 0;
+			JSResult = await ExecuteJS( "window.scrollY;" );
+			if ( JSResult.Success ) {
+				initialScrollY = (int) JSResult.Result;
+	 		}
+
+			//////////////////////////////////////////////////////////////////////////
 			// Perform as many screenshots as necessary to capture the entire page
 			//
 			int	viewportHeight = m_browser.Size.Height;
@@ -262,19 +270,26 @@ Log( LOG_TYPE.DEBUG, _eventType );
 Log( LOG_TYPE.DEBUG, "Page scroll height = " + scrollHeight + " - Screenshots Count = " + screenshotsCount );
 
 			using ( Brush backgroundBrush = new SolidBrush( backgroundColor ) )
-				await DoScreenshots( screenshotsCount, scrollHeight, backgroundBrush );
+				await DoScreenshots( screenshotsCount, initialScrollY, scrollHeight, backgroundBrush );
+
 
 			//////////////////////////////////////////////////////////////////////////
 			// Query the HTML source code and DOM content
 			//
-			await QueryContent( backgroundColor );
+			await QueryContent( backgroundColor, initialScrollY );
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// Notify the page was successfully loaded
+			//
+			m_pageSuccess();
 		}
 
 		/// <summary>
 		/// Do multiple screenshots to capture the entire page
 		/// </summary>
 		/// <returns></returns>
-		async Task	DoScreenshots( int _scrollsCount, int _scrollHeight, Brush _backgroundBrush ) {
+		async Task	DoScreenshots( int _scrollsCount, int _initialScrollY, int _scrollHeight, Brush _backgroundBrush ) {
 			_scrollsCount = Math.Min( m_maxScreenshotsCount, _scrollsCount );
 
 			int			viewportWidth = m_browser.Size.Width;
@@ -287,13 +302,6 @@ Log( LOG_TYPE.DEBUG, "Page scroll height = " + scrollHeight + " - Screenshots Co
 //				await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( "(function() { document.documentElement.style.overflow = 'hidden'; })();" ), m_timeOut_ms_JavascriptNoRender );
 
 //				await ExecuteJS( "(function() { document.documentElement.style.overflow = 'hidden'; })();" );
-
-				// Retrieve initial scroll value
-				int					initialScrollY = 0;
-				JavascriptResponse	JSResult = await ExecuteJS( "window.scrollY;" );
-				if ( JSResult.Success ) {
-					initialScrollY = (int) JSResult.Result;
-	 			}
 
 
 #if false
@@ -346,14 +354,15 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 						/// Clean the DOM and retrieve workable area
 						/// 
 						RectangleF	contentRectangleF = await CleanDOMAndReturnMainContentRectangle();
-						Rectangle	contentRectangle = new Rectangle(	(int) Mathf.Floor( contentRectangleF.X ), (int) Mathf.Floor( contentRectangleF.Y ),
+						Rectangle	contentRectangle = new Rectangle(	(int) Mathf.Floor( contentRectangleF.X ),
+																		(int) Mathf.Floor( contentRectangleF.Y ),
 																		(int) (1 + Mathf.Ceiling( contentRectangleF.Right ) - Mathf.Floor( contentRectangleF.X ) ),
 																		(int) (1 + Mathf.Ceiling( contentRectangleF.Bottom ) - Mathf.Floor( contentRectangleF.Y ) )
 																	);
 						if ( contentRectangle.IsEmpty ) {
 							// Use default rectangle covering the entire screen...
 							contentRectangle = defaultTotalContentRectangle;
-							contentRectangle.Offset( 0, -(initialScrollY + scrollIndex * viewportHeight) );
+							contentRectangle.Offset( 0, -(_initialScrollY + scrollIndex * viewportHeight) );
 						}
 
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Cleaning DOM and getting viewport ({0}, {1}, {2}, {3})", contentRectangle.X, contentRectangle.Y, contentRectangle.Width, contentRectangle.Height );
@@ -369,7 +378,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						//////////////////////////////////////////////////////////////////////////
 						/// Clip bitmap with intersection of content and viewport rectangles
 						/// 
- 						int			remainingHeight = _scrollHeight - (initialScrollY + scrollIndex * viewportHeight);
+ 						int			remainingHeight = _scrollHeight - (_initialScrollY + scrollIndex * viewportHeight);
 									remainingHeight = Math.Min( viewportHeight, remainingHeight );
 
 						Rectangle	viewportRectangle = new Rectangle( 0, viewportHeight - remainingHeight, viewportWidth, remainingHeight );
@@ -417,7 +426,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						//////////////////////////////////////////////////////////////////////////
 						/// Scroll down the page
 						if ( scrollIndex < _scrollsCount-1 ) {
-							int	scrollPosition = Math.Min( _scrollHeight, initialScrollY + (scrollIndex+1) * viewportHeight );
+							int	scrollPosition = Math.Min( _scrollHeight, _initialScrollY + (scrollIndex+1) * viewportHeight );
 Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting scrolling to position {0}...", scrollPosition );
 							await ExecuteJS( JSCodeScroll( (uint) scrollPosition ), m_delay_ms_ScrollDown );
 						}
@@ -431,9 +440,6 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 					}
 				}
 
-				// Notify the page was successfully loaded
-				m_pageSuccess();
-
 			} catch ( Exception _e ) {
 				m_pageError( -1, "An error occurred while attempting to render a page screenshot for URL \"" + m_URL + "\": \r\n" + _e.Message );
 			}
@@ -443,7 +449,7 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 		/// Reads back HTML content and do a screenshot
 		/// </summary>
 		/// <returns></returns>
-		async Task	QueryContent( Color _backgroundColor ) {
+		async Task	QueryContent( Color _backgroundColor, int _initialScrollY ) {
 			try {
 Log( LOG_TYPE.DEBUG, "QueryContent for " + m_URL );
 
@@ -458,7 +464,7 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved HTML code " + (source.Length <
 				string	pageTitle = JSResult.Result as string;
 
 				// Retrive DOM elements
-				XmlDocument	DOMContent = await RetrieveDOMContent();
+				XmlDocument	DOMContent = await RetrieveDOMContent( _initialScrollY );
 
 Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM", DOMContent["root"].ChildNodes.Count );
 
@@ -474,11 +480,14 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 		/// Lists all the content elements in the DOM (images, links and text) 
 		/// </summary>
 		/// <returns></returns>
-		async Task<XmlDocument>	RetrieveDOMContent() {
+		async Task<XmlDocument>	RetrieveDOMContent( int _initialScrollY ) {
+
+			// Execute DOM retrieval script
 			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.RetrieveDOMElements );
 			if ( !JSResult.Success )
 				throw new Exception( "Failed to execute retrieval of DOM content elements: " + JSResult.Message );
 
+			// Readback results
 			XmlDocument	result = null;
 			try {
 				JSON			parser = new JSON();
@@ -505,12 +514,20 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 							case 3: elementTypeName = "TEXT"; break;
 						}
 
+						RectangleF	clientRect = new RectangleF(
+							(float) element["x"].AsDouble,
+							(float) element["y"].AsDouble,
+							(float) element["w"].AsDouble,
+							(float) element["h"].AsDouble
+						);
+						clientRect.Offset( 0, -_initialScrollY );
+
 						xmlElement.SetAttribute( "path", element["path"].AsString );
 						xmlElement.SetAttribute( "type", elementTypeName );
-						xmlElement.SetAttribute( "x", element["x"].AsDouble.ToString() );
-						xmlElement.SetAttribute( "y", element["y"].AsDouble.ToString() );
-						xmlElement.SetAttribute( "w", element["w"].AsDouble.ToString() );
-						xmlElement.SetAttribute( "h", element["h"].AsDouble.ToString() );
+						xmlElement.SetAttribute( "x", clientRect.X.ToString() );
+						xmlElement.SetAttribute( "y", clientRect.Y.ToString() );
+						xmlElement.SetAttribute( "w", clientRect.Width.ToString() );
+						xmlElement.SetAttribute( "h", clientRect.Height.ToString() );
 						if ( elementType == 1 ) {
 							xmlElement.SetAttribute( "URL", element["URL"].AsString );
 						}
