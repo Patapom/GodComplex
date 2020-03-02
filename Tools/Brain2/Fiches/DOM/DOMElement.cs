@@ -11,10 +11,28 @@ namespace Brain2 {
 	/// </summary>
 	public class	DOMElement {
 
+		#region NESTED TYPES
+
+		public enum		ELEMENT_TYPE {
+			ROOT,
+			TEXT,
+			LINK,
+			IMAGE,
+			UNKNOWN,
+		}
+
+		#endregion
+
 		#region FIELDS
 
-		public string		m_type = null;
+		/// <summary>
+		/// The path within the HTML document
+		/// The path has the form "0.1.2.3.4.5...." where each number indicates the index of the child to fetch at any given level
+		/// </summary>
+		public string		m_path = null;
+		public ELEMENT_TYPE	m_type = ELEMENT_TYPE.UNKNOWN;
 		public RectangleF	m_rectangle;
+		public string		m_URL = null;	// Link elements can have an URL
 		public DOMElement[]	m_children;
 
 		#endregion
@@ -36,14 +54,17 @@ namespace Brain2 {
 		#region I/O
 
 		public void	Write( BinaryWriter _writer ) {
-			_writer.Write( m_type != null );
-			if ( m_type != null )
-				_writer.Write( m_type );
+			_writer.Write( m_path );
+			_writer.Write( (int) m_type );
 
 			_writer.Write( m_rectangle.X );
 			_writer.Write( m_rectangle.Y );
 			_writer.Write( m_rectangle.Width );
 			_writer.Write( m_rectangle.Height );
+
+			if ( m_type == ELEMENT_TYPE.LINK ) {
+				_writer.Write( m_URL );
+			}
 
 			_writer.Write( m_children != null ? m_children.Length : 0 );
 			if ( m_children != null ) {
@@ -53,8 +74,13 @@ namespace Brain2 {
 		}
 
 		public void	Read( BinaryReader _reader ) {
-			m_type = _reader.ReadBoolean() ? _reader.ReadString() : null;
+			m_path = _reader.ReadString();
+			m_type = (ELEMENT_TYPE) _reader.ReadInt32();
 			m_rectangle = new RectangleF( _reader.ReadSingle(), _reader.ReadSingle(), _reader.ReadSingle(), _reader.ReadSingle() );
+
+			if ( m_type == ELEMENT_TYPE.LINK ) {
+				m_URL = _reader.ReadString();
+			}
 
 			int	childrenCount = _reader.ReadInt32();
 			m_children = childrenCount > 0 ? new DOMElement[childrenCount] : null;
@@ -69,30 +95,44 @@ namespace Brain2 {
 			if ( _XML == null || !_XML.HasChildNodes )
 				return null;
 
-			return FromPageRendererXML( _XML["ROOT"] );
+			return FromPageRendererXML( _XML["root"] );
 		}
 
-		static List< DOMElement >	ms_tempChildren = new List<DOMElement>();
 		private static DOMElement	FromPageRendererXML( XmlElement _element ) {
 			DOMElement	R = new DOMElement();
 
-			R.m_type = _element.GetAttribute( "type" );
+			if ( _element.Name == "root" ) {
+				R.m_type = ELEMENT_TYPE.ROOT;
+			} else {
+				R.m_path = _element.GetAttribute( "path" );
+				string	typeName = _element.GetAttribute( "type" );
+				switch ( typeName ) {
+					case "TEXT": R.m_type = ELEMENT_TYPE.TEXT; break;
+					case "LINK": R.m_type = ELEMENT_TYPE.LINK; break;
+					case "IMAGE": R.m_type = ELEMENT_TYPE.IMAGE; break;
+					default: R.m_type = ELEMENT_TYPE.UNKNOWN; break;
+				}
 
-			float	X, Y, W, H;
-			if (	float.TryParse( _element.GetAttribute( "x" ), out X )
-				&&	float.TryParse( _element.GetAttribute( "y" ), out Y )
-				&&	float.TryParse( _element.GetAttribute( "w" ), out W )
-				&&	float.TryParse( _element.GetAttribute( "h" ), out H ) ) {
-				R.m_rectangle = new RectangleF( X, Y, W, H );
-			}
+				float	X, Y, W, H;
+				if (	float.TryParse( _element.GetAttribute( "x" ), out X )
+					&&	float.TryParse( _element.GetAttribute( "y" ), out Y )
+					&&	float.TryParse( _element.GetAttribute( "w" ), out W )
+					&&	float.TryParse( _element.GetAttribute( "h" ), out H ) ) {
+					R.m_rectangle = new RectangleF( X, Y, W, H );
+				}
 
-			ms_tempChildren.Clear();
-			foreach ( XmlNode childNode in _element.ChildNodes ) {
-				if ( childNode is XmlElement ) {
-					ms_tempChildren.Add( FromPageRendererXML( childNode as XmlElement ) );
+				if ( R.m_type == ELEMENT_TYPE.LINK ) {
+					R.m_URL = _element.GetAttribute( "URL" );
 				}
 			}
-			R.m_children = ms_tempChildren.ToArray();
+
+			List< DOMElement >	tempChildren = new List<DOMElement>();
+			foreach ( XmlNode childNode in _element.ChildNodes ) {
+				if ( childNode is XmlElement ) {
+					tempChildren.Add( FromPageRendererXML( childNode as XmlElement ) );
+				}
+			}
+			R.m_children = tempChildren.ToArray();
 
 			return R;
 		}
