@@ -18,11 +18,17 @@ namespace Brain2
 			public Bitmap		m_bitmap;
 		}
 
+		class DOMRectangle {
+			public RectangleF	m_rectangle;
+			public Color		m_color;
+		}
+
 		#endregion
 
 		#region FIELDS
 
 		private BitmapWithRectangle[]	m_bitmaps = new BitmapWithRectangle[0];
+		private List<DOMRectangle>		m_rectangles = new List<DOMRectangle>();
 
 		public BitmapWithRectangle[]	Bitmaps {
 			get { return m_bitmaps; }
@@ -72,6 +78,16 @@ namespace Brain2
 			Invalidate();
 
 			Init();
+		}
+
+		public void	ClearRectangles() {
+			m_rectangles.Clear();
+			Invalidate();
+		}
+
+		public void	AddRectangle( RectangleF _rectangle, Color _color ) {
+			m_rectangles.Add( new DOMRectangle() { m_rectangle = _rectangle, m_color = _color } );
+			Invalidate();
 		}
 
 		/// <summary>
@@ -155,7 +171,7 @@ namespace Brain2
 				return;
 			}
 
-//			int	Y = 0;
+			// Paint bitmap parts
 			for ( int bitmapIndex=0; bitmapIndex < m_bitmaps.Length; bitmapIndex++ ) {
 				BitmapWithRectangle	B = m_bitmaps[bitmapIndex];
 
@@ -168,23 +184,12 @@ namespace Brain2
 					SizeF	textSize = e.Graphics.MeasureString( textError, this.Font );
 					e.Graphics.DrawString( textError, this.Font, Brushes.Red, B.m_displayRectangle.Location + new Size( B.m_displayRectangle.Width - (int) textSize.Width, B.m_displayRectangle.Height - (int) textSize.Height ) );
 				}
-//			if ( image.m_image == null ) {
-//				BrainForm.LogError( new Exception( "FicheWebPageAnnotatorForm => Null image file in web page snapshot chunk! Can't create bitmap..." ) );
-//				continue;
-//			}
+			}
 
-// 				Rectangle	bitmapRect = new Rectangle( 0, Y, B.Width, B.Height );
-// 				Rectangle	clippedRect = Rectangle.Intersect( bitmapRect, e.ClipRectangle );
-// 				if ( clippedRect.Width > 0 && clippedRect.Height > 0 ) {
-// 					Rectangle	sourceRect = bitmapRect;
-// 								sourceRect.X -= clippedRect.X;
-// 								sourceRect.Y -= clippedRect.Y;
-// 
-// //					e.Graphics.DrawImage( B, clippedRect, sourceRect, GraphicsUnit.Pixel );
-// 					e.Graphics.DrawImage( B, 0, Y );
-// 				}
-// 
-// 				Y += B.Height;
+			// Paint DOM rectangles
+			foreach ( DOMRectangle rectangle in m_rectangles ) {
+				using ( Pen P = new Pen( rectangle.m_color, 2 ) )
+					e.Graphics.DrawRectangle( P, rectangle.m_rectangle.X, rectangle.m_rectangle.Y, rectangle.m_rectangle.Width, rectangle.m_rectangle.Height );
 			}
 		}
 	}

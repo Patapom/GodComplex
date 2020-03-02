@@ -29,7 +29,7 @@ namespace Brain2 {
 		/// The path within the HTML document
 		/// The path has the form "0.1.2.3.4.5...." where each number indicates the index of the child to fetch at any given level
 		/// </summary>
-		public string		m_path = null;
+		public string		m_path = "";
 		public ELEMENT_TYPE	m_type = ELEMENT_TYPE.UNKNOWN;
 		public RectangleF	m_rectangle;
 		public string		m_URL = null;	// Link elements can have an URL

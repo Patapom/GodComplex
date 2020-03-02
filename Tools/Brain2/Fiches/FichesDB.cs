@@ -966,20 +966,6 @@ throw new Exception( "TODO!" );
 			}
 		}
 
-		internal void	FicheHTMLContentChanged( Fiche _fiche ) {
-			if ( _fiche == null )
-				throw new Exception( "Invalid fiche!" );
-
-			// Maybe not useful? Don't know what to do here...
-		}
-
-		internal void	FicheDOMElementsChanged( Fiche _fiche ) {
-			if ( _fiche == null )
-				throw new Exception( "Invalid fiche!" );
-
-			// Maybe not useful? Don't know what to do here...
-		}
-
 // 		/// <summary>
 // 		/// Used by fiches to notify of a change so the database should act accordingly (e.g. resaving the updated fiche)
 // 		/// </summary>

@@ -41,6 +41,7 @@ namespace Brain2 {
 				if ( m_fiche != null ) {
 					m_fiche.TitleChanged -= fiche_TitleChanged;
 					m_fiche.WebPageImageChanged -= fiche_WebPageImageChanged;
+					m_fiche.DOMElementsChanged -= fiche_DOMElementsChanged;
 					DisposeFicheBitmaps();
 				}
 
@@ -49,6 +50,7 @@ namespace Brain2 {
 				if ( m_fiche != null ) {
 					m_fiche.TitleChanged += fiche_TitleChanged;
 					m_fiche.WebPageImageChanged += fiche_WebPageImageChanged;
+					m_fiche.DOMElementsChanged += fiche_DOMElementsChanged;
 					fiche_TitleChanged( m_fiche );			// Ask for title right now
 					fiche_WebPageImageChanged( m_fiche );	// Ask for image right now
 				}
@@ -117,7 +119,7 @@ namespace Brain2 {
 
 			panelHost.m_childPanel = panelWebPage;
 
-			panelWebPage.Focus();
+			panelHost.Focus();
 		}
 
 		private void webEditor_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
@@ -136,6 +138,7 @@ namespace Brain2 {
 			}
 			m_webPageImagePart2Bitmap.Clear();
 			panelWebPage.Bitmaps = null;
+			panelWebPage.ClearRectangles();
 		}
 
 		#endregion
@@ -178,6 +181,7 @@ namespace Brain2 {
 				return;
 
 			panelWebPage.Bitmaps = bitmaps;
+			panelWebPage.ClearRectangles();
 
 			// Make sure the panel is at least as large as the host
 			// It can be much bigger but can't be smaller
@@ -185,6 +189,24 @@ namespace Brain2 {
 			panelWebPage.Width = Math.Max( panelHost.Width, pageRectangle.Right );
 			panelWebPage.Height = Math.Max( panelHost.Height, pageRectangle.Bottom );
 			panelWebPage.Invalidate();
+		}
+
+		private void fiche_DOMElementsChanged( Fiche _sender ) {
+			panelWebPage.SuspendLayout();
+			panelWebPage.ClearRectangles();
+			if ( _sender.DOMElements != null ) {
+				foreach ( DOMElement element in _sender.DOMElements.m_children ) {
+					Color	color = Color.Magenta;
+					switch ( element.m_type ) {
+						case DOMElement.ELEMENT_TYPE.TEXT: color = Color.ForestGreen; break;
+						case DOMElement.ELEMENT_TYPE.LINK: color = Color.CornflowerBlue; break;
+						case DOMElement.ELEMENT_TYPE.IMAGE: color = Color.IndianRed; break;
+					}
+					panelWebPage.AddRectangle( element.m_rectangle, color );
+				}
+			}
+			panelWebPage.ResumeLayout();
+			panelWebPage.PerformLayout();
 		}
 
 		#endregion

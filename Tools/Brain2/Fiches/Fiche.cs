@@ -615,7 +615,7 @@ namespace Brain2 {
 						return;
 
 					m_HTMLContent = value;
-					Database.FicheHTMLContentChanged( this );
+					HTMLContentChanged?.Invoke( this );
 				} );
 			}
 		}
@@ -628,7 +628,7 @@ namespace Brain2 {
 						return;
 
 					m_rootElement = value;
-					Database.FicheDOMElementsChanged( this );
+					DOMElementsChanged?.Invoke( this );
 				} );
 			}
 		}
@@ -714,6 +714,16 @@ namespace Brain2 {
 		/// Raised whenever the thumbnail changed (not necessarily on the main thread!)
 		/// </summary>
 		public event FicheEventHandler	ThumbnailChanged;
+
+		/// <summary>
+		/// Raised whenever the web page HTML content changed (not necessarily on the main thread!)
+		/// </summary>
+		public event FicheEventHandler	HTMLContentChanged;
+
+		/// <summary>
+		/// Raised whenever the web page HTML content changed (not necessarily on the main thread!)
+		/// </summary>
+		public event FicheEventHandler	DOMElementsChanged;
 
 		#endregion
 
