@@ -375,7 +375,7 @@ namespace Brain2 {
 							if ( m_GUID != Guid.Empty ) {
 								m_fiche = m_database.FindFicheByGUID( m_GUID );
 							} else {
-								m_GUID = Guid.NewGuid();
+								m_GUID = m_database.CreateGUID();
 							}
 
 							if ( m_fiche == null ) {
@@ -436,7 +436,7 @@ namespace Brain2 {
 							if ( m_GUID != Guid.Empty ) {
 								existingFiche = m_database.FindFicheByGUID( m_GUID );
 							} else {
-								m_GUID = Guid.NewGuid();
+								m_GUID = m_database.CreateGUID();
 
 								// Attempt to find the fiche by URL
 								Fiche[]	existingFiches = m_database.FindFichesByURL( m_URL );

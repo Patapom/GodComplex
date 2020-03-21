@@ -75,8 +75,8 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\temp\$(ProjectName)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration)\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)\build\$(Configuration);$(SolutionDir)\Packages\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\x64\$(Configuration);$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IncludePath>$(ProjectDir)\..\FreeImage3170\Dist\x64\$(Configuration)\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)\build\$(Configuration);$(ProjectDir)\..\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\x64\$(Configuration);$(ProjectDir)\..\FreeImage3170\Dist\x64\$(Configuration);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -88,8 +88,8 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\temp\$(ProjectName)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration)\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)\build\$(Configuration);$(SolutionDir)\Packages\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\x64\$(Configuration);$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IncludePath>$(ProjectDir)\..\FreeImage3170\Dist\x64\$(Configuration)\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)\build\$(Configuration);$(ProjectDir)\..\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\x64\$(Configuration);$(ProjectDir)\..\FreeImage3170\Dist\x64\$(Configuration);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

@@ -93,6 +93,12 @@ namespace Brain2 {
 		uint			m_fadeDuration_ms = 1000;
 
 		/// <summary>
+		/// Don't activate and steal focus
+		/// From https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.form.showwithoutactivation?redirectedfrom=MSDN&view=netframework-4.8#System_Windows_Forms_Form_ShowWithoutActivation
+		/// </summary>
+		protected override bool ShowWithoutActivation => true;
+
+		/// <summary>
 		/// Gets or sets the duration of display after a notification before fading starts
 		/// </summary>
 		public uint	DisplayDuration { get { return m_displayDuration_ms; } set { m_displayDuration_ms = value; } }
@@ -125,6 +131,9 @@ namespace Brain2 {
 			m_pathCounter1Digit = CreateRoundedBoxPath( "8" );
 			m_pathCounter2Digits = CreateRoundedBoxPath( "88" );
 
+// https://twitter.com/aras_p/status/1235462825256136705/photo/1
+//return false sur WM_INITDIALOG;
+
 			SetStyle( ControlStyles.ResizeRedraw, true );
 		}
 
@@ -144,6 +153,19 @@ namespace Brain2 {
 			m_backgroundBrush.Dispose();
 
 			base.Dispose(disposing);
+		}
+
+		/// <summary>
+		/// Overridden to get the notifications.
+		/// </summary>
+		/// <param name="m"></param>
+		protected override void WndProc( ref Message m ) {
+
+			switch ( m.Msg ) {
+				case Interop.WM_INITDIALOG:
+					m.Result = new IntPtr( 0 );	// Return FALSE
+					break;
+			}
 		}
 
 		GraphicsPath	CreateRoundedBoxPath( string _text ) {

@@ -114,7 +114,7 @@ namespace Brain2 {
 				public Action			m_delegate;
 				public JobLoadChunk( FichesDB _owner, Fiche.ChunkBase _caller, Action _delegate ) : base( _owner ) { m_caller = _caller; m_delegate = _delegate; }
 				public override void	Run() {
-					using ( Stream S = m_owner.SyncRequestFicheStream( m_caller.OwnerFiche, true ) ) {
+					using ( Stream S = m_owner.Sync_RequestFicheStream( m_caller.OwnerFiche, true ) ) {
 						S.Position = (long) m_caller.Offset;	// Jump to the chunk's start position
 
 						using ( BinaryReader R = new BinaryReader( S ) ) {
@@ -268,7 +268,6 @@ namespace Brain2 {
 			DEBUG
 		}
 
-
 		/// <summary>
 		/// Whenever a fiche is modified, it should call FicheDB.SyncNotifyFicheModifiedAndNeedsSaving() so a timer is started and the fiche gets automatically saved when the timer expires
 		/// </summary>
@@ -349,6 +348,9 @@ namespace Brain2 {
 					m_workingThreads[i] = new WorkingThread( this );
 				}
 			#endif
+
+			// Create default fiches
+			CreateDefaultFiches();
 		}
 
 		public void Dispose() {
@@ -452,30 +454,31 @@ namespace Brain2 {
 		}
 
 		// @TODO: Advanced search => in content, by tag, etc.
+		// @TODO: Handle "." to append tags with a parent, or to discriminate identical tags
 
 		#endregion
 
 		#region I/O
 
-		// 		public void	SaveDatabase( DirectoryInfo _rootFolder ) {
-		// 			List< Exception >	errors = new List<Exception>();
-		// 			foreach ( Fiche fiche in m_fiches ) {
-		// 				try {
-		// 
-		// 					string		fileName = fiche.FileName;
-		// 					FileInfo	file = new FileInfo( fileName );
-		// 					using ( FileStream S = file.Create() )
-		// 						using ( BinaryWriter W = new BinaryWriter( S ) )
-		// 							fiche.Write( W );
-		// 
-		// 				} catch ( Exception _e ) {
-		// 					errors.Add( _e );
-		// 				}
-		// 			}
-		// 
-		// 			if ( errors.Count > 0 )
-		// 				throw new Exception( "Errors while saving database:" );
-		// 		}
+// 		public void	SaveDatabase( DirectoryInfo _rootFolder ) {
+// 			List< Exception >	errors = new List<Exception>();
+// 			foreach ( Fiche fiche in m_fiches ) {
+// 				try {
+// 
+// 					string		fileName = fiche.FileName;
+// 					FileInfo	file = new FileInfo( fileName );
+// 					using ( FileStream S = file.Create() )
+// 						using ( BinaryWriter W = new BinaryWriter( S ) )
+// 							fiche.Write( W );
+// 
+// 				} catch ( Exception _e ) {
+// 					errors.Add( _e );
+// 				}
+// 			}
+// 
+// 			if ( errors.Count > 0 )
+// 				throw new Exception( "Errors while saving database:" );
+// 		}
 
 		public void	LoadFichesDescriptions( DirectoryInfo _rootFolder ) {
 			List< Exception >	errors = new List<Exception>();
@@ -484,12 +487,6 @@ namespace Brain2 {
 					throw new Exception( "Invalid root folder!" );
 
 				m_rootFolder = _rootFolder;
-
-// 				// Release all existing fiches first
-// 				Fiche[]	fiches = m_fiches.ToArray();
-// 				foreach ( Fiche F in fiches ) {
-// 					F.Dispose();
-// 				}
 
 				// Prepare the Everything query
 				string	everythingQuery = "parent:" + _rootFolder.FullName.Replace( "/", "\\" );
@@ -752,7 +749,7 @@ throw new Exception( "TODO!" );
 
 			// If the file already exists then notify the fiche it's its last chance to read data from the old file before it's overwritten!
 			if ( Sync_FicheStreamAlreadyExists( _fiche ) ) {
-				using ( Stream S = SyncRequestFicheStream( _fiche, true ) ) {
+				using ( Stream S = Sync_RequestFicheStream( _fiche, true ) ) {
 					using ( BinaryReader R = new BinaryReader( S ) ) {
 						_fiche.LastChanceReadBeforeWrite( R );
 					}
@@ -760,7 +757,7 @@ throw new Exception( "TODO!" );
 			}
 
 			// Now we can save the fiche peacefully
-			using ( Stream S = SyncRequestFicheStream( _fiche, false ) ) {
+			using ( Stream S = Sync_RequestFicheStream( _fiche, false ) ) {
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
 					// Ensure the fiche is ready so it can be saved
 					if ( _fiche.Status != Fiche.STATUS.READY )
@@ -851,7 +848,7 @@ throw new Exception( "TODO!" );
 		/// <param name="_fiche">The fiche to create a file stream for</param>
 		/// <param name="_read">True for a read operation, false for a write operation</param>
 		/// <returns></returns>
-		internal Stream	SyncRequestFicheStream( Fiche _fiche, bool _read ) {
+		internal Stream	Sync_RequestFicheStream( Fiche _fiche, bool _read ) {
 			FileInfo	ficheFileName = Sync_GetFicheFileName( _fiche );
 			if ( _read ) {
 				return ficheFileName.OpenRead();
@@ -989,6 +986,37 @@ throw new Exception( "TODO!" );
 
 		#endregion
 
+		#region GUID Generation
+
+		/// <summary>
+		/// Creates a unique and non-protected GUID for a fiche
+		/// </summary>
+		/// <returns></returns>
+		public Guid	CreateGUID() {
+			Guid	result = Guid.NewGuid();
+			while ( IsProtectedGUID( result ) || FindFicheByGUID( result ) != null ) {
+				result = Guid.NewGuid();
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// A protected GUID is 14 zeroes followed by 2 bytes for the protected ID
+		/// </summary>
+		/// <param name="_GUID"></param>
+		/// <returns></returns>
+		public static bool	IsProtectedGUID( Guid _GUID ) {
+			byte[]	bytes = _GUID.ToByteArray();
+			for ( int i=0; i < 14; i++ ) {
+				if ( bytes[i] != 0 )
+					return false;
+			}
+
+			return true;
+		}
+
+		#endregion
+
 		#region Registration
 
 		internal void	RegisterFiche( Fiche _fiche ) {
@@ -1048,6 +1076,56 @@ throw new Exception( "TODO!" );
 				m_URL2Fiches[_fiche.URL].Remove( _fiche );
 			}
 			_fiche.Title = null;	// Will remove the fiche from the dictionaries
+		}
+
+		#endregion
+
+		#region Default Fiches
+
+		Fiche	CreateDefaultFiche( string _title, ushort _GUID, params Fiche[] _tags ) {
+			Fiche	fiche = new Fiche( this, Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _title, null, _tags, null );
+
+			Guid	GUID = new Guid( 0U, 0, 0, 0, 0, 0, 0, 0, 0, (byte) (_GUID >> 8), (byte) (_GUID & 0xFF) );
+			fiche.GUID = GUID;
+
+			return fiche;
+		}
+
+		void	CreateDefaultFiches() {
+			// Create master tag "Tag"
+			Fiche	fTag = CreateDefaultFiche( "Tag", 0x0001 );
+
+			// Create people tags
+			Fiche	fPeople =	CreateDefaultFiche( "People", 0x0002, fTag );
+								CreateDefaultFiche( "User", 0x0003, fPeople );
+								CreateDefaultFiche( "Author", 0x0004, fPeople );
+								CreateDefaultFiche( "Contributor", 0x0005, fPeople );
+
+			// Create organization tags
+			Fiche	fOrganisation =	CreateDefaultFiche( "Organization", 0x1000, fTag );
+			Fiche	fOrganisation_Apple =		CreateDefaultFiche( "Apple", 0x1001, fOrganisation );
+			Fiche	fOrganisation_Microsoft =	CreateDefaultFiche( "Microsoft", 0x1002, fOrganisation );
+			Fiche	fOrganisation_Google =		CreateDefaultFiche( "Google", 0x1003, fOrganisation );
+			Fiche	fOrganisation_Facebook =	CreateDefaultFiche( "Facebook", 0x1004, fOrganisation );
+			Fiche	fOrganisation_Amazon =		CreateDefaultFiche( "Amazon", 0x1005, fOrganisation );
+
+			// Create place tags
+			Fiche	fPlace =	CreateDefaultFiche( "Place", 0x2000, fTag );
+
+			// Create Web tags
+			Fiche	fWeb =	CreateDefaultFiche( "Web", 0x8000, fPlace );
+			Fiche	fDomain =	CreateDefaultFiche( "Domain", 0x8100, fWeb );
+								CreateDefaultFiche( "Facebook", 0x8101, fDomain, fOrganisation_Facebook );
+								CreateDefaultFiche( "Google", 0x8102, fDomain, fOrganisation_Google );
+								CreateDefaultFiche( "Microsoft", 0x8103, fDomain, fOrganisation_Microsoft );
+								CreateDefaultFiche( "Twitter", 0x8104, fDomain );
+
+			// Tag
+			// People => User, Author, Contributor
+			// Organization => [Google, Facebook, Apple, Amazon, Microsoft]
+			// Place => 
+			// Web => Domain => [Twitter, Facebook]
+			// 
 		}
 
 		#endregion

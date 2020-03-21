@@ -332,7 +332,7 @@ this.TopMost = false;
 				
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://stackoverflow.com/questions/4964205/non-transparent-click-through-form-in-net" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "http://www.patapom.com/" ) );	// OK!
-SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.monde-diplomatique.fr/2020/03/HOLLAR/61546" ) );	// OK!
+//SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.monde-diplomatique.fr/2020/03/HOLLAR/61546" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://docs.google.com/document/d/1_iJeEDcoDJS8EUyaprAL4Eu67Tbox_DnYnzQPFiTsa0/edit#heading=h.bktvm5f5g3wf" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.breakin.se/mc-intro/" ) );	// OK!
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.frontiersin.org/articles/10.3389/fpsyg.2017.02124/full" ) );	// OK!
@@ -341,8 +341,25 @@ SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCa
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://en.wikipedia.org/wiki/Quantum_mind" ) );	// Crash bitmap copy
 
 // Content rectangles still off
+// Sur le premier lien c'est un bandeau dynamique qui doit foutre la merde
+// Sur mediapart aussi apparemment (ça se voit uniquement en mode "incognito" sinon je suis loggé avec mon compte et l'article est complet)
 //SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "http://variances.eu/?p=3221" ) );
+SelectedFiche = URLHandler.CreateURLFiche( m_database, null, WebHelpers.CreateCanonicalURL( "https://www.mediapart.fr/journal/economie/040320/la-banque-publique-d-investissement-va-eponger-les-pertes-du-cac-40" ) );
 
+/*
+Essayer ça:
+https://www.republicain-lorrain.fr/edition-thionville-hayange/2020/03/05/ces-frontaliers-qui-laissent-tomber-le-train?preview=true&amp;fbclid=IwAR3jgJaj0wjepYYTEHNiXbJzQ4B9giZ4htO6gge4q7BwXUGQrvSpql8Sh9M
+
+Exemple d'article "parfait" avec un court résumé au début et des liens "bio" sur les gens et les organisations:
+(pourrait-on tenter de créer ce genre de digests automatiquement?)
+https://www.ftm.nl/dutch-multinationals-funded-climate-sceptic
+
+Tester blog jean Chon "questions à charge" où la page se charge au fur
+
+
+Tester ça avec les trucs à droite qui s'updatent bizarrement + cleanup d'URL
+https://www.huffingtonpost.fr/entry/agnes-buzyn-livre-des-confessions-accablantes-sur-le-coronavirus_fr_5e70b8cec5b6eab7793c6642?ncid=other_twitter_cooo9wqtham&utm_campaign=share_twitter
+*/
 
 m_logForm.Show();
 			}
