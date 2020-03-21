@@ -239,7 +239,9 @@ Log( LOG_TYPE.DEBUG, _eventType );
 			//////////////////////////////////////////////////////////////////////////
 			// Include general JS helpers
 			//
-			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.Helpers );
+			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.Helpers, 100 );
+			if ( !JSResult.Success )
+				throw new Exception( "Failed to execute helper scripts: " + JSResult.Message );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Ask for the page's height (not always reliable, especially on infinite scrolling feeds like facebook or twitter!)
