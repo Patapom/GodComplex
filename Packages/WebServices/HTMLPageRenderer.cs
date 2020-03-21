@@ -239,12 +239,12 @@ Log( LOG_TYPE.DEBUG, _eventType );
 			//////////////////////////////////////////////////////////////////////////
 			// Include general JS helpers
 			//
-			await ExecuteJS( Properties.Resources.Helpers );
+			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.Helpers );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Ask for the page's height (not always reliable, especially on infinite scrolling feeds like facebook or twitter!)
 			//
-			JavascriptResponse	JSResult = await ExecuteJS( "GetPageHeight();" );
+			JSResult = await ExecuteJS( "GetPageHeight();" );
 			int	scrollHeight = (int) JSResult.Result;
 //Console.WriteLine( "Scroll height = " + scrollHeight );
 
@@ -550,7 +550,7 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 		/// </summary>
 		async Task<RectangleF>	CleanDOMAndReturnMainContentRectangle() {
 
-			JavascriptResponse	JSResult = await ExecuteJS( JSCodeIsolateMainContent() );
+			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.IsolateMainContent );
 			if ( !JSResult.Success )
 				throw new Exception( "JS request failed: DOM not cleared and no workable viewport dimension was returned... Reason: " + JSResult.Message );
 			if ( !(JSResult.Result is string) ) {
@@ -560,6 +560,11 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 
 			// Wait for a while before continuing
 			await Delay_ms( m_delay_ms_CleanDOM );
+
+			// Compute absolute rectangles of DOM content elements
+			JavascriptResponse	JSResult2 = await ExecuteJS( Properties.Resources.ComputeDOMRectangles );
+			if ( !JSResult2.Success )
+				throw new Exception( "JS request failed: DOM content rectangles not computed. Reason: " + JSResult2.Message );
 
 			// Parse the resulting bounding rectangle
 			try {
@@ -738,9 +743,7 @@ function IsFixedElement( _element ) {
 		/// The expected return value should be a JSON string of the bounding rectangle of the main element
 		/// </summary>
 		/// <returns></returns>
-		string	JSCodeIsolateMainContent() {
-return Properties.Resources.IsolateMainContent;
-/*
+/*		string	JSCodeIsolateMainContent() {
 return @"
 // This function is used to know if an element is set with a 'fixed' position, which is what we're looking for: fixed elements that may block the viewport
 function IsFixedElement( _element ) {
@@ -805,8 +808,9 @@ function RemoveFixedNodes( _root ) {
 //	// Convert into JSON
 //	return JSON.stringify( leafNodeInformation );
 } )();
-";*/
+";
 		}
+*/
 
 // Some invalid example: correctly queries leaves but useless since we need to climb back up!
 		string	JSCodeListDOMFixedElements_GetLeavesThenGoBackUp() {

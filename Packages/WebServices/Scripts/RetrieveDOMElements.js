@@ -12,26 +12,33 @@ function RecurseRetrieveContent( _node, _elementsDictionary ) {
 //console.log( "Node " + _node.path + " is content" );
 
 		// Append a new content element
-		var	contentNode = _node.getBoundingClientRect === undefined ? _node.parentNode	// Text nodes don't have a rectangle, only the parent has so use parent as content node...
+		var	contentNode = _node.getBoundingClientRect === undefined ? _node.parentNode	// Text nodes don't have a rectangle, only the parent has, so use parent as content node...
 																	: _node;
 
 		if ( _elementsDictionary[contentNode.path] === undefined ) {
-			var	clientRectangle = contentNode.getBoundingClientRect();
+			// Retrieve absolute rectangle coordinates stored in the DOM element from previous script execution (if available, but should be since code path to content elements is the same in both scripts)
+			var	absoluteRectangle = contentNode.absoluteRectangle;
+			if ( absoluteRectangle === undefined ) {
+console.log( "Node " + _node.path + " has no absolute rectangle! Recreating..." );
+				var	clientRectangle = contentNode.getBoundingClientRect();
 
-			// Convert to absolute position
-			var	absoluteLeft = clientRectangle.left + window.scrollX;
-			var	absoluteTop = clientRectangle.top + window.scrollY;
-
-//console.log( "NEW Node " + contentNode.path + " - Type " + contentType + " (" + absoluteLeft + ", " + absoluteTop + ", " + clientRectangle.width + ", " + clientRectangle.height + ")"
-//		 + " Tag = " + contentNode.tagName + " HTML = " + contentNode.outerHTML );
+				absoluteRectangle = {
+					left : clientRectangle.left + window.scrollX,
+					top : clientRectangle.top + window.scrollY,
+					width : clientRectangle.width,
+					height : clientRectangle.height
+				};
+//			} else {
+//console.log( "Node " + _node.path + " has a VALID absolute rectangle!" );
+			}
 
 			var	contentElementDescriptor = {
 				path : contentNode.path,
 				type : contentType,
-				x : absoluteLeft,
-				y : absoluteTop,
-				w : clientRectangle.width,
-				h : clientRectangle.height,
+				x : absoluteRectangle.left,
+				y : absoluteRectangle.top,
+				w : absoluteRectangle.width,
+				h : absoluteRectangle.height,
 			};
 
 			if ( contentType == 1 ) {

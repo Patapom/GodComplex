@@ -61,6 +61,24 @@ namespace WebServices.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to // Builds the absolute rectangles of content elements
+        ///function RecurseComputeContentRectangles( _node, _elementsDictionary ) {
+        /////console.log( &quot;Examining node &quot; + _node.path + &quot; (ID = &quot; + _node.id + &quot; - Type = &quot; + _node.nodeType + &quot; - Tag = &quot; + _node.tagName + &quot; - XPath = &quot; + getXPath( _node ) + &quot;)&quot; );
+        ///
+        ///	if ( !IsValidNode( _node ) ) {
+        /////console.log( &quot;Node &quot; + _node.path + &quot; is invalid!&quot; );
+        ///		return;	// The node is invalid... (e.g placeholder or invisible)
+        ///	}
+        ///
+        ///	var	contentType = IsContentNode( _node  [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string ComputeDOMRectangles {
+            get {
+                return ResourceManager.GetString("ComputeDOMRectangles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to // Code from https://stackoverflow.com/questions/5706837/get-unique-selector-of-element-in-jquery
         /////
         ///function getXPath(node, path) {
@@ -86,11 +104,16 @@ namespace WebServices.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to // Returns the FIRST top-most element that contains ALL elements that have content (i.e. image or text)
-        ///function RecurseRetrieveTopMostContentContainer( _node, _path ) {
-        /////console.log( &quot;Examining node &quot; + _path + &quot; (ID = &quot; + _node.id + &quot; - Type = &quot; + _node.nodeType + &quot; - Tag = &quot; + _node.tagName + &quot; - Value = &quot; + _node.nodeValue + &quot; - XPath = &quot; + getXPath( _node ) + &quot;)&quot; );
-        /////if ( _node.outerHTML !== undefined )
-        /////	console.log( &quot;Outer HTML = &quot; + (_node.outerHTML.length &lt; 100 ? _node.outerHTML : _node.oute [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to // Builds the absolute rectangles of content elements
+        ///function RecurseComputeContentRectangles( _node, _elementsDictionary ) {
+        /////console.log( &quot;Examining node &quot; + _node.path + &quot; (ID = &quot; + _node.id + &quot; - Type = &quot; + _node.nodeType + &quot; - Tag = &quot; + _node.tagName + &quot; - XPath = &quot; + getXPath( _node ) + &quot;)&quot; );
+        ///
+        ///	if ( !IsValidNode( _node ) ) {
+        /////console.log( &quot;Node &quot; + _node.path + &quot; is invalid!&quot; );
+        ///		return;	// The node is invalid... (e.g placeholder or invisible)
+        ///	}
+        ///
+        ///	var	contentType = IsContentNode( _node  [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string IsolateMainContent {
             get {
@@ -101,11 +124,15 @@ namespace WebServices.Properties {
         /// <summary>
         ///   Looks up a localized string similar to // Populates a dictionary of content elements
         ///function RecurseRetrieveContent( _node, _elementsDictionary ) {
-        /////console.log( &quot;Examining node &quot; + _path + &quot; (ID = &quot; + _node.id + &quot; - Type = &quot; + _node.nodeType + &quot; - Tag = &quot; + _node.tagName + &quot; - Value = &quot; + _node.nodeValue + &quot; - XPath = &quot; + getXPath( _node ) + &quot;)&quot; );
-        /////if ( _node.outerHTML !== undefined )
-        /////	console.log( &quot;Outer HTML = &quot; + (_node.outerHTML.length &lt; 100 ? _node.outerHTML : _node.outerHTML.substr( 0, 100 )) );
+        /////console.log( &quot;Examining node &quot; + _node.path + &quot; (ID = &quot; + _node.id + &quot; - Type = &quot; + _node.nodeType + &quot; - Tag = &quot; + _node.tagName + &quot; - XPath = &quot; + getXPath( _node ) + &quot;)&quot; );
         ///
-        ///	if ( !IsValidNode( _node ) )  [rest of string was truncated]&quot;;.
+        ///	if ( !IsValidNode( _node ) ) {
+        /////console.log( &quot;Node &quot; + _node.path + &quot; is invalid!&quot; );
+        ///		return;	// The node is invalid... (e.g placeholder or invisible)
+        ///	}
+        ///
+        ///	var	contentType = IsContentNode( _node );
+        ///	if ( content [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string RetrieveDOMElements {
             get {

@@ -10,10 +10,11 @@ function RecurseRetrieveTopMostContentContainer( _node, _path ) {
 	}
 	if ( IsContentNode( _node ) ) {
 //console.log( "Node " + _path + " is content" );
-		if ( IsInvisibleElement( _node ) ) {
+		if ( !IsVisibleElement( _node ) ) {
 //console.log( "Node " + _path + " is invisible" );
 			return null;
 		}
+
 		return _node;	// A content-containing node is its own container...
 	}
 
@@ -45,6 +46,9 @@ function RemoveFixedNodes( _root ) {
 	RecurseGetSpecificNodes( _root, IsFixedElement ).forEach( _element => _element.remove() );
 }
 
+//function IsInvisibleElement( _element ) {
+//	return !IsVisibleElement( _element );
+//}
 //function RemoveInvisibleNodes(_root) {
 //	if ( _root == null )
 //		_root = document.body;

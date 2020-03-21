@@ -49,10 +49,10 @@ function IsFixedElement( _element ) {
 }
 
 // Returns true if the element is not visible (e.g. simply hidden or out of screen)
-function IsInvisibleElement( _element ) {
+function IsVisibleElement( _element ) {
 	if ( _element.hidden ) {
 //console.log( "Element is hidden..." );
-		return true;	// Obvious...
+		return false;	// Obvious...
 	}
 
 	// Check style for invisibility
@@ -60,12 +60,12 @@ function IsInvisibleElement( _element ) {
 		var style = window.getComputedStyle( _element );
 		if ( style.display == "none" || style.visibility == "hidden" ) {
 //console.log( "Element " + _element.id + " removed because display style is either display:none or visibility:hidden..." );
-			return true;
+			return false;
 		}
 	}
 
 	if ( _element.getBoundingClientRect === undefined )
-		return false;
+		return true;	// Assume some text element...
 
 	var	rectangle = _element.getBoundingClientRect();
 //console.log( "Rectangle = (" + rectangle.left + ", " + rectangle.top + ", " + rectangle.width + ", " + rectangle.height + ") with scroll offset, bottom = " + (rectangle.bottom + window.scrollY) );
@@ -79,16 +79,11 @@ function IsInvisibleElement( _element ) {
 	var	l = rectangle.left;
 	var	t = rectangle.top;
 
-	if ( r <= 0 || b <= 0 ) {
-//console.log( "Outside top-left screen..." );
-		return true;	// Outside of screen
-	}
-	if ( l >= window.width || t >= window.height ) {
-//console.log( "Outside bottom-right screen..." );
-		return true;	// Outside of screen
+	if ( r <= 0 || b <= 0 || l >= window.width || t >= window.height ) {
+		return false;	// Outside of screen
 	}
 
-	return false;	// Element is visible!
+	return true;	// Element is visible!
 }
 
 // Returns true if the element is valid
