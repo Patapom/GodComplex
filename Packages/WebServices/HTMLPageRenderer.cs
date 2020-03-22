@@ -630,7 +630,7 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 //Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Waiting {1}", _waiter, counter++ );
 
 				double	elapsedTimeSinceLastPageEvent = m_hasPageEvents ? (DateTime.Now - m_lastPageEvent).TotalMilliseconds : 0;
-				if ( elapsedTimeSinceLastPageEvent > m_delay_ms_StablePage )
+				if ( !m_browser.IsLoading && elapsedTimeSinceLastPageEvent > m_delay_ms_StablePage )
 					return;	// Page seems stable enough...
 
 //				Application.DoEvents();
