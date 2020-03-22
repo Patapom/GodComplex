@@ -16,45 +16,14 @@ namespace WebServices {
 // TODO:
 //	• Use schemes to handle local files: https://github.com/cefsharp/CefSharp/wiki/General-Usage#scheme-handler
 //	• Example: Capture Full Page Using Scrolling https://github.com/WildGenie/OSIRTv2/blob/3e60d3ce908a1d25a7b4633dc9afdd53256cbb4f/OSIRT/Browser/MainBrowser.cs#L300
-//	• Download element rectangles! => Use JS
 
 	/// <summary>
-	/// Class wrapping CEF Sharp (Chromium Embedded Framework, .Net wrapper version) to render web pages in an offscreen bitmap
-	/// https://github.com/cefsharp/CefSharp/wiki/General-Usage
+	/// Class rendering web pages into an offscreen bitmap
+	/// The class will auto-dispose itself and release the browser once the page is successfully rendered, or if an error occurred
 	/// </summary>
 	public class HTMLPageRenderer : IDisposable {
 
 		#region NESTED TYPES
-
-		class LifeSpanHandler : ILifeSpanHandler {
-			public bool DoClose(IWebBrowser chromiumWebBrowser, IBrowser browser) {
-				return false;
-			}
-
-			public void OnAfterCreated(IWebBrowser chromiumWebBrowser, IBrowser browser) {
-			}
-
-			public void OnBeforeClose(IWebBrowser chromiumWebBrowser, IBrowser browser) {
-			}
-
-			public bool OnBeforePopup(IWebBrowser chromiumWebBrowser, IBrowser browser, IFrame frame, string targetUrl, string targetFrameName, WindowOpenDisposition targetDisposition, bool userGesture, IPopupFeatures popupFeatures, IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptAccess, out IWebBrowser newBrowser) {
-				// See https://github.com/cefsharp/CefSharp/wiki/General-Usage#popups
-				newBrowser = null;
-				return true;
-			}
-		}
-
-// 		class HTMLSourceReader : CefSharp.IStringVisitor {
-// 			public string	m_HTMLContent = null;
-// 			public HTMLSourceReader() {
-// 			}
-// 			public void Visit( string _str ) {
-// 				m_HTMLContent = _str;
-// 			}
-// 
-// 			public void Dispose() {
-// 			}
-// 		}
 
 		/// <summary>
 		/// Used to notify the HTML source is available
@@ -97,22 +66,15 @@ namespace WebServices {
 
 		#region FIELDS
 
-		private int					m_delay_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for over 5s
-		private int					m_delay_ms_ScrollDown = 250;			// Wait for 250ms before taking a screenshot after a page scroll on ROUND 2
-		private int					m_delay_ms_CleanDOM = 1000;				// Wait for 1000ms after cleaning DOM
+		private BrowsersPool.Browser	m_browser = null;
 
-		private int					m_timeOut_ms_JavascriptNoRender = 1000;	// Default timeout after 1s of a JS command that doesn't trigger a new rendering
-		private int					m_timeOut_ms_PageRender = 30000;		// Default timeout after 30s for a page rendering
-		private int					m_timeOut_ms_Screenshot = 10000;		// Default timeout after 1s for a screenshot
+		private int						m_delay_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for over 5s
+		private int						m_delay_ms_ScrollDown = 250;			// Wait for 250ms before taking a screenshot after a page scroll on ROUND 2
+		private int						m_delay_ms_CleanDOM = 1000;				// Wait for 1000ms after cleaning DOM
 
-		private ChromiumWebBrowser	m_browser = null;
-
-// 		public HostHandler host;
-// 		private DownloadHandler dHandler;
-// 		private ContextMenuHandler mHandler;
-// 		private LifeSpanHandler lHandler;
-// 		private KeyboardHandler kHandler;
-// 		private RequestHandler rHandler;
+		private int						m_timeOut_ms_JavascriptNoRender = 1000;	// Default timeout after 1s of a JS command that doesn't trigger a new rendering
+		private int						m_timeOut_ms_PageRender = 30000;		// Default timeout after 30s for a page rendering
+		private int						m_timeOut_ms_Screenshot = 10000;		// Default timeout after 1s for a screenshot
 
 		private string					m_URL;
 		private int						m_maxScreenshotsCount;
@@ -128,38 +90,14 @@ namespace WebServices {
 
 		#region METHODS
 
-		public HTMLPageRenderer( string _URL, int _browserViewportWidth, int _browserViewportHeight, int _maxScreenshotsCount, WebPageSourceAvailable _pageSourceAvailable, WebPageRendered _pageRendered, WebPageSuccess _pageSuccess, WebPageErrorOccurred _pageError, LogDelegate _logDelegate ) {
+		public HTMLPageRenderer( BrowsersPool.Browser _browser, string _URL, int _browserViewportWidth, int _browserViewportHeight, int _maxScreenshotsCount, WebPageSourceAvailable _pageSourceAvailable, WebPageRendered _pageRendered, WebPageSuccess _pageSuccess, WebPageErrorOccurred _pageError, LogDelegate _logDelegate ) {
 
-//Main( null );
-
-			m_URL = _URL;
-			m_maxScreenshotsCount = _maxScreenshotsCount;
+			m_browser = _browser;
 			m_pageSourceAvailable = _pageSourceAvailable;
 			m_pageRendered = _pageRendered;
 			m_pageSuccess = _pageSuccess;
 			m_pageError = _pageError;
 			m_logDelegate = _logDelegate != null ? _logDelegate : DefaultLogger;
-
-			if ( !Cef.IsInitialized ) {
-				InitChromium();
-			}
-
-			// https://github.com/cefsharp/CefSharp/wiki/General-Usage#cefsettings-and-browsersettings
-			BrowserSettings	browserSettings = new BrowserSettings();
-
-// 			dHandler = new DownloadHandler(this);
-// 			lHandler = new LifeSpanHandler(this);
-// 			mHandler = new ContextMenuHandler(this);
-// 			kHandler = new KeyboardHandler(this);
-// 			rHandler = new RequestHandler(this);
-// 
-// 			InitDownloads();
-// 
-// 			host = new HostHandler(this);
-
-			m_browser = new ChromiumWebBrowser( "", browserSettings );
-			m_browser.BrowserInitialized += browser_BrowserInitialized;
-			m_browser.LifeSpanHandler = new LifeSpanHandler();
 
 			// https://github.com/cefsharp/CefSharp/wiki/General-Usage#handlers
 			m_browser.LoadError += browser_LoadError;
@@ -167,14 +105,14 @@ namespace WebServices {
 			m_browser.FrameLoadStart += browser_FrameLoadStart;
 			m_browser.FrameLoadEnd += browser_FrameLoadEnd;
 
+			// Setup page and size
+			m_URL = _URL;
+			m_maxScreenshotsCount = _maxScreenshotsCount;
+
  			if ( _browserViewportHeight == 0 )
  				_browserViewportHeight = (int) (_browserViewportWidth * 1.6180339887498948482045868343656);
 
 			m_browser.Size = new Size( _browserViewportWidth, _browserViewportHeight );
-		}
-
-		private void browser_BrowserInitialized(object sender, EventArgs e) {
-Log( LOG_TYPE.DEBUG, "browser_BrowserInitialized" );
 
 			// No event have been registered yet
 			m_hasPageEvents = false;
@@ -183,9 +121,25 @@ Log( LOG_TYPE.DEBUG, "browser_BrowserInitialized" );
 			m_browser.Load( m_URL );
 
 			// Execute waiting task
-//			var	T = ExecuteTaskOrTimeOut( WaitForPageRendered(), m_timeOut_ms_PageRender );
 			Task	T = new Task( WaitForPageRendered );
 					T.Start();
+		}
+
+		bool	m_disposed = false;
+		public virtual void	Dispose() {
+			if ( m_disposed )
+				throw new Exception( "Already disposed!" );
+
+			m_disposed = true;
+
+			m_browser.Stop();
+
+			m_browser.LoadError -= browser_LoadError;
+			m_browser.LoadingStateChanged -= browser_LoadingStateChanged;
+			m_browser.FrameLoadStart -= browser_FrameLoadStart;
+			m_browser.FrameLoadEnd -= browser_FrameLoadEnd;
+
+			m_browser.Release();
 		}
 
 		private void browser_LoadError(object sender, LoadErrorEventArgs e) {
@@ -204,6 +158,9 @@ Log( LOG_TYPE.DEBUG, "browser_LoadError: " + e.ErrorText + " on URL " + e.Failed
 			}
 
 			m_pageError( (int) e.ErrorCode, e.ErrorText );
+
+			// Autodispose...
+			Dispose();
 		}
 
 		private void browser_FrameLoadStart(object sender, FrameLoadStartEventArgs e) {
@@ -243,6 +200,7 @@ Log( LOG_TYPE.DEBUG, _eventType );
 			if ( !JSResult.Success )
 				throw new Exception( "Failed to execute helper scripts: " + JSResult.Message );
 
+
 			//////////////////////////////////////////////////////////////////////////
 			// Ask for the page's height (not always reliable, especially on infinite scrolling feeds like facebook or twitter!)
 			//
@@ -257,13 +215,12 @@ Log( LOG_TYPE.DEBUG, _eventType );
 //				backgroundColor = 
 			}
 
+
 			//////////////////////////////////////////////////////////////////////////
 			// Retrieve initial scroll value
-			int					initialScrollY = 0;
 			JSResult = await ExecuteJS( "window.scrollY;" );
-			if ( JSResult.Success ) {
-				initialScrollY = (int) JSResult.Result;
-	 		}
+			int	initialScrollY = JSResult.Success ? (int) JSResult.Result : 0;
+
 
 			//////////////////////////////////////////////////////////////////////////
 			// Perform as many screenshots as necessary to capture the entire page
@@ -286,6 +243,9 @@ Log( LOG_TYPE.DEBUG, "Page scroll height = " + scrollHeight + " - Screenshots Co
 			// Notify the page was successfully loaded
 			//
 			m_pageSuccess();
+
+			// Autodispose...
+			Dispose();
 		}
 
 		/// <summary>
@@ -457,7 +417,7 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
 Log( LOG_TYPE.DEBUG, "QueryContent for " + m_URL );
 
 				// From Line 162 https://github.com/WildGenie/OSIRTv2/blob/3e60d3ce908a1d25a7b4633dc9afdd53256cbb4f/OSIRT/Browser/MainBrowser.cs#L300
-				string	source = await m_browser.GetBrowser().MainFrame.GetSourceAsync();
+				string	source = await m_browser.MainFrame.GetSourceAsync();
 				if ( source == null )
 					throw new Exception( "Failed to retrieve HTML source!" );
 
@@ -609,7 +569,7 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 			return await ExecuteJS( _JS, 0 );
 		}
 		async Task<JavascriptResponse>	ExecuteJS( string _JS, int _delay_ms ) {
-			Task<JavascriptResponse>	task = (await ExecuteTaskOrTimeOut( m_browser.GetBrowser().MainFrame.EvaluateScriptAsync( _JS, null ), m_timeOut_ms_JavascriptNoRender, "EvaluateScriptAsync " + _JS )) as Task<JavascriptResponse>;
+			Task<JavascriptResponse>	task = (await ExecuteTaskOrTimeOut( m_browser.MainFrame.EvaluateScriptAsync( _JS, null ), m_timeOut_ms_JavascriptNoRender, "EvaluateScriptAsync " + _JS )) as Task<JavascriptResponse>;
 
 			if ( _delay_ms > 0 ) {
 				await Delay_ms( _delay_ms );
@@ -644,30 +604,8 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 			await ExecuteTaskOrTimeOut( AsyncWaitForStablePage( _waiter ), m_timeOut_ms_PageRender, "AsyncWaitForStablePage()" );
 		}
 
-		public void Dispose() {
-			m_browser.Dispose();
-		}
-
-		#region Static CEF Init/Exit
-
-		// https://github.com/cefsharp/CefSharp/wiki/General-Usage#initialize-and-shutdown
-
-		public static void	InitChromium() {
-			// We're going to manually call Cef.Shutdown
-            CefSharpSettings.ShutdownOnExit = false;
-
-			CefSettings	settings = new CefSettings();
- 			Cef.Initialize( settings, performDependencyCheck: true, browserProcessHandler: null );
-		}
-
-		public static void	ExitChromium() {
-			Cef.Shutdown();
-		}
-
-		#endregion
-
 		public void	Log( LOG_TYPE _type, string _text, params object[] _arguments ) {
-			_text = string.Format( _text, _arguments );
+			_text = string.Format( "[" + m_browser.Name + " - " + m_URL + "] " + _text, _arguments );
 			m_logDelegate( _type, _text );
 		}
 
