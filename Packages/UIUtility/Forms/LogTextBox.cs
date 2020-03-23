@@ -52,10 +52,17 @@ namespace UIUtility
 			UpdateRTF();
 		}
 
+		public void		LogDebug( string _Text )
+		{
+			_Text = _Text.Replace( "\n", @"\line" );
+			m_Log.Append( @"\cf5 " + _Text );
+			UpdateRTF();
+		}
+
 		protected void	UpdateRTF()
 		{
 			string RTFText = @"{\rtf1\ansi\deff0" +
-			@"{\colortbl;\red0\green0\blue0;\red32\green128\blue32;\red192\green128\blue0;\red255\green0\blue0;}" +
+			@"{\colortbl;\red0\green0\blue0;\red32\green128\blue32;\red192\green128\blue0;\red255\green0\blue0;\red127\green20\blue127;}" +
 			m_Log.ToString() + "}";
 
 			this.SuspendLayout();
