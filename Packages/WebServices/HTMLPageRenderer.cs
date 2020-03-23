@@ -66,15 +66,15 @@ namespace WebServices {
 
 		#region FIELDS
 
+		private const int				m_delay_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for over 5s
+		private const int				m_delay_ms_ScrollDown = 250;			// Wait for 250ms before taking a screenshot after a page scroll on ROUND 2
+		private const int				m_delay_ms_CleanDOM = 1000;				// Wait for 1000ms after cleaning DOM
+
+		private const int				m_timeOut_ms_JavascriptNoRender = 1000;	// Default timeout after 1s of a JS command that doesn't trigger a new rendering
+		private const int				m_timeOut_ms_PageRender = 30000;		// Default timeout after 30s for a page rendering
+		private const int				m_timeOut_ms_Screenshot = 10000;		// Default timeout after 10s for a screenshot
+
 		private BrowsersPool.Browser	m_browser = null;
-
-		private int						m_delay_ms_StablePage = 5000;			// Page is deemed stable if no event have been received for over 5s
-		private int						m_delay_ms_ScrollDown = 250;			// Wait for 250ms before taking a screenshot after a page scroll on ROUND 2
-		private int						m_delay_ms_CleanDOM = 1000;				// Wait for 1000ms after cleaning DOM
-
-		private int						m_timeOut_ms_JavascriptNoRender = 1000;	// Default timeout after 1s of a JS command that doesn't trigger a new rendering
-		private int						m_timeOut_ms_PageRender = 30000;		// Default timeout after 30s for a page rendering
-		private int						m_timeOut_ms_Screenshot = 10000;		// Default timeout after 1s for a screenshot
 
 		private string					m_URL;
 		private int						m_maxScreenshotsCount;
@@ -121,8 +121,12 @@ namespace WebServices {
 			m_browser.Load( m_URL );
 
 			// Execute waiting task
-			Task	T = new Task( WaitForPageRendered );
-					T.Start();
+			try {
+				Task	T = new Task( WaitForPageRendered );
+						T.Start();
+			} catch ( Exception _e ) {
+				Log( LOG_TYPE.ERROR, "Timeout! " + _e.Message );
+			}
 		}
 
 		bool	m_disposed = false;
@@ -148,7 +152,15 @@ namespace WebServices {
 		/// </summary>
 		async void	WaitForPageRendered() {
 			// Wait until the page is stable a first time...
-			await WaitForStablePage( "WaitForPageRendered() => Wait before querying content" );
+			try {
+				await WaitForStablePage();
+			} catch ( TimeoutException ) {
+				Log( LOG_TYPE.WARNING, "WaitForStablePage() timed out... Continuing anyway..." );
+			} catch ( Exception _e ) {
+				Log( LOG_TYPE.ERROR, "WaitForStablePage() provoked an exception... Aborting!\r\nDetails: " + _e.Message );
+				Dispose();
+				return;
+			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Include general JS helpers
@@ -186,20 +198,24 @@ namespace WebServices {
 			int	screenshotsCount = (int) Math.Ceiling( (double) scrollHeight / viewportHeight );
 Log( LOG_TYPE.DEBUG, "Page scroll height = " + scrollHeight + " - Screenshots Count = " + screenshotsCount );
 
-			using ( Brush backgroundBrush = new SolidBrush( backgroundColor ) )
+			using ( Brush backgroundBrush = new SolidBrush( backgroundColor ) ) {
 				await DoScreenshots( screenshotsCount, initialScrollY, scrollHeight, backgroundBrush );
-
+			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Query the HTML source code and DOM content
 			//
-			await QueryContent( backgroundColor, initialScrollY );
+			try {
+				await QueryContent( backgroundColor, initialScrollY );
 
+				// Notify the page was successfully loaded
+				m_pageSuccess();
 
-			//////////////////////////////////////////////////////////////////////////
-			// Notify the page was successfully loaded
-			//
-			m_pageSuccess();
+			} catch ( TimeoutException ) {
+				Log( LOG_TYPE.ERROR, "QueryContent() timed out... Continuing anyway..." );
+			} catch ( Exception _e ) {
+				Log( LOG_TYPE.ERROR, "QueryContent() provoked an exception... Aborting!\r\nDetails: " + _e.Message );
+			}
 
 			// Autodispose...
 			Dispose();
@@ -482,13 +498,11 @@ Log( LOG_TYPE.DEBUG, _eventType );
 			await Task.Delay( _delay_ms );
 		}
 
-		async Task	AsyncWaitForStablePage( string _waiter ) {
-			const int	MAX_COUNTER = 100;
+		async Task	WaitForStablePage() {
+			DateTime	startTime = DateTime.Now;
+			while ( (DateTime.Now - startTime).TotalMilliseconds < m_delay_ms_StablePage ) {
 
-			int	counter = 0;
-			while ( counter < MAX_COUNTER ) {
-//Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Waiting {1}", _waiter, counter++ );
-
+				// Check time since last page event
 				double	elapsedTimeSinceLastPageEvent = m_hasPageEvents ? (DateTime.Now - m_lastPageEvent).TotalMilliseconds : 0;
 				if ( !m_browser.IsLoading && elapsedTimeSinceLastPageEvent > m_delay_ms_StablePage )
 					return;	// Page seems stable enough...
@@ -497,12 +511,14 @@ Log( LOG_TYPE.DEBUG, _eventType );
 				await Task.Delay( 250 );  // We do need these delays. Some pages, like facebook, may need to load viewport content.
 			}
 
-//Log( LOG_TYPE.DEBUG, "AsyncWaitForStablePage( {0} ) => Exiting after {1} loops!", _waiter, counter );
+			throw new TimeoutException();
+//			Log( LOG_TYPE.WARNING, "AsyncWaitForStablePage() timed out! Assuming page is loaded anyway..." );
 		}
 
-		async Task	WaitForStablePage( string _waiter ) {
-			await ExecuteTaskOrTimeOut( AsyncWaitForStablePage( _waiter ), m_timeOut_ms_PageRender, "AsyncWaitForStablePage()" );
-		}
+// 		async Task	WaitForStablePage() {
+// //			await ExecuteTaskOrTimeOut( AsyncWaitForStablePage( _waiter ), m_timeOut_ms_PageRender, "AsyncWaitForStablePage()" );
+// 			await AsyncWaitForStablePage();
+// 		}
 
 		public void	Log( LOG_TYPE _type, string _text, params object[] _arguments ) {
 			_text = string.Format( "[" + m_browser.Name + " - " + m_URL + "] " + _text, _arguments );
