@@ -64,8 +64,9 @@ function IsVisibleElement( _element ) {
 		}
 	}
 
-	if ( _element.getBoundingClientRect === undefined )
-		return true;	// Assume some text element...
+	if ( _element.getBoundingClientRect === undefined ) {
+		return true;	// No bounding rectangle
+	}
 
 	var	rectangle = _element.getBoundingClientRect();
 //console.log( "Rectangle = (" + rectangle.left + ", " + rectangle.top + ", " + rectangle.width + ", " + rectangle.height + ") with scroll offset, bottom = " + (rectangle.bottom + window.scrollY) );
@@ -79,7 +80,7 @@ function IsVisibleElement( _element ) {
 	var	l = rectangle.left;
 	var	t = rectangle.top;
 
-	if ( r <= 0 || b <= 0 || l >= window.width || t >= window.height ) {
+	if ( r <= 0 || b <= 0 || l >= window.innerWidth || t >= window.innerHeight ) {
 		return false;	// Outside of screen
 	}
 
@@ -152,3 +153,9 @@ function RecurseGetSpecificNodes( _element, _filter ) {
 
 	return result;
 }
+
+(function() {
+
+//console.log( "Browser window inner size: " + window.innerWidth + " x " + window.innerHeight );
+
+})();

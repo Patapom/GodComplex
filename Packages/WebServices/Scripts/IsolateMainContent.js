@@ -56,7 +56,7 @@ function RemoveFixedNodes( _root ) {
 //	RecurseGetSpecificNodes( _root, IsInvisibleElement ).forEach( _element => _element.remove() );
 //}
 
-(function () {
+(function() {
 	// Remove fixed and invisible DOM elements
 	RemoveFixedNodes( document.body );
 //	RemoveInvisibleNodes( document.body );

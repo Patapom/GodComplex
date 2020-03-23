@@ -127,6 +127,7 @@ namespace WebServices {
 
 		bool	m_disposed = false;
 		public virtual void	Dispose() {
+
 			if ( m_disposed )
 				throw new Exception( "Already disposed!" );
 
@@ -140,50 +141,6 @@ namespace WebServices {
 			m_browser.FrameLoadEnd -= browser_FrameLoadEnd;
 
 			m_browser.Release();
-		}
-
-		private void browser_LoadError(object sender, LoadErrorEventArgs e) {
-Log( LOG_TYPE.DEBUG, "browser_LoadError: " + e.ErrorText + " on URL " + e.FailedUrl );
-
-			if ( !m_URL.ToLower().StartsWith( e.FailedUrl.ToLower() ) )
-				return;	// Not our URL! Not our concern...
-
-// 			switch ( e.ErrorCode ) {
-// 				case CefErrorCode.Aborted:
-// 					break;
-// 			}
-			switch ( (uint) e.ErrorCode ) {
-				case 0xffffffe5U:
-					return;	// Ignore...
-			}
-
-			m_pageError( (int) e.ErrorCode, e.ErrorText );
-
-			// Autodispose...
-			Dispose();
-		}
-
-		private void browser_FrameLoadStart(object sender, FrameLoadStartEventArgs e) {
-			RegisterPageEvent( "browser_FrameLoadStart" );
-		}
-		
-		private void browser_FrameLoadEnd(object sender, FrameLoadEndEventArgs e) {
-			RegisterPageEvent( "browser_FrameLoadEnd" );
-		}
-
-		private void browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e) {
-// 			if ( e.IsLoading )
-// 				return;	// Still loading...
-
-			RegisterPageEvent( "browser_LoadingStateChanged (" + (e.IsLoading ? "loading" : "finished") + ")" );
-		}
-
-		bool		m_hasPageEvents = false;
- 		DateTime	m_lastPageEvent;
-		void	RegisterPageEvent( string _eventType ) {
-			m_lastPageEvent = DateTime.Now;
-			m_hasPageEvents = true;
-Log( LOG_TYPE.DEBUG, _eventType );
 		}
 
 		/// <summary>
@@ -316,19 +273,19 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 						//////////////////////////////////////////////////////////////////////////
 						/// Clean the DOM and retrieve workable area
 						/// 
-						RectangleF	contentRectangleF = await CleanDOMAndReturnMainContentRectangle();
-						Rectangle	contentRectangle = new Rectangle(	(int) Mathf.Floor( contentRectangleF.X ),
-																		(int) Mathf.Floor( contentRectangleF.Y ),
-																		(int) (1 + Mathf.Ceiling( contentRectangleF.Right ) - Mathf.Floor( contentRectangleF.X ) ),
-																		(int) (1 + Mathf.Ceiling( contentRectangleF.Bottom ) - Mathf.Floor( contentRectangleF.Y ) )
+						RectangleF	clientContentRectangleF = await CleanDOMAndReturnMainContentRectangle();
+						Rectangle	clientContentRectangle = new Rectangle(	(int) Mathf.Floor( clientContentRectangleF.X ),
+																			(int) Mathf.Floor( clientContentRectangleF.Y ),
+																			(int) (1 + Mathf.Ceiling( clientContentRectangleF.Right ) - Mathf.Floor( clientContentRectangleF.X ) ),
+																			(int) (1 + Mathf.Ceiling( clientContentRectangleF.Bottom ) - Mathf.Floor( clientContentRectangleF.Y ) )
 																	);
-						if ( contentRectangle.IsEmpty ) {
+						if ( clientContentRectangle.IsEmpty ) {
 							// Use default rectangle covering the entire screen...
-							contentRectangle = defaultTotalContentRectangle;
-							contentRectangle.Offset( 0, -(_initialScrollY + scrollIndex * viewportHeight) );
+							clientContentRectangle = defaultTotalContentRectangle;
+							clientContentRectangle.Offset( 0, -(_initialScrollY + scrollIndex * viewportHeight) );
 						}
 
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Cleaning DOM and getting viewport ({0}, {1}, {2}, {3})", contentRectangle.X, contentRectangle.Y, contentRectangle.Width, contentRectangle.Height );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Cleaning DOM and getting viewport ({0}, {1}, {2}, {3})", clientContentRectangle.X, clientContentRectangle.Y, clientContentRectangle.Width, clientContentRectangle.Height );
 
 
 						//////////////////////////////////////////////////////////////////////////
@@ -345,7 +302,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 									remainingHeight = Math.Min( viewportHeight, remainingHeight );
 
 						Rectangle	viewportRectangle = new Rectangle( 0, viewportHeight - remainingHeight, viewportWidth, remainingHeight );
-						Rectangle	clippedContentRectangle = contentRectangle;
+						Rectangle	clippedContentRectangle = clientContentRectangle;
 									clippedContentRectangle.Intersect( viewportRectangle );
 
 						Bitmap		bitmap = null;
@@ -376,6 +333,9 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 								// We need the absolute content rectangle, in other words the location of this image chunk as it would be in the web page from the topmost and left most location...
 								Rectangle	absoluteContentRectangle = clippedContentRectangle;
 											absoluteContentRectangle.Offset( 0, scrollIndex * viewportHeight - viewportRectangle.Y );
+
+								// Compute absolute DOM rectangles
+								await ComputeDOMRectangles( (uint) absoluteContentRectangle.Left, (uint) absoluteContentRectangle.Top );
 
 								m_pageRendered( (uint) scrollIndex, absoluteContentRectangle, image );
 
@@ -439,115 +399,55 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 			}
 		}
 
-		/// <summary>
-		/// Lists all the content elements in the DOM (images, links and text) 
-		/// </summary>
-		/// <returns></returns>
-		async Task<XmlDocument>	RetrieveDOMContent( int _initialScrollY ) {
+		#region Events
 
-//Console.WriteLine( "InitialY = " + _initialScrollY );
+		private void browser_LoadError(object sender, LoadErrorEventArgs e) {
+Log( LOG_TYPE.DEBUG, "browser_LoadError: " + e.ErrorText + " on URL " + e.FailedUrl );
 
-			// Execute DOM retrieval script
-			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.RetrieveDOMElements );
-			if ( !JSResult.Success )
-				throw new Exception( "Failed to execute retrieval of DOM content elements: " + JSResult.Message );
+			if ( !m_URL.ToLower().StartsWith( e.FailedUrl.ToLower() ) )
+				return;	// Not our URL! Not our concern...
 
-			// Readback results
-			XmlDocument	result = null;
-			try {
-				JSON			parser = new JSON();
-				JSON.JSONObject	root = null;
-				using ( System.IO.StringReader R = new System.IO.StringReader( JSResult.Result as string ) ) {
-					root = parser.ReadJSON( R )["root"];
-
-					if ( !root.IsArray )
-						throw new Exception( "Expected an array of element descriptors. Found " + root.m_object );
-
-					result = new XmlDocument();
-					XmlElement	xmlRoot = result.CreateElement( "root" );
-					result.AppendChild( xmlRoot );
-
-					foreach ( JSON.JSONObject element in root.AsArray ) {
-						XmlElement	xmlElement = result.CreateElement( "element" );
-						xmlRoot.AppendChild( xmlElement );
-
-						int		elementType = ((int) element["type"].AsDouble);
-						string	elementTypeName = "UNKNOWN";
-						switch ( elementType ) {
-							case 1: elementTypeName = "LINK"; break;
-							case 2: elementTypeName = "IMAGE"; break;
-							case 3: elementTypeName = "TEXT"; break;
-						}
-
-						RectangleF	clientRect = new RectangleF(
-							(float) element["x"].AsDouble,
-							(float) element["y"].AsDouble,
-							(float) element["w"].AsDouble,
-							(float) element["h"].AsDouble
-						);
-						clientRect.Offset( 0, -_initialScrollY );
-
-//Console.WriteLine( "Rectangle Y = " + clientRect.Y );
-
-						xmlElement.SetAttribute( "path", element["path"].AsString );
-						xmlElement.SetAttribute( "type", elementTypeName );
-						xmlElement.SetAttribute( "x", clientRect.X.ToString() );
-						xmlElement.SetAttribute( "y", clientRect.Y.ToString() );
-						xmlElement.SetAttribute( "w", clientRect.Width.ToString() );
-						xmlElement.SetAttribute( "h", clientRect.Height.ToString() );
-						if ( elementType == 1 ) {
-							xmlElement.SetAttribute( "URL", element["URL"].AsString );
-						}
-					}
-				}
-			} catch ( Exception _e ) {
-				throw new Exception( "Failed to build XML Document from JSON object of DOM content elements: " + _e.Message );
+// 			switch ( e.ErrorCode ) {
+// 				case CefErrorCode.Aborted:
+// 					break;
+// 			}
+			switch ( (uint) e.ErrorCode ) {
+				case 0xffffffe5U:
+					return;	// Ignore...
 			}
 
-			return result;
+			m_pageError( (int) e.ErrorCode, e.ErrorText );
+
+			// Autodispose...
+			Dispose();
 		}
 
-		/// <summary>
-		/// Cleans the DOM of annoying content like fixed banners or popups and returns a rectangle containing the main content of the web page
-		/// </summary>
-		async Task<RectangleF>	CleanDOMAndReturnMainContentRectangle() {
-
-			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.IsolateMainContent );
-			if ( !JSResult.Success )
-				throw new Exception( "JS request failed: DOM not cleared and no workable viewport dimension was returned... Reason: " + JSResult.Message );
-			if ( !(JSResult.Result is string) ) {
-				Log( LOG_TYPE.WARNING, "Failed to retrieve workable rectangle for page's main content: defaulting to entire browser window..." );
-				return RectangleF.Empty;
-			}
-
-			// Wait for a while before continuing
-			await Delay_ms( m_delay_ms_CleanDOM );
-
-			// Compute absolute rectangles of DOM content elements
-			JavascriptResponse	JSResult2 = await ExecuteJS( Properties.Resources.ComputeDOMRectangles );
-			if ( !JSResult2.Success )
-				throw new Exception( "JS request failed: DOM content rectangles not computed. Reason: " + JSResult2.Message );
-
-			// Parse the resulting bounding rectangle
-			try {
-				JSON			parser = new JSON();
-				JSON.JSONObject	root = null;
-				using ( System.IO.StringReader R = new System.IO.StringReader( JSResult.Result as string ) ) {
-					root = parser.ReadJSON( R )["root"];
-
-					RectangleF	result = new RectangleF();
-					result.X = (float) root["x"].AsDouble;
-					result.Y = (float) root["y"].AsDouble;
-					result.Width = (float) root["width"].AsDouble;
-					result.Height = (float) root["height"].AsDouble;
-
-					return result;
-				}
-			} catch ( Exception _e ) {
-				Log( LOG_TYPE.ERROR, "Failed to parse resulting page's main rectangle because of \"{0}\" : defaulting to entire browser window...", _e.Message );
-				return RectangleF.Empty;
-			}
+		private void browser_FrameLoadStart(object sender, FrameLoadStartEventArgs e) {
+			RegisterPageEvent( "browser_FrameLoadStart" );
 		}
+		
+		private void browser_FrameLoadEnd(object sender, FrameLoadEndEventArgs e) {
+			RegisterPageEvent( "browser_FrameLoadEnd" );
+		}
+
+		private void browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e) {
+// 			if ( e.IsLoading )
+// 				return;	// Still loading...
+
+			RegisterPageEvent( "browser_LoadingStateChanged (" + (e.IsLoading ? "loading" : "finished") + ")" );
+		}
+
+		bool		m_hasPageEvents = false;
+ 		DateTime	m_lastPageEvent;
+		void	RegisterPageEvent( string _eventType ) {
+			m_lastPageEvent = DateTime.Now;
+			m_hasPageEvents = true;
+Log( LOG_TYPE.DEBUG, _eventType );
+		}
+
+		#endregion
+
+		#region Helpers
 
 		/// <summary>
 		/// Executes a task for a given amount of time before it times out
@@ -619,191 +519,9 @@ Log( LOG_TYPE.DEBUG, "QueryContent() => Retrieved {0} content elements from DOM"
 System.Diagnostics.Debug.WriteLine( _text );
 		}
 
+		#endregion
+
 		#region Javascript Code
-
-		/// <summary>
-		/// Makes the page scroll down to the provided position
-		/// The expected return value should be undefined
-		/// </summary>
-		/// <param name="_Y"></param>
-		/// <returns></returns>
-		string	JSCodeScroll( uint _Y ) {
-			return "(function() { window.scrollTo( 0," +_Y + " ); })();";
-		}
-
-		/// <summary>
-		/// Lists all the leaf DOM elements in the document
-		/// The expected return value should be a JSON string of an array of leaf elements with information for each of them
-		/// </summary>
-		/// <returns></returns>
-		string	JSCodeListDOMLeafElements() {
-			return
-@"
-// From https://stackoverflow.com/questions/22289391/how-to-create-an-array-of-leaf-nodes-of-an-html-dom-using-javascript
-function getLeafNodes( _root ) {
-    var nodes = Array.prototype.slice.call( _root.getElementsByTagName( '*' ), 0 );
-    var leafNodes = nodes.filter( function( _element ) {
-        return !_element.hasChildNodes();
-    });
-    return leafNodes;
-}
-
-function IsFixedElement( _element ) {
-	var	position = window.getComputedStyle( leafNode ).position;
-	return position == 'sticky' || position == 'fixed';
-}
-
-(function() { 
-	// Enumerate leaf DOM elements
-	var	leafNodes = getLeafNodes( document.body );
-//return leafNodes.length;
-
-	// Query information for each
-	var	leafNodeInformation = [];
-	for ( var i=0; i < leafNodes.length; i++ ) {
-		var	leafNode = leafNodes[i];
-
-		var	leafNodeInfo = {
-			bounds : leafNode.getBoundingClientRect(),
-			fixed : IsFixedElement( leafNode ),			// True if the element is fixed
-			index : 0									// Index of the element in the DOM
-		};
-
-		leafNodeInformation.push( leafNodeInfo );
-	}
-
-	// Convert into JSON
-	return JSON.stringify( leafNodeInformation );
-} )();
-";
-		}
-
-		/// <summary>
-		/// Isolates the main window with content
-		/// The expected return value should be a JSON string of the bounding rectangle of the main element
-		/// </summary>
-		/// <returns></returns>
-/*		string	JSCodeIsolateMainContent() {
-return @"
-// This function is used to know if an element is set with a 'fixed' position, which is what we're looking for: fixed elements that may block the viewport
-function IsFixedElement( _element ) {
-	var	position = window.getComputedStyle( _element ).position;
-	return position == 'sticky' || position == 'fixed';
-}
-
-// Returns the top parent node that contains only this child node (meaning we stop going up to the parent if the parent has more than one child)
-function GetParentWithSingleChild( _element ) {
-	var	parent = _element.parentNode;
-	if ( parent == null || parent.children.length > 1 )
-		return _element;	// Stop at this element...
-
-	return GetParentWithSingleChild( parent );
-}
-
-function RecurseGetFixedNodes( _element ) {
-	if ( IsFixedElement( _element ) )
-		return [ GetParentWithSingleChild( _element ) ];
-
-	// Query information for each child
-	var	childNodes = _element.children;
-	var	fixedChildNodes = [];
-	for ( var i=0; i < childNodes.length; i++ ) {
-		fixedChildNodes = fixedChildNodes.concat( RecurseGetFixedNodes( childNodes[i] ) );
-	}
-
-	return fixedChildNodes;
-}
-
-function RemoveFixedNodes( _root ) {
-	if ( _root == null )
-		_root = document.body;
-
-	RecurseGetFixedNodes( _root ).forEach( _element => _element.remove() );
-}
-
-(function() { 
-	// Recursively enumerate fixed DOM elements
-	var	leafNodes = RecurseGetFixedNodes( document.body );
-//return leafNodes.length;
-
-	// Remove them from the DOM
-	leafNodes.forEach( _element => _elemente.remove() );
-
-	// Enumerate all non empty nodes that contain either text or an image
-	
-
-//	// Query information for each
-//	var	leafNodeInformation = [];
-//	for ( var i=0; i < leafNodes.length; i++ ) {
-//		var	leafNode = leafNodes[i];
-//		var	nodeBounds = leafNode.getBoundingClientRect();
-//
-//		var	leafNodeInfo = {
-//			bounds : { x: nodeBounds.x, y: nodeBounds.y, w: nodeBounds.width, h: nodeBounds.height },
-//		};
-//
-//		leafNodeInformation.push( leafNodeInfo );
-//	}
-//
-//	// Convert into JSON
-//	return JSON.stringify( leafNodeInformation );
-} )();
-";
-		}
-*/
-
-// Some invalid example: correctly queries leaves but useless since we need to climb back up!
-		string	JSCodeListDOMFixedElements_GetLeavesThenGoBackUp() {
-			return @"
-// From https://stackoverflow.com/questions/22289391/how-to-create-an-array-of-leaf-nodes-of-an-html-dom-using-javascript
-function getLeafNodes( _root ) {
-    var nodes = Array.prototype.slice.call( _root.getElementsByTagName( '*' ), 0 );
-    var leafNodes = nodes.filter( function( _element ) {
-        return !_element.hasChildNodes();
-    });
-    return leafNodes;
-}
-
-function IsFixedElement( _element ) {
-	var	position = window.getComputedStyle( _element ).position;
-	return position == 'sticky' || position == 'fixed';
-}
-
-function GetParentFixedElement( _element ) {
-	if ( _element == null )
-		return null;
-
-	if ( IsFixedElement( _element ) )
-		return _element;
-
-	return GetParentFixedElement( _element.parentNode );
-}
-
-(function() { 
-	// Enumerate leaf DOM elements
-	var	leafNodes = getLeafNodes( document.body );
-//return leafNodes.length;
-
-	// Query information for each
-	var	leafNodeInformation = [];
-	for ( var i=0; i < leafNodes.length; i++ ) {
-		var	leafNode = leafNodes[i];
-		var	fixedParentNode = GetParentFixedElement( leafNode );
-		if ( fixedParentNode == null )
-			continue;	// Not a fixed node
-
-		var	leafNodeInfo = {
-			bounds : fixedParentNode.getBoundingClientRect(),
-		};
-
-		leafNodeInformation.push( leafNodeInfo );
-	}
-
-	// Convert into JSON
-	return JSON.stringify( leafNodeInformation );
-} )();
-";
-		}
 
 		/// Récupère un DOM element via son selector
 		/// document.querySelector( "selector" )
@@ -818,7 +536,131 @@ function GetParentFixedElement( _element ) {
 		/// "#react-root > div > div > div > main > div > div > div > div.css-1dbjc4n.r-14lw9ot.r-1tlfku8.r-1ljd8xs.r-13l2t4g.r-1phboty.r-1jgb5lz.r-11wrixw.r-61z16t.r-1ye8kvj.r-13qz1uu.r-184en5c > div > div.css-1dbjc4n.r-aqfbo4.r-14lw9ot.r-my5ep6.r-rull8r.r-qklmqi.r-gtdqiz.r-ipm5af.r-1g40b8q"
 
 
+		/// <summary>
+		/// Makes the page scroll down to the provided position
+		/// The expected return value should be undefined
+		/// </summary>
+		/// <param name="_Y"></param>
+		/// <returns></returns>
+		string	JSCodeScroll( uint _Y ) {
+			return "(function() { window.scrollTo( 0," +_Y + " ); })();";
+		}
 
+		/// <summary>
+		/// Cleans the DOM of annoying content like fixed banners or popups and returns a rectangle containing the main content of the web page
+		/// </summary>
+		/// <returns></returns>
+		async Task<RectangleF>	CleanDOMAndReturnMainContentRectangle() {
+
+			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.IsolateMainContent );
+			if ( !JSResult.Success )
+				throw new Exception( "JS request failed: DOM not cleared and no workable viewport dimension was returned... Reason: " + JSResult.Message );
+			if ( !(JSResult.Result is string) ) {
+				Log( LOG_TYPE.WARNING, "Failed to retrieve workable rectangle for page's main content: defaulting to entire browser window..." );
+				return RectangleF.Empty;
+			}
+
+			// Wait for a while before continuing
+			await Delay_ms( m_delay_ms_CleanDOM );
+
+			// Parse the resulting bounding rectangle
+			try {
+				JSON			parser = new JSON();
+				JSON.JSONObject	root = null;
+				using ( System.IO.StringReader R = new System.IO.StringReader( JSResult.Result as string ) ) {
+					root = parser.ReadJSON( R )["root"];
+
+					RectangleF	result = new RectangleF();
+					result.X = (float) root["x"].AsDouble;
+					result.Y = (float) root["y"].AsDouble;
+					result.Width = (float) root["width"].AsDouble;
+					result.Height = (float) root["height"].AsDouble;
+
+					return result;
+				}
+			} catch ( Exception _e ) {
+				Log( LOG_TYPE.ERROR, "Failed to parse resulting page's main rectangle because of \"{0}\" : defaulting to entire browser window...", _e.Message );
+				return RectangleF.Empty;
+			}
+		}
+
+		/// <summary>
+		/// Computes the absolute DOM rectangle positions
+		/// </summary>
+		/// <returns></returns>
+		async Task	ComputeDOMRectangles( uint _offsetX, uint _offsetY ) {
+			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.ComputeDOMRectangles + "\r\nComputeDOMRectangles( " + _offsetX + ", " + _offsetY + ")" );
+			if ( !JSResult.Success )
+				throw new Exception( "JS request failed: DOM content rectangles not computed. Reason: " + JSResult.Message );
+		}
+
+		/// <summary>
+		/// Lists all the content elements in the DOM (images, links and text) 
+		/// </summary>
+		/// <returns></returns>
+		async Task<XmlDocument>	RetrieveDOMContent( int _initialScrollY ) {
+
+//Console.WriteLine( "InitialY = " + _initialScrollY );
+
+			// Execute DOM retrieval script
+			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.RetrieveDOMElements );
+			if ( !JSResult.Success )
+				throw new Exception( "Failed to execute retrieval of DOM content elements: " + JSResult.Message );
+
+			// Readback results
+			XmlDocument	result = null;
+			try {
+				JSON			parser = new JSON();
+				JSON.JSONObject	root = null;
+				using ( System.IO.StringReader R = new System.IO.StringReader( JSResult.Result as string ) ) {
+					root = parser.ReadJSON( R )["root"];
+
+					if ( !root.IsArray )
+						throw new Exception( "Expected an array of element descriptors. Found " + root.m_object );
+
+					result = new XmlDocument();
+					XmlElement	xmlRoot = result.CreateElement( "root" );
+					result.AppendChild( xmlRoot );
+
+					foreach ( JSON.JSONObject element in root.AsArray ) {
+						XmlElement	xmlElement = result.CreateElement( "element" );
+						xmlRoot.AppendChild( xmlElement );
+
+						int		elementType = ((int) element["type"].AsDouble);
+						string	elementTypeName = "UNKNOWN";
+						switch ( elementType ) {
+							case 1: elementTypeName = "LINK"; break;
+							case 2: elementTypeName = "IMAGE"; break;
+							case 3: elementTypeName = "TEXT"; break;
+						}
+
+						RectangleF	clientRect = new RectangleF(
+							(float) element["x"].AsDouble,
+							(float) element["y"].AsDouble,
+							(float) element["w"].AsDouble,
+							(float) element["h"].AsDouble
+						);
+						clientRect.Offset( 0, -_initialScrollY );
+
+//Console.WriteLine( "Rectangle Y = " + clientRect.Y );
+
+						xmlElement.SetAttribute( "path", element["path"].AsString );
+						xmlElement.SetAttribute( "type", elementTypeName );
+						xmlElement.SetAttribute( "x", clientRect.X.ToString() );
+						xmlElement.SetAttribute( "y", clientRect.Y.ToString() );
+						xmlElement.SetAttribute( "w", clientRect.Width.ToString() );
+						xmlElement.SetAttribute( "h", clientRect.Height.ToString() );
+						if ( elementType == 1 ) {
+							xmlElement.SetAttribute( "URL", element["URL"].AsString );
+						}
+					}
+				}
+			} catch ( Exception _e ) {
+				throw new Exception( "Failed to build XML Document from JSON object of DOM content elements: " + _e.Message );
+			}
+
+			return result;
+		}
 
 		#endregion
 

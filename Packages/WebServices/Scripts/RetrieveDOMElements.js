@@ -19,7 +19,7 @@ function RecurseRetrieveContent( _node, _elementsDictionary ) {
 			// Retrieve absolute rectangle coordinates stored in the DOM element from previous script execution (if available, but should be since code path to content elements is the same in both scripts)
 			var	absoluteRectangle = contentNode.absoluteRectangle;
 			if ( absoluteRectangle === undefined ) {
-console.log( "Node " + _node.path + " has no absolute rectangle! Recreating..." );
+console.log( "Node " + contentNode.path + " has no absolute rectangle! Recreating..." );
 				var	clientRectangle = contentNode.getBoundingClientRect();
 
 				absoluteRectangle = {
