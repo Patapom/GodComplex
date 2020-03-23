@@ -71,7 +71,7 @@ namespace WebServices {
 		private const int				m_delay_ms_CleanDOM = 1000;				// Wait for 1000ms after cleaning DOM
 
 		private const int				m_timeOut_ms_JavascriptNoRender = 1000;	// Default timeout after 1s of a JS command that doesn't trigger a new rendering
-		private const int				m_timeOut_ms_PageRender = 30000;		// Default timeout after 30s for a page rendering
+		private const int				m_timeOut_ms_PageRender = 60000;		// Default timeout after 60s for a page rendering
 		private const int				m_timeOut_ms_Screenshot = 10000;		// Default timeout after 10s for a screenshot
 
 		private BrowsersPool.Browser	m_browser = null;
@@ -351,7 +351,9 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 											absoluteContentRectangle.Offset( 0, scrollIndex * viewportHeight - viewportRectangle.Y );
 
 								// Compute absolute DOM rectangles
-								await ComputeDOMRectangles( (uint) absoluteContentRectangle.Left, (uint) absoluteContentRectangle.Top );
+//								await ComputeDOMRectangles( absoluteContentRectangle.Left, absoluteContentRectangle.Top );
+//								await ComputeDOMRectangles( 0, 0 );
+								await ComputeDOMRectangles( 0, _initialScrollY + scrollIndex * viewportHeight - viewportRectangle.Y );
 
 								m_pageRendered( (uint) scrollIndex, absoluteContentRectangle, image );
 
@@ -500,25 +502,18 @@ Log( LOG_TYPE.DEBUG, _eventType );
 
 		async Task	WaitForStablePage() {
 			DateTime	startTime = DateTime.Now;
-			while ( (DateTime.Now - startTime).TotalMilliseconds < m_delay_ms_StablePage ) {
+			while ( (DateTime.Now - startTime).TotalMilliseconds < m_timeOut_ms_PageRender ) {
 
 				// Check time since last page event
 				double	elapsedTimeSinceLastPageEvent = m_hasPageEvents ? (DateTime.Now - m_lastPageEvent).TotalMilliseconds : 0;
 				if ( !m_browser.IsLoading && elapsedTimeSinceLastPageEvent > m_delay_ms_StablePage )
 					return;	// Page seems stable enough...
 
-//				Application.DoEvents();
 				await Task.Delay( 250 );  // We do need these delays. Some pages, like facebook, may need to load viewport content.
 			}
 
 			throw new TimeoutException();
-//			Log( LOG_TYPE.WARNING, "AsyncWaitForStablePage() timed out! Assuming page is loaded anyway..." );
 		}
-
-// 		async Task	WaitForStablePage() {
-// //			await ExecuteTaskOrTimeOut( AsyncWaitForStablePage( _waiter ), m_timeOut_ms_PageRender, "AsyncWaitForStablePage()" );
-// 			await AsyncWaitForStablePage();
-// 		}
 
 		public void	Log( LOG_TYPE _type, string _text, params object[] _arguments ) {
 			_text = string.Format( "[" + m_browser.Name + " - " + m_URL + "] " + _text, _arguments );
@@ -604,7 +599,7 @@ System.Diagnostics.Debug.WriteLine( _text );
 		/// Computes the absolute DOM rectangle positions
 		/// </summary>
 		/// <returns></returns>
-		async Task	ComputeDOMRectangles( uint _offsetX, uint _offsetY ) {
+		async Task	ComputeDOMRectangles( int _offsetX, int _offsetY ) {
 			JavascriptResponse	JSResult = await ExecuteJS( Properties.Resources.ComputeDOMRectangles + "\r\nComputeDOMRectangles( " + _offsetX + ", " + _offsetY + ")" );
 			if ( !JSResult.Success )
 				throw new Exception( "JS request failed: DOM content rectangles not computed. Reason: " + JSResult.Message );
