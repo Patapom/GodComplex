@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define NO_TIMEOUT
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -301,14 +303,14 @@ Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 1) EXCEPTION! " + _e.Message );
 							clientContentRectangle.Offset( 0, -(_initialScrollY + scrollIndex * viewportHeight) );
 						}
 
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Cleaning DOM and getting viewport ({0}, {1}, {2}, {3})", clientContentRectangle.X, clientContentRectangle.Y, clientContentRectangle.Width, clientContentRectangle.Height );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Cleaning DOM and getting viewport ({0}, {1}, {2}, {3})", clientContentRectangle.X, clientContentRectangle.Y, clientContentRectangle.Width, clientContentRectangle.Height );
 
 
 						//////////////////////////////////////////////////////////////////////////
 						/// Request a screenshot
  						Task<Bitmap>	taskScreenshot = (await ExecuteTaskOrTimeOut( m_browser.ScreenshotAsync( false ), m_timeOut_ms_Screenshot, "m_browser.ScreenshotAsync()" )) as Task<Bitmap>;
 
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Retrieved web page image screenshot {0} / {1}", 1+scrollIndex, _scrollsCount );
 
 
 						//////////////////////////////////////////////////////////////////////////
@@ -355,6 +357,7 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 //								await ComputeDOMRectangles( 0, 0 );
 								await ComputeDOMRectangles( 0, _initialScrollY + scrollIndex * viewportHeight - viewportRectangle.Y );
 
+								// Notify a new image is ready
 								m_pageRendered( (uint) scrollIndex, absoluteContentRectangle, image );
 
 							} catch ( Exception _e ) {
@@ -368,16 +371,16 @@ Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Retrieved web page image scre
 						/// Scroll down the page
 						if ( scrollIndex < _scrollsCount-1 ) {
 							int	scrollPosition = Math.Min( _scrollHeight, _initialScrollY + (scrollIndex+1) * viewportHeight );
-Log( LOG_TYPE.DEBUG, "DoScreenshots() => (ROUND 2) Requesting scrolling to position {0}...", scrollPosition );
+Log( LOG_TYPE.DEBUG, "DoScreenshots() => Requesting scrolling to position {0}...", scrollPosition );
 							await ExecuteJS( JSCodeScroll( (uint) scrollPosition ), m_delay_ms_ScrollDown );
 						}
 
 					} catch ( TimeoutException _e ) {
-Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) TIMEOUT EXCEPTION! " + _e.Message );
+Log( LOG_TYPE.ERROR, "DoScreenshots() => TIMEOUT EXCEPTION! " + _e.Message );
 //						throw new Exception( "Page rendering timed out" );
 //m_pageError()
 					} catch ( Exception _e ) {
-Log( LOG_TYPE.ERROR, "DoScreenshots() => (ROUND 2) EXCEPTION! " + _e.Message );
+Log( LOG_TYPE.ERROR, "DoScreenshots() => EXCEPTION! " + _e.Message );
 					}
 				}
 
@@ -475,10 +478,14 @@ Log( LOG_TYPE.DEBUG, _eventType );
 		/// <param name="_timeOut_ms"></param>
 		/// <returns></returns>
 		async Task<Task>	ExecuteTaskOrTimeOut< T >( T _task, int _timeOut_ms, string _timeOutMessage ) where T : Task {
-			if ( (await Task.WhenAny( _task, Task.Delay( _timeOut_ms ) )) != _task ) {
-//				_task.Dispose();
-				throw new TimeoutException( _timeOutMessage );
-			}
+			#if NO_TIMEOUT
+				await _task;
+			#else
+				if ( (await Task.WhenAny( _task, Task.Delay( _timeOut_ms ) )) != _task ) {
+//					_task.Dispose();
+					throw new TimeoutException( _timeOutMessage );
+				}
+			#endif
 
 			return _task;
 		}
