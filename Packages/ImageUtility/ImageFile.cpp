@@ -249,8 +249,8 @@ ImageFile::FILE_FORMAT	ImageFile::GetFileTypeFromExistingFileContent( System::IO
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 	return FILE_FORMAT( ImageUtilityLib::ImageFile::GetFileTypeFromExistingFileContent( nativeFileName ) );
 }
-ImageFile::FILE_FORMAT	ImageFile::GetFileTypeFromFileNameOnly( System::IO::FileInfo^ _fileName ) {
-	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
+ImageFile::FILE_FORMAT	ImageFile::GetFileTypeFromFileNameOnly( System::String^ _fileName ) {
+	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName );
 	return FILE_FORMAT( ImageUtilityLib::ImageFile::GetFileTypeFromFileNameOnly( nativeFileName ) );
 }
 

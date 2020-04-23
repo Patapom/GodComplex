@@ -488,7 +488,7 @@ namespace ImageUtility {
 		// WARNING: The image file MUST exist on disk as FreeImage inspects the content!
 		static FILE_FORMAT	GetFileTypeFromExistingFileContent( System::IO::FileInfo^ _fileName );
 		// Same version from filename only
-		static FILE_FORMAT	GetFileTypeFromFileNameOnly( System::IO::FileInfo^ _fileName );
+		static FILE_FORMAT	GetFileTypeFromFileNameOnly( System::String^ _fileName );
 
 		// Loads a System::Drawing.Bitmap into a byte[] containing RGBARGBARG... pixels
 		// <param name="_Bitmap">The source System::Drawing.Bitmap to load</param>
