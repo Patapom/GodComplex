@@ -35,5 +35,9 @@ String^	Everything::Search::Result::FileName::get() {
 }
 
 String^	Everything::Search::Result::FullName::get() {
-	return System::IO::Path::Combine( PathName, FileName );
+	char	temp[MAX_PATH];
+	DWORD	count = Everything_GetResultFullPathNameA(m_resultIndex, temp, MAX_PATH);
+	temp[count] = '\0';
+	return	System::Runtime::InteropServices::Marshal::PtrToStringAnsi(System::IntPtr((void*)temp));
+//	return System::IO::Path::Combine( PathName, FileName );
 }
