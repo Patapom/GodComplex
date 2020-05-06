@@ -17,6 +17,7 @@ namespace Brain2 {
 		public const int WM_KEYUP = 0x0101;
 		public const int WM_SYSKEYDOWN = 0x0104;
 		public const int WM_SYSKEYUP = 0x0105;
+		public const int WM_INITDIALOG = 0x0110;
 
 		// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-nchittest
 		public const int HTCAPTION = 0x2;

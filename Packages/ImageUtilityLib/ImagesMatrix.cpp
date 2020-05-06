@@ -852,7 +852,7 @@ void	ImagesMatrix::NextMipSize( U32& _width, U32& _height, U32& _depth ) {
 //	15 gives us 4 mips at respective sizes 15, 7, 3, 1
 //	16 gives us 5 mips at respective sizes 16, 8, 4, 2, 1
 U32		ImagesMatrix::ComputeMipsCount( U32 _size ) {
-	U32	sizeLog2 = U32( floorf( log2f( _size ) ) );	// Worst case scenario: we want a 2^N-1 size to give us N-1
+	U32	sizeLog2 = U32( floorf( log2f( (float) _size ) ) );	// Worst case scenario: we want a 2^N-1 size to give us N-1
 	return 1 + sizeLog2;							// And we need 1 more mip level to reach level 2^0
 }
 

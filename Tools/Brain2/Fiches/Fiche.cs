@@ -462,11 +462,11 @@ namespace Brain2 {
 				m_owner.NotifyThumbnailChanged( this );
 			}
 
-			public override void Read(BinaryReader _reader) {
+			public override void Read( BinaryReader _reader ) {
 				// Read is performed asynchronously when "Content" is requested
 			}
 
-			public override void Write(BinaryWriter _writer) {
+			public override void Write( BinaryWriter _writer ) {
 				if ( m_compressedContent == null ) {
 					// We need to compress content
 					if ( m_thumbnail == null )
@@ -615,7 +615,7 @@ namespace Brain2 {
 						return;
 
 					m_HTMLContent = value;
-					Database.FicheHTMLContentChanged( this );
+					HTMLContentChanged?.Invoke( this );
 				} );
 			}
 		}
@@ -628,7 +628,7 @@ namespace Brain2 {
 						return;
 
 					m_rootElement = value;
-					Database.FicheDOMElementsChanged( this );
+					DOMElementsChanged?.Invoke( this );
 				} );
 			}
 		}
@@ -715,18 +715,28 @@ namespace Brain2 {
 		/// </summary>
 		public event FicheEventHandler	ThumbnailChanged;
 
+		/// <summary>
+		/// Raised whenever the web page HTML content changed (not necessarily on the main thread!)
+		/// </summary>
+		public event FicheEventHandler	HTMLContentChanged;
+
+		/// <summary>
+		/// Raised whenever the web page HTML content changed (not necessarily on the main thread!)
+		/// </summary>
+		public event FicheEventHandler	DOMElementsChanged;
+
 		#endregion
 
 		#region METHODS
 
-		protected	Fiche( FichesDB _database, string _title ) {
-			m_GUID = Guid.NewGuid();
-			m_title = _title;
-
-			Database = _database;
-		}
+// 		protected	Fiche( FichesDB _database, string _title ) {
+// 			m_GUID = CreateGUID();
+// 			m_title = _title;
+// 
+// 			Database = _database;
+// 		}
 		public	Fiche( FichesDB _database, TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) {
-			m_GUID = Guid.NewGuid();
+			m_GUID = _database.CreateGUID();
 			m_type = _type;
 			m_title = _title;
 			m_URL = _URL;
@@ -736,9 +746,19 @@ namespace Brain2 {
 			Database = _database;
 			m_status = STATUS.READY;
 		}
+
 		public	Fiche( FichesDB _database, BinaryReader _reader ) {
 			Read( _reader );
 			Database = _database;	// Register afterward so our registration data (e.g. GUID, URL, title, etc.) are ready
+		}
+
+		/// <summary>
+		/// Internal and protected fiche creation
+		/// Shouldn't be called manually, only the database should use this method
+		/// </summary>
+		/// <param name="_database"></param>
+		internal Fiche( FichesDB _database ) {
+			m_database = _database;
 		}
 
 		public void Dispose() {
