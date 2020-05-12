@@ -525,6 +525,28 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 	m_fileFormat = _source.m_fileFormat;
 }
 
+void	ImageFile::RescaleFrom( const ImageFile& _source, U32 _width, U32 _height, PIXEL_FORMAT _targetFormat ) {
+	Init( _width, _height, _targetFormat, _source.GetColorProfile() );
+
+	// Read "height" scanlines
+	bfloat4*	sourceScanline = new bfloat4[_source.Width()];
+	bfloat4*	targetScanline = new bfloat4[_width];
+
+	float		horizontalScale = (float) _source.Width() / _width;
+
+	for ( U32 Y=0; Y < _height; Y++ ) {
+		U32	sourceY = U32( _source.Height() * Y / _height );
+		_source.ReadScanline( sourceY, sourceScanline );
+		for ( U32 X=0; X < _width; X++ ) {
+			targetScanline[X] = sourceScanline[U32( horizontalScale * (X+0.5f) )];
+		}
+		WriteScanline( Y, targetScanline );
+	}
+
+	SAFE_DELETE_ARRAY( targetScanline );
+	SAFE_DELETE_ARRAY( sourceScanline );
+}
+
 void	U8toS8( U8*& _scanline ) {
 	S16	signedValue = S16( *_scanline );
 	S8	temp = S8( signedValue - 128 );

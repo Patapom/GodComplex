@@ -271,6 +271,7 @@ namespace ImageUtilityLib {
 
 		ImageFile();
 		ImageFile( const ImageFile& _other );
+		ImageFile( const ImageFile& _other, U32 _newWidth, U32 _newHeight, PIXEL_FORMAT _newFormat );	// Builds from other and possibily rescale
 		ImageFile( const wchar_t* _fileName, FILE_FORMAT _format );
 		ImageFile( const U8* _fileContent, U64 _fileSize, FILE_FORMAT _format );
 		ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
@@ -304,6 +305,9 @@ namespace ImageUtilityLib {
 
 		// Tone maps a HDR image into a LDR RGBA8 format
 		void				ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper );
+
+		// Rescales the source image into this image
+		void				RescaleFrom( const ImageFile& _source, U32 _width, U32 _height, PIXEL_FORMAT _targetFormat );
 
 		// Makes the image signed/unsigned
 		// WARNING: Works only for integer formats: throws if called on floating-point formats!

@@ -430,6 +430,11 @@ namespace ImageUtility {
 			m_nativeObject = new ImageUtilityLib::ImageFile();
 			ConvertFrom( _other, _targetFormat );
 		}
+		ImageFile( ImageFile^ _other, U32 _width, U32 _height, PIXEL_FORMAT _targetFormat ) {
+			m_ownedObject = true;
+			m_nativeObject = new ImageUtilityLib::ImageFile();
+			RescaleFrom( _other, _width, _height, _targetFormat );
+		}
 
 		// Creates a bitmap from a System::Drawing.Bitmap and a color profile
 		ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfile^ _colorProfile );
@@ -466,6 +471,9 @@ namespace ImageUtility {
 
 		// Tone maps a HDR image into a LDR RGBA8 format
 		void				ToneMapFrom( ImageFile^ _source, ToneMapper^ _toneMapper );
+
+		// Rescales the source image into this image
+		void				RescaleFrom( ImageFile^ _source, UInt32 _width, UInt32 _height, PIXEL_FORMAT _targetFormat );
 
 		// Makes the image signed/unsigned
 		// WARNING: Works only for integer formats: throws if called on floating-point formats!
