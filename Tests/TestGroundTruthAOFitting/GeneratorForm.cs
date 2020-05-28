@@ -1275,7 +1275,7 @@ m_SB_Rays.SetInput( 4 );
 
 			string	DraggedFileName = (data as string[])[0];
 
-			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( DraggedFileName ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
 				m_draggedFileName = DraggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}
@@ -1315,7 +1315,7 @@ m_SB_Rays.SetInput( 4 );
 
 			string	DraggedFileName = (data as string[])[0];
 
-			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( DraggedFileName ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
 				m_draggedFileName = DraggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}
@@ -1373,7 +1373,7 @@ m_SB_Rays.SetInput( 4 );
 
 			string	draggedFileName = (data as string[])[0];
 
-			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( draggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( draggedFileName ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
 				m_draggedFileName = draggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}

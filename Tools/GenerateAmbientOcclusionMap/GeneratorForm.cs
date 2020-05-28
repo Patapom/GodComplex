@@ -1035,7 +1035,7 @@ minAngle_Back = Mathf.Min( minAngle_Back, tsAngle );
 
 			string	DraggedFileName = (data as string[])[0];
 
-			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( DraggedFileName ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
 				m_DraggedFileName = DraggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}
@@ -1075,7 +1075,7 @@ minAngle_Back = Mathf.Min( minAngle_Back, tsAngle );
 
 			string	DraggedFileName = (data as string[])[0];
 
-			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( DraggedFileName ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
 				m_DraggedFileName = DraggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}

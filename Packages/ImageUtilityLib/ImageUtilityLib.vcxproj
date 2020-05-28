@@ -23,7 +23,7 @@
     <ProjectGuid>{E4903ED5-BC9D-4D1E-BD88-C811B140825D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ImageUtilityLib</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <ProjectName>ImageUtilityLib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
