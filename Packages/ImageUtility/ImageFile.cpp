@@ -240,7 +240,7 @@ void	ImageFile::ToneMapFrom( ImageFile^ _source, ToneMapper^ _toneMapper ) {
 
 	m_nativeObject->ToneMapFrom( *_source->m_nativeObject, static_cast< ImageUtilityLib::ImageFile::toneMapper_t >( ip.ToPointer() ) );
 
-	// release reference to delegate  
+	// Release reference to delegate  
 	gch.Free();  
 }
 
