@@ -244,8 +244,12 @@ void	ImageFile::ToneMapFrom( ImageFile^ _source, ToneMapper^ _toneMapper ) {
 	gch.Free();  
 }
 
-void	ImageFile::RescaleFrom( ImageFile^ _source, UInt32 _width, UInt32 _height, PIXEL_FORMAT _targetFormat ) {
-	m_nativeObject->RescaleFrom( *_source->m_nativeObject, _width, _height, BaseLib::PIXEL_FORMAT( _targetFormat ) );
+void	ImageFile::CopySource( ImageFile^ _source, UInt32 _offsetX, UInt32 _offsetY ) {
+	m_nativeObject->CopySource( *_source->m_nativeObject, _offsetX, _offsetY );
+}
+
+void	ImageFile::RescaleSource( ImageFile^ _source ) {
+	m_nativeObject->RescaleSource( *_source->m_nativeObject );
 }
 
 // Retrieves the image file type based on the image file name
