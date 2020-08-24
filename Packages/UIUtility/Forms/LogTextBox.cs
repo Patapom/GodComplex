@@ -27,6 +27,7 @@ namespace UIUtility
 		public void		Log( string _Text )
 		{
 			_Text = _Text.Replace( "\n", @"\line" );
+			_Text = _Text.Replace( "\r", "" );
 			m_Log.Append( @"\cf1 " + _Text );
 			UpdateRTF();
 		}
@@ -34,6 +35,7 @@ namespace UIUtility
 		public void		LogSuccess( string _Text )
 		{
 			_Text = _Text.Replace( "\n", @"\line" );
+			_Text = _Text.Replace( "\r", "" );
 			m_Log.Append( @"\cf2 " + _Text );
 			UpdateRTF();
 		}
@@ -41,6 +43,7 @@ namespace UIUtility
 		public void		LogWarning( string _Text )
 		{
 			_Text = _Text.Replace( "\n", @"\line" );
+			_Text = _Text.Replace( "\r", "" );
 			m_Log.Append( @"\cf3 " + _Text );
 			UpdateRTF();
 		}
@@ -48,6 +51,7 @@ namespace UIUtility
 		public void		LogError( string _Text )
 		{
 			_Text = _Text.Replace( "\n", @"\line" );
+			_Text = _Text.Replace( "\r", "" );
 			m_Log.Append( @"\cf4 " + _Text );
 			UpdateRTF();
 		}
@@ -55,6 +59,7 @@ namespace UIUtility
 		public void		LogDebug( string _Text )
 		{
 			_Text = _Text.Replace( "\n", @"\line" );
+			_Text = _Text.Replace( "\r", "" );
 			m_Log.Append( @"\cf5 " + _Text );
 			UpdateRTF();
 		}

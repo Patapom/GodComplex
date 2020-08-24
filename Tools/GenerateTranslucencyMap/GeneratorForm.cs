@@ -197,11 +197,11 @@ namespace GenerateTranslucencyMap
 					using ( ScopedForceShadersLoadFromBinary scope = new ScopedForceShadersLoadFromBinary() )
 				#endif
 				{
-					m_CS_BilateralFilter = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
-					m_CS_GenerateVisibilityMap = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/GenerateVisibilityMap.hlsl" ), "CS", null );
-					m_CS_GenerateTranslucencyMap = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ), "CS", null );
-					m_CS_Helper_Normalize = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ), "CS_Finalize", null );
-					m_CS_Helper_Mix = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ), "CS_Mix", null );
+					m_CS_BilateralFilter = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS" );
+					m_CS_GenerateVisibilityMap = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/GenerateVisibilityMap.hlsl" ), "CS" );
+					m_CS_GenerateTranslucencyMap = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ), "CS" );
+					m_CS_Helper_Normalize = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ), "CS_Finalize" );
+					m_CS_Helper_Mix = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ), "CS_Mix" );
 				}
 // 				m_CS_BilateralFilter = new ComputeShader( m_Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ) ), "CS" );
 // 				m_CS_GenerateVisibilityMap = new ComputeShader( m_Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Binary/GenerateVisibilityMap.fxbin" ) ), "CS" );

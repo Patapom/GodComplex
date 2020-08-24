@@ -91,7 +91,7 @@ namespace Renderer.UnitTests
 			}
 
 			// Build the shader to render the cube
-			m_shader_renderCube = new Shader( m_device, new System.IO.FileInfo( @".\Shaders\RenderCube.hlsl" ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS", null );
+			m_shader_renderCube = new Shader( m_device, new System.IO.FileInfo( @".\Shaders\RenderCube.hlsl" ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS" );
 
 			// Build constant buffer to provide camera transform
 			m_CB_Camera = new ConstantBuffer<CBCamera>( m_device, 0 );

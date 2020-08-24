@@ -177,11 +177,11 @@ const string	SUFFIX = "";
 					using ( Renderer.ScopedForceShadersLoadFromBinary scope = new Renderer.ScopedForceShadersLoadFromBinary() )
 				#endif
 				{
-					m_CS_GenerateGroundTruth_Direct = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/Demo/ComputeGroundTruth.hlsl" ), "CS_Direct", null );
-					m_CS_GenerateGroundTruth_Indirect = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/Demo/ComputeGroundTruth.hlsl" ), "CS_Indirect", null );
-					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
-					m_CS_ComputeIndirectLighting = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeIndirectLighting.hlsl" ), "CS", new Renderer.ShaderMacro[] { new Renderer.ShaderMacro( "ALBEDO", ALBEDO.ToString() ) } );
-					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
+					m_CS_GenerateGroundTruth_Direct = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/Demo/ComputeGroundTruth.hlsl" ), "CS_Direct" );
+					m_CS_GenerateGroundTruth_Indirect = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/Demo/ComputeGroundTruth.hlsl" ), "CS_Indirect" );
+					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS" );
+					m_CS_ComputeIndirectLighting = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeIndirectLighting.hlsl" ), "CS", new Renderer.ShaderMacro( "ALBEDO", ALBEDO.ToString() ) );
+					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS" );
 				}
 
 				// Create our constant buffers

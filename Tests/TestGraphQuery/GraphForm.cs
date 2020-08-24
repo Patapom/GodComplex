@@ -139,12 +139,12 @@ namespace TestGraphQuery
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 			m_CB_Text = new ConstantBuffer<CB_Text>( m_device, 2 );
 
-			m_compute_HeatDiffusion = new ComputeShader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), "CS", null );
-			m_compute_SplatHeatSources = new ComputeShader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), "CS2", null );
+			m_compute_HeatDiffusion = new ComputeShader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), "CS" );
+			m_compute_SplatHeatSources = new ComputeShader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), "CS2" );
 
-			m_shader_RenderGraphNode = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			m_shader_RenderGraphLink = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS2", null, "PS2", null );
-			m_shader_RenderText = new Shader( m_device, new FileInfo( "./Shaders/RenderText.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_RenderGraphNode = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+			m_shader_RenderGraphLink = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS2", null, "PS2" );
+			m_shader_RenderText = new Shader( m_device, new FileInfo( "./Shaders/RenderText.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS"  );
 
 
 			//////////////////////////////////////////////////////////////////////////

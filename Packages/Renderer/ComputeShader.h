@@ -17,12 +17,12 @@ namespace Renderer {
 
 	public:
 
-		ComputeShader( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros ) {
-			Init( _device, _shaderFileName, _entryPoint, _macros, nullptr );
+		ComputeShader( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, ... cli::array<ShaderMacro^>^ _macros ) {
+			Init( _device, _shaderFileName, _entryPoint, nullptr, _macros );
 		}
 
-		ComputeShader( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros, FileServer^ _fileServerOverride ) {
-			Init( _device, _shaderFileName, _entryPoint, _macros, _fileServerOverride );
+		ComputeShader( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, FileServer^ _fileServerOverride, ... cli::array<ShaderMacro^>^ _macros ) {
+			Init( _device, _shaderFileName, _entryPoint, _fileServerOverride, _macros );
 		}
 
 		~ComputeShader() {
@@ -39,6 +39,6 @@ namespace Renderer {
 		}
 
 	private:
-		void	Init( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros, FileServer^ _fileServerOverride );
+		void	Init( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, FileServer^ _fileServerOverride, ... cli::array<ShaderMacro^>^ _macros );
 	};
 }

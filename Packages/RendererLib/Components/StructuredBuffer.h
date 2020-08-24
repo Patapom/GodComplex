@@ -33,12 +33,12 @@ public:		// PROPERTIES
 
 public:		// METHODS
 
-	StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _ElementsCount, bool _bWriteable, bool _allowRawView );
+	StructuredBuffer( Device& _device, U32 _elementSize, U32 _elementsCount, bool _writeable, bool _allowRawView );
 	~StructuredBuffer();
 
 	// Read/Write for CPU interchange
-	void			Read( void* _pData, U32 _ElementsCount=~0U ) const;
-	void			Write( void* _pData, U32 _ElementsCount=~0U );
+	void			Read( void* _pData, U32 _elementsCount=~0U ) const;
+	void			Write( void* _pData, U32 _elementsCount=~0U );
 
 	// Clear of the unordered access view
 	void			Clear( U32 _pValue[4] );
@@ -78,17 +78,17 @@ public:		// PROPERTIES
 public:		// METHODS
 
 	SB() : m( NULL ), m_pBuffer( NULL )		{}
-	SB( Device& _Device, int _ElementsCount, bool _bWriteable ) : m( NULL ), m_pBuffer( NULL ) { Init( _Device, _ElementsCount, _bWriteable ); }
+	SB( Device& _Device, int _elementsCount, bool _bWriteable ) : m( NULL ), m_pBuffer( NULL ) { Init( _Device, _elementsCount, _bWriteable ); }
 	~SB()									{ delete m_pBuffer; delete[] m; }
 
-	void	Init( Device& _Device, int _ElementsCount, bool _bWriteable )
+	void	Init( Device& _Device, int _elementsCount, bool _bWriteable )
 	{
-		m = new T[_ElementsCount];
-		m_pBuffer = new StructuredBuffer( _Device, sizeof(T), _ElementsCount, _bWriteable );
+		m = new T[_elementsCount];
+		m_pBuffer = new StructuredBuffer( _Device, sizeof(T), _elementsCount, _bWriteable );
 	}
 
-	void	Read( int _ElementsCount=-1 )		{ m_pBuffer->Read( m, _ElementsCount ); }
-	void	Write( int _ElementsCount=-1 )		{ m_pBuffer->Write( m, _ElementsCount ); }
+	void	Read( int _elementsCount=-1 )		{ m_pBuffer->Read( m, _elementsCount ); }
+	void	Write( int _elementsCount=-1 )		{ m_pBuffer->Write( m, _elementsCount ); }
 	void	Clear( U32 _pValue[4] )				{ m_pBuffer->Clear( _pValue ); }
 	void	Clear( const bfloat4& _Value )		{ m_pBuffer->Clear( _Value ); }
 	void	SetInput( int _SlotIndex, bool _bIKnowWhatImDoing=false )

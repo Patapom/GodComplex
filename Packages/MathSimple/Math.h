@@ -122,6 +122,9 @@ namespace SharpMath {
 		static float			Step( float a, float b )							{ return a < b ? 1.0f : 0.0f; }
 		static float			Smoothstep( float a, float b, float x )				{ float t = (x - a) / (b - a); return 3*t*t - 2*t*t*t; }
 
+		generic<typename T>
+		static void				Swap( T% a, T%b )									{ T temp = a; a = b; b = temp; }
+
 		//////////////////////////////////////////////////////////////////////////
 		// Conversions
 		static float			ToDeg( float _radians )								{ return 180.0f * _radians * INVPI; }

@@ -153,9 +153,10 @@ namespace Renderer {
 		}
 
 		// Views
-		View2D^		GetView()				{ return GetView( 0, 0, 0, 0 ); }
+		View2D^		GetView() { return GetView( 0, 0, 0, 0 ); }
 		View2D^		GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize );
 		View2D^		GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize, bool _asArray );
+		View2D^		GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize, bool _asArray, ImageUtility::COMPONENT_FORMAT _formatOverride );
 
 		// Uploads the texture to the shader
 		void		Set( UInt32 _slotIndex );
@@ -192,9 +193,9 @@ namespace Renderer {
 		UInt32		m_arrayStart;
 		UInt32		m_arraySize;
 		bool		m_asArray;
+		ImageUtility::COMPONENT_FORMAT	m_formatOverride;
 
-		View2D( Texture2D^ _Owner, UInt32 _MipLevelStart, UInt32 _mipLevelsCount, UInt32 _ArrayStart, UInt32 _arraySize ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _mipLevelsCount ), m_arrayStart( _ArrayStart ), m_arraySize( _arraySize ), m_asArray( false ) {}
-		View2D( Texture2D^ _Owner, UInt32 _MipLevelStart, UInt32 _mipLevelsCount, UInt32 _ArrayStart, UInt32 _arraySize, bool _AsArray ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _mipLevelsCount ), m_arrayStart( _ArrayStart ), m_arraySize( _arraySize ), m_asArray( _AsArray ) {}
+		View2D( Texture2D^ _Owner, UInt32 _MipLevelStart, UInt32 _mipLevelsCount, UInt32 _ArrayStart, UInt32 _arraySize, bool _asArray, ImageUtility::COMPONENT_FORMAT _formatOverride ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _mipLevelsCount ), m_arrayStart( _ArrayStart ), m_arraySize( _arraySize ), m_asArray( _asArray ), m_formatOverride( _formatOverride ) {}
 
 	public:
 

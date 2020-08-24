@@ -61,6 +61,7 @@ namespace ImageUtility {
 		SNORM,
 		UINT,
 		SINT,
+		TYPELESS,
 	};
 
 	// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)

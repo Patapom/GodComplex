@@ -142,7 +142,8 @@ namespace TestGraphViz
 				// Load the graph we need to simulate
 				m_graph = new ProtoParser.Graph();
 
-				FileInfo	file = new FileInfo( "../../../AI/Projects/Semantic Memory/Tests/Birds Database/Tools/ProtoParser/Concepts.graph" );
+//				FileInfo	file = new FileInfo( "../../../AI/Projects/Semantic Memory/Tests/Birds Database/Tools/ProtoParser/Concepts.graph" );
+				FileInfo	file = new FileInfo( "../../../AI/Projects/Semantic Memory/Tests/Birds Database/Tools/ProtoParser/TestGraph.graph" );
 				if ( !file.Exists )
 					file = new FileInfo( "./Graphs/TestGraph.graph" );
 
@@ -167,16 +168,16 @@ neurons[0].LinkChild( neurons[1] );
 				m_CB_Simulation = new ConstantBuffer<CB_Simulation>( m_device, 1 );
 				m_CB_Text = new ConstantBuffer<CB_Text>( m_device, 2 );
 
-				m_shader_ComputeForces = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS", null );
-				m_shader_Simulate = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS2", null );
+				m_shader_ComputeForces = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS" );
+				m_shader_Simulate = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS2" );
 	#if RENDER_GRAPH_PROPER
-				m_shader_RenderGraphNode = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_shader_RenderGraphLink = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph2.hlsl" ), VERTEX_FORMAT.Pt4, "VS2", null, "PS2", null );
+				m_shader_RenderGraphNode = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_shader_RenderGraphLink = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph2.hlsl" ), VERTEX_FORMAT.Pt4, "VS2", null, "PS2" );
 	#else
-				m_shader_RenderGraph = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_RenderGraph = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 	#endif
 
-				m_shader_RenderText = new Shader( m_device, new FileInfo( "./Shaders/RenderText.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_RenderText = new Shader( m_device, new FileInfo( "./Shaders/RenderText.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 
 				// Build node info
 				m_SB_Nodes = new StructuredBuffer<SB_NodeInfo>( m_device, m_nodesCount, true );

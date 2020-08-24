@@ -161,8 +161,8 @@ namespace TestMSBRDF {
 			}
 
 			try {
-//				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );						// OBSOLETE MSBRDF CODE! For historical purpose only...
- 				m_shader_Finalize = new Shader( m_device, new System.IO.FileInfo( "Shaders/Finalize.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+//				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );						// OBSOLETE MSBRDF CODE! For historical purpose only...
+ 				m_shader_Finalize = new Shader( m_device, new System.IO.FileInfo( "Shaders/Finalize.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 
 				#if TEST_COMPLETE_SCENE || TEST_COMPLETE_SCENE_SPHERE_ONLY
 					// Use this for a full render
@@ -181,7 +181,7 @@ namespace TestMSBRDF {
 					groupBoxPlane.Visible = false;	// No plane is available in this configuration
 				#elif TEST_LTC_AREA_LIGHT
 					// Use this to show a rendering with LTC area light
-					m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderCompareLTC.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+					m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderCompareLTC.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 					checkBoxUseRealTimeApprox.Visible = true;
 //					checkBoxUseRealTimeApprox.Checked = true;
 					checkBoxUseRealTimeApprox.Checked = false;

@@ -56,8 +56,9 @@ namespace Renderer {
 	void	Texture2D::SetCS( UInt32 _slotIndex )		{ m_texture->SetCS( _slotIndex, true, NULL ); }
 	void	Texture2D::SetCSUAV( UInt32 _slotIndex )	{ m_texture->SetCSUAV( _slotIndex, NULL ); }
 
-	View2D^		Texture2D::GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize )					{ return gcnew View2D( this, _mipLevelStart, _mipLevelsCount, _arrayStart, _arraySize ); }
-	View2D^		Texture2D::GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize, bool _asArray )	{ return gcnew View2D( this, _mipLevelStart, _mipLevelsCount, _arrayStart, _arraySize, _asArray ); }
+	View2D^		Texture2D::GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize )																	{ return GetView( _mipLevelStart, _mipLevelsCount, _arrayStart, _arraySize, false ); }
+	View2D^		Texture2D::GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize, bool _asArray )													{ return GetView( _mipLevelStart, _mipLevelsCount, _arrayStart, _arraySize, _asArray, ImageUtility::COMPONENT_FORMAT::AUTO ); }
+	View2D^		Texture2D::GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize, bool _asArray, ImageUtility::COMPONENT_FORMAT _formatOverride )	{ return gcnew View2D( this, _mipLevelStart, _mipLevelsCount, _arrayStart, _arraySize, _asArray, _formatOverride ); }
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -65,10 +66,10 @@ namespace Renderer {
 	UInt32							View2D::Width::get() { return m_owner->WidthAtMip[m_mipLevelStart]; }
 	UInt32							View2D::Height::get() { return m_owner->HeightAtMip[m_mipLevelStart]; }
 	UInt32							View2D::ArraySizeOrDepth::get() { return m_owner->ArraySize; }
-	::ID3D11ShaderResourceView*		View2D::SRV::get() { return m_owner->m_texture->GetSRV( m_mipLevelStart, m_mipLevelsCount, m_arrayStart, m_arraySize, m_asArray ); }
-	::ID3D11RenderTargetView*		View2D::RTV::get() { return m_owner->m_texture->GetRTV( m_mipLevelStart, m_arrayStart, m_arraySize ); }
-	::ID3D11UnorderedAccessView*	View2D::UAV::get() { return m_owner->m_texture->GetUAV( m_mipLevelStart, m_arrayStart, m_arraySize ); }
-	::ID3D11DepthStencilView*		View2D::DSV::get() { return m_owner->m_texture->GetDSV( m_arrayStart, m_arraySize ); }
+	::ID3D11ShaderResourceView*		View2D::SRV::get() { return m_owner->m_texture->GetSRV( m_mipLevelStart, m_mipLevelsCount, m_arrayStart, m_arraySize, m_asArray, (BaseLib::COMPONENT_FORMAT) m_formatOverride ); }
+	::ID3D11RenderTargetView*		View2D::RTV::get() { return m_owner->m_texture->GetRTV( m_mipLevelStart, m_arrayStart, m_arraySize, (BaseLib::COMPONENT_FORMAT) m_formatOverride ); }
+	::ID3D11UnorderedAccessView*	View2D::UAV::get() { return m_owner->m_texture->GetUAV( m_mipLevelStart, m_arrayStart, m_arraySize, (BaseLib::COMPONENT_FORMAT) m_formatOverride ); }
+	::ID3D11DepthStencilView*		View2D::DSV::get() { return m_owner->m_texture->GetDSV( m_arrayStart, m_arraySize, (BaseLib::COMPONENT_FORMAT) m_formatOverride ); }
 
 	void	View2D::Set( UInt32 _slotIndex )		{ m_owner->m_texture->Set(		_slotIndex, true, SRV ); }
 	void	View2D::SetVS( UInt32 _slotIndex )		{ m_owner->m_texture->SetVS(	_slotIndex, true, SRV ); }
