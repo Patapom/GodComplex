@@ -247,11 +247,13 @@ namespace SharpMath {
 		float	x, y, z, w;
 
 		float4( float _x, float _y, float _z, float _w )		{ Set( _x, _y, _z, _w ); }
-		float4( float2 _xy, float _z, float _w )				{ Set( _xy.x, _xy.y, _z, _w ); }
-		float4( float2 _xy, float2 _zw )						{ Set( _xy.x, _xy.y, _zw.x, _zw.y ); }
-		float4( float3 _xyz, float _w )							{ Set( _xyz.x, _xyz.y, _xyz.z, _w ); }
+		float4( float2 _xy, float _z, float _w )				{ Set( _xy, _z, _w ); }
+		float4( float2 _xy, float2 _zw )						{ Set( _xy, _zw ); }
+		float4( float3 _xyz, float _w )							{ Set( _xyz, _w ); }
 //		explicit float4( System::Drawing::Color^ _Color, float _Alpha )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f, _Alpha ); }
 		void	Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }
+		void	Set( float2 _xy, float _z, float _w )			{ x = _xy.x; y = _xy.y; z = _z; w = _w; }
+		void	Set( float2 _xy, float2 _zw )					{ x = _xy.x; y = _xy.y; z = _zw.x; w = _zw.y; }
 		void	Set( float3 _xyz, float _w )					{ x = _xyz.x; y = _xyz.y; z = _xyz.z; w = _w; }
 
 		String^	ToString() override {
