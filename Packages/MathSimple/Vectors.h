@@ -106,9 +106,10 @@ namespace SharpMath {
 	public value struct	float3 {
 	public:
 		float	x, y, z;
-		float3( float _x, float _y, float _z )		{ Set( _x, _y, _z ); }
-		float3( float2 _xy, float _z )				{ Set( _xy.x, _xy.y, _z ); }
-//		explicit float3( System::Drawing::Color^ _Color )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f ); }
+		float3( float _x, float _y, float _z )				{ Set( _x, _y, _z ); }
+		float3( float2 _xy, float _z )						{ Set( _xy.x, _xy.y, _z ); }
+		explicit float3( System::Drawing::Color^ _Color )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f ); }
+		float3( UInt32 _Color )								{ Set( ((_Color & 0xFF0000) >> 16) / 255.0f, ((_Color & 0xFF) >> 8) / 255.0f, (_Color & 0xFF) / 255.0f ); }
 		void	Set( float _x, float _y, float _z )	{ x = _x; y = _y; z = _z; }
 
 		String^	ToString() override {
@@ -250,6 +251,8 @@ namespace SharpMath {
 		float4( float2 _xy, float _z, float _w )				{ Set( _xy, _z, _w ); }
 		float4( float2 _xy, float2 _zw )						{ Set( _xy, _zw ); }
 		float4( float3 _xyz, float _w )							{ Set( _xyz, _w ); }
+		explicit float4( System::Drawing::Color^ _Color, float _a )		{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f, _a ); }
+		float4( UInt32 _Color )											{ Set( ((_Color & 0xFF0000) >> 16) / 255.0f, ((_Color & 0xFF) >> 8) / 255.0f, (_Color & 0xFF) / 255.0f, (_Color >> 24) / 255.0f ); }
 //		explicit float4( System::Drawing::Color^ _Color, float _Alpha )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f, _Alpha ); }
 		void	Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }
 		void	Set( float2 _xy, float _z, float _w )			{ x = _xy.x; y = _xy.y; z = _z; w = _w; }
@@ -346,6 +349,23 @@ namespace SharpMath {
 
 		bool	Almost( float4 b )					{ return Almost( b, Mathf::ALMOST_EPSILON ); }
 		bool	Almost( float4 b, float _epsilon )	{ return Mathf::Almost( x, b.x, _epsilon ) && Mathf::Almost( y, b.y, _epsilon ) && Mathf::Almost( z, b.z, _epsilon ) && Mathf::Almost( w, b.w, _epsilon ); }
+
+		// Rectangle operations
+		property float	Left		{ float get() { return z > 0 ? x : x + z; } }
+		property float	Right		{ float get() { return z > 0 ? x + z : x; } }
+		property float	Top			{ float get() { return w > 0 ? y : y + w; } }
+		property float	Bottom		{ float get() { return w > 0 ? y + w : y; } }
+		property float2	TopLeft		{ float2 get() { return float2( Left, Top ); } }
+		property float2	TopRight	{ float2 get() { return float2( Right, Top ); } }
+		property float2	BottomLeft	{ float2 get() { return float2( Left, Bottom ); } }
+		property float2	BottomRight	{ float2 get() { return float2( Right, Bottom ); } }
+		bool			RectContainsPoint( float2^ _position ) {
+			if ( _position->x < Left || _position->x > Right )
+				return false;
+			if ( _position->y < Top || _position->y > Bottom )
+				return false;
+			return true;
+		}
 
 		static property float4	Zero	{ float4 get() { return float4( 0, 0, 0, 0 ); } }
 		static property float4	UnitX	{ float4 get() { return float4( 1, 0, 0, 0 ); } }

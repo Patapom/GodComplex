@@ -54,10 +54,10 @@ namespace Renderer {
 			bfloat4	value( _Value.x, _Value.y, _Value.z, _Value.w );
 			m_pStructuredBuffer->Clear( value );
 		}
-		void	SetInput( int _SlotIndex ) {
+		void	SetInput( UInt32 _SlotIndex ) {
 			m_pStructuredBuffer->SetInput( _SlotIndex );
 		}
-		void	SetOutput( int _SlotIndex )		{ m_pStructuredBuffer->SetOutput( _SlotIndex ); }
+		void	SetOutput( UInt32 _SlotIndex )	{ m_pStructuredBuffer->SetOutput( _SlotIndex ); }
  		void	RemoveFromLastAssignedSlots()	{ m_pStructuredBuffer->RemoveFromLastAssignedSlots(); }
  		void	RemoveFromLastAssignedSlotUAV()	{ m_pStructuredBuffer->RemoveFromLastAssignedSlotUAV(); }
 	};

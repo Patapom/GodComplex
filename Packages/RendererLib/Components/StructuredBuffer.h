@@ -45,8 +45,8 @@ public:		// METHODS
 	void			Clear( const bfloat4& _Value );
 
 	// Uploads the buffer to the shader
-	void			SetInput( int _SlotIndex );
-	void			SetOutput( int _SlotIndex );
+	void			SetInput( U32 _SlotIndex );
+	void			SetOutput( U32 _SlotIndex );
 
 	// Removes the structured buffer from any last assigned SRV slots
 	void			RemoveFromLastAssignedSlots() const;
