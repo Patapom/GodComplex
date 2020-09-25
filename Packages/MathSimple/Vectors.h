@@ -78,6 +78,9 @@ namespace SharpMath {
 		float3	Cross( float2 b );
 		float	CrossZ( float2 b )	{ return x * b.y - y * b.x; }	// Returns the Z component of the orthogonal vector
 
+		static float2	CosSin( float _angle ) { return float2( Mathf::Cos( _angle ), Mathf::Sin( _angle ) ); }
+		static float2	SinCos( float _angle ) { return float2( Mathf::Sin( _angle ), Mathf::Cos( _angle ) ); }
+
 		static bool			operator==( float2^ _Op0, float2^ _Op1 ) {
 			if ( ((Object^) _Op0) == nullptr && ((Object^) _Op1) == nullptr )
 				return true;
@@ -128,6 +131,7 @@ namespace SharpMath {
 		static float3	operator/( float3 a, float3 b )	{ return float3( a.x/b.x, a.y/b.y, a.z/b.z ); }
 
 		static explicit operator float2( float3 a )		{ return float2( a.x, a.y ); }
+		static explicit operator System::Drawing::Color( float3 a )	{ return System::Drawing::Color::FromArgb( (Byte) (255.0f * a.x), (Byte) (255.0f * a.y), (Byte) (255.0f * a.z) ); }
 
 		property float	Length {
 			float	get() { return (float) Math::Sqrt( x*x + y*y + z*z ); }
@@ -276,6 +280,7 @@ namespace SharpMath {
 
 		static explicit operator float2( float4 a )		{ return float2( a.x, a.y ); }
 		static explicit operator float3( float4 a )		{ return float3( a.x, a.y, a.z ); }
+		static explicit operator System::Drawing::Color( float4 a )	{ return System::Drawing::Color::FromArgb( (Byte) (255.0f * a.w), (Byte) (255.0f * a.x), (Byte) (255.0f * a.y), (Byte) (255.0f * a.z) ); }
 
 		property float	Length {
 			float	get() { return (float) Math::Sqrt( x*x + y*y + z*z + w*w ); }
@@ -355,6 +360,9 @@ namespace SharpMath {
 		property float	Right		{ float get() { return z > 0 ? x + z : x; } }
 		property float	Top			{ float get() { return w > 0 ? y : y + w; } }
 		property float	Bottom		{ float get() { return w > 0 ? y + w : y; } }
+		property float	Width		{ float get() { return Mathf::Abs( z ); } }
+		property float	Height		{ float get() { return Mathf::Abs( w ); } }
+		property float2	Center		{ float2 get() { return float2( Left + 0.5f * Width, Top + 0.5f * Height ); } }
 		property float2	TopLeft		{ float2 get() { return float2( Left, Top ); } }
 		property float2	TopRight	{ float2 get() { return float2( Right, Top ); } }
 		property float2	BottomLeft	{ float2 get() { return float2( Left, Bottom ); } }
