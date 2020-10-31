@@ -113,7 +113,7 @@ void	SVD::Decompose() {
 					s += U[k][i] * U[k][i];
 				}
 				f = U[i][i];
-				g = -SIGN( sqrt(s), f );
+				g = -SIGN( sqrtf(s), f );
 				h = f*g - s;
 				U[i][i] = f-g;
 				for ( int j=l; j < n; j++ ) {
@@ -144,7 +144,7 @@ void	SVD::Decompose() {
 					s += U[i][k] * U[i][k];
 				}
 				f = U[i][l];
-				g = -SIGN( sqrt(s), f );
+				g = -SIGN( sqrtf(s), f );
 				h = f * g - s;
 				U[i][l] = f - g;
 				for ( int k=l; k < n; k++ )

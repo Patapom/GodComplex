@@ -1315,7 +1315,7 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 					s += a[k][i] * a[k][i];
 				}
 				f = a[i][i];
-				g = -SIGN( sqrt(s), f );
+				g = -SIGN( sqrtf(s), f );
 				h = f*g - s;
 				a[i][i] = f-g;
 				for ( int j=l; j < n; j++ ) {
@@ -1346,7 +1346,7 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 					s += a[i][k] * a[i][k];
 				}
 				f = a[i][l];
-				g = -SIGN( sqrt(s), f );
+				g = -SIGN( sqrtf(s), f );
 				h = f * g - s;
 				a[i][l] = f - g;
 				for ( int k=l; k < n; k++ )
@@ -1564,7 +1564,7 @@ void svdcmp_ORIGINAL(int m, int n, float **a, float w[], float **v) {
 					s += a[k][i]*a[k][i];
 				}
 				f=a[i][i];
-				g = -SIGN(sqrt(s),f);
+				g = -SIGN(sqrtf(s),f);
 				h=f*g-s;
 				a[i][i]=f-g;
 				for (j=l;j<=n;j++) {
@@ -1585,7 +1585,7 @@ void svdcmp_ORIGINAL(int m, int n, float **a, float w[], float **v) {
 					s += a[i][k]*a[i][k];
 				}
 				f=a[i][l];
-				g = -SIGN(sqrt(s),f);
+				g = -SIGN(sqrtf(s),f);
 				h=f*g-s;
 				a[i][l]=f-g;
 				for (k=l;k<=n;k++) rv1[k]=a[i][k]/h;
