@@ -114,7 +114,7 @@ void	StructuredBuffer::Clear( const bfloat4& _Value ) {
 	m_device.DXContext().ClearUnorderedAccessViewFloat( m_pUnorderedAccessView, &_Value.x );
 }
 
-void	StructuredBuffer::SetInput( int _SlotIndex ) {
+void	StructuredBuffer::SetInput( U32 _SlotIndex ) {
 	// Unassign this buffer to any output it was previously bound to
 	// NOTE: This mechanism may seem a bit heavy but it's really necessary to avoid scratching one's head too often
 	//	when a buffer seems to be empty in the compute shader, whereas it has silently been NOT ASSIGNED AS INPUT
@@ -139,7 +139,7 @@ void	StructuredBuffer::SetInput( int _SlotIndex ) {
 	m_LastAssignedSlots[5] = _SlotIndex;
 }
 
-void	StructuredBuffer::SetOutput( int _SlotIndex ) {
+void	StructuredBuffer::SetOutput( U32 _SlotIndex ) {
 #ifdef _DEBUG
 	ASSERT( ms_ppOutputs[_SlotIndex] != this, "StructureBuffer already assigned to this output slot! It's only a warning, you can ignore this but you should consider removing this redundant SetOutput() from your code..." );
 #endif

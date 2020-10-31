@@ -62,12 +62,14 @@ void	ImageFile::Exit() {
 void	ImageFile::Load( System::IO::FileInfo^ _fileName ) {
 	if ( !_fileName->Exists )
 		throw gcnew System::IO::FileNotFoundException( "File \"" + _fileName + "\" not found!" );
+
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 	m_nativeObject->Load( nativeFileName );
 }
 void	ImageFile::Load( System::IO::FileInfo^ _fileName, FILE_FORMAT _format ) {
 	if ( !_fileName->Exists )
 		throw gcnew System::IO::FileNotFoundException( "File \"" + _fileName + "\" not found!" );
+
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 	m_nativeObject->Load( nativeFileName, ImageUtilityLib::ImageFile::FILE_FORMAT( _format ) );
 
@@ -90,14 +92,23 @@ void	ImageFile::Load( NativeByteArray^ _fileContent, FILE_FORMAT _format ) {
 
 // Save to a file or memory
 void	ImageFile::Save( System::IO::FileInfo^ _fileName ) {
+	if ( !_fileName->Directory->Exists )
+		throw gcnew Exception( "Target directory for file \"" + _fileName->FullName + "\" does not exist!" );
+
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 	m_nativeObject->Save( nativeFileName );
 }
 void	ImageFile::Save( System::IO::FileInfo^ _fileName, FILE_FORMAT _format ) {
+	if ( !_fileName->Directory->Exists )
+		throw gcnew Exception( "Target directory for file \"" + _fileName->FullName + "\" does not exist!" );
+
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 	m_nativeObject->Save( nativeFileName, ImageUtilityLib::ImageFile::FILE_FORMAT( _format ) );
 }
 void	ImageFile::Save( System::IO::FileInfo^ _fileName, FILE_FORMAT _format, SAVE_FLAGS _options ) {
+	if ( !_fileName->Directory->Exists )
+		throw gcnew Exception( "Target directory for file \"" + _fileName->FullName + "\" does not exist!" );
+
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 	m_nativeObject->Save( nativeFileName, ImageUtilityLib::ImageFile::FILE_FORMAT( _format ), ImageUtilityLib::ImageFile::SAVE_FLAGS( _options ) );
 }
