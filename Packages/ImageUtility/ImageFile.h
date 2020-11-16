@@ -437,7 +437,6 @@ namespace ImageUtility {
 
 		// Creates a bitmap from a System::Drawing.Bitmap and a color profile
 		ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfile^ _colorProfile );
-
 		~ImageFile();
 
 	public:
@@ -523,6 +522,9 @@ namespace ImageUtility {
 		// Same as AsBitmap property except it doesn't create a bitmap every time
 		// NOTE: if the provided bitmap is larger than the image then borders are left untouched
 		void						AsBitmapInPlace( System::Drawing::Bitmap^ _bitmap );
+
+		// Gets the last text dumped by the FreeImage library (maybe it can help to track errors?)
+		static System::String^		LastDumpedText();
 
 
 	public:

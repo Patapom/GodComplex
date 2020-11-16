@@ -195,8 +195,12 @@ void	ImageFile::Save( const wchar_t* _fileName, FILE_FORMAT _format, SAVE_FLAGS 
 	FreeImage_FlipVertical( m_bitmap );
 
 	m_fileFormat = _format;
-	if ( !FreeImage_SaveU( FileFormat2FIF( _format ), m_bitmap, _fileName, int(_options) ) )
+	ms_lastDumpedText[0] = '\0';
+	if ( !FreeImage_SaveU( FileFormat2FIF( _format ), m_bitmap, _fileName, int(_options) ) ) {
+		if ( ms_lastDumpedText[0] != '\0' )
+			throw ms_lastDumpedText;
 		throw "Failed to save the image file!";
+	}
 
 	// Apparently, FreeImage **always** flips the images vertically so we need to flip them back after saving
 	FreeImage_FlipVertical( m_bitmap );
@@ -214,8 +218,11 @@ void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64& _fileSize, 
 
 	// Save into a stream of unknown size
 	FIMEMORY*	stream = FreeImage_OpenMemory();
-	if ( !FreeImage_SaveToMemory( FileFormat2FIF( _format ), m_bitmap, stream, int(_options) ) )
+	if ( !FreeImage_SaveToMemory( FileFormat2FIF( _format ), m_bitmap, stream, int(_options) ) ) {
+		if ( ms_lastDumpedText[0] != '\0' )
+			throw ms_lastDumpedText;
 		throw "Failed to save the image file!";
+	}
 
 	// Apparently, FreeImage **always** flips the images vertically so we need to flip them back before saving
 	FreeImage_FlipVertical( m_bitmap );
@@ -1067,9 +1074,21 @@ PIXEL_FORMAT	ImageFile::Bitmap2PixelFormat( const FIBITMAP& _bitmap ) {
 	return PIXEL_FORMAT::UNKNOWN;
 }
 
+//typedef void (*FreeImage_OutputMessageFunction)(FREE_IMAGE_FORMAT fif, const char *msg);
+wchar_t	ImageFile::ms_lastDumpedText[1024];
+
+void FreeImage_OutputMessage( FREE_IMAGE_FORMAT _fif, const char* _message ) {
+	size_t	convertedCharsCount;
+	mbstowcs_s( &convertedCharsCount, ImageFile::ms_lastDumpedText, _message, MIN( 1023, (int) strlen(_message)+1 ) );
+	ImageFile::ms_lastDumpedText[1023] = '\0';
+ 
+	OutputDebugString( ImageFile::ms_lastDumpedText );
+}
+
 void	ImageFile::UseFreeImage() {
 	if ( ms_freeImageUsageRefCount == 0 ) {
 		FreeImage_Initialise( TRUE );
+		FreeImage_SetOutputMessage( FreeImage_OutputMessage );
 	}
 	ms_freeImageUsageRefCount++;
 }
