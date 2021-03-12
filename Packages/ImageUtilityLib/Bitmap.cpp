@@ -107,8 +107,8 @@ void	Bitmap::BilinearSample( float X, float Y, bfloat4& _XYZ ) const {
 //	_Z must be in [0,_responseCurveSize[ range
 float	ComputeWeight( U32 _Z, U32 _responseCurveSize ) {
 	U32	Zmid = _responseCurveSize >> 1;
-	U32	weight = _Z <= Zmid	? _Z							// Zï¿½[0,Zmid] => Z
-							: _responseCurveSize-1 - _Z;	// Zï¿½]Zmid,Zmax] => Zmax - Z
+	U32	weight = _Z <= Zmid	? _Z							// Z€[0,Zmid] => Z
+							: _responseCurveSize-1 - _Z;	// Z€]Zmid,Zmax] => Zmax - Z
 	return float( 1 + weight );								// Add 1 so the weight is never 0!
 }
 
@@ -387,7 +387,7 @@ void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _im
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Find the best possible samples across the provided images
-	// According to Debevec in ï¿½2.1:
+	// According to Debevec in §2.1:
 	//	<< Finally, we need not use every available pixel site in this solution procedure.
 	//		Given measurements of N pixels in P photographs, we have to solve for N values of ln(Ei) and (Zmax - Zmin) samples of g.
 	//		To ensure a sufficiently overdetermined system, we want N*(P-1) > (Zmax-Zmin).
@@ -410,7 +410,7 @@ void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _im
 	_responseCurve.SetCount( responseCurveSize );
 
 	// Now, we need to carefully select the candidate pixels.
-	// Still quoting Debevec in ï¿½2.1:
+	// Still quoting Debevec in §2.1:
 	//	<< Clearly, the pixel locations should be chosen so that they have a reasonably even distribution of pixel values from Zmin to Zmax,
 	//		and so that they are spatially well distributed in the image.
 	//	   Furthermore, the pixels are best sampled from regions of the image with low intensity variance so that radiance can be assumed to
@@ -421,7 +421,7 @@ void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _im
 List< bfloat2 >	sequence;
 Hammersley::BuildSequence( pixelsCountPerImage, sequence );
 
-	const bfloat4	LUMINANCE_D65( 0.2126f, 0.7152f, 0.0722f, 0.0f );	// Y vector for observer. = 2ï¿½, Illuminant = D65
+	const bfloat4	LUMINANCE_D65( 0.2126f, 0.7152f, 0.0722f, 0.0f );	// Y vector for observer. = 2°, Illuminant = D65
 
 	U32		componentsCount = _luminanceOnly ? 1 : 3;
 
@@ -598,7 +598,7 @@ imageEV = -float(imageIndex);
 
 		// ===================================================================
 		// 2.4] Recover curve values
-		// At this point, we recovered the g(Z) for Zï¿½[Zmin,Zmax], followed by the log2(Ei) for the N selected pixels
+		// At this point, we recovered the g(Z) for Z€[Zmin,Zmax], followed by the log2(Ei) for the N selected pixels
 		// Let's just store the g(Z) into our target array
 		if ( _luminanceOnly ) {
 			for ( U32 Z=0; Z < responseCurveSize; Z++ ) {
@@ -1026,7 +1026,7 @@ delete[] Abackup;
 
 		// ===================================================================
 		// 2.4] Recover curve values
-		// At this point, we recovered the g(Z) for Zï¿½[Zmin,Zmax], followed by the log2(Ei) for the N selected pixels
+		// At this point, we recovered the g(Z) for Z€[Zmin,Zmax], followed by the log2(Ei) for the N selected pixels
 		// Let's just store the g(Z) into our target array
 		if ( _luminanceOnly ) {
 			for ( U32 Z=0; Z < responseCurveSize; Z++ ) {
@@ -1284,7 +1284,7 @@ static int iminarg1,iminarg2;
 // From numerical recipes, chapter 2.6 (NOTE: I rewrote the code so it uses 0-based vectors and matrices!)
 // (itself stolen from http://people.duke.edu/~hpgavin/SystemID/References/Golub+Reinsch-NM-1970.pdf)
 //
-// Given a matrix a[1..m][1..n], this routine computes its singular value decomposition, A = U ï¿½ W ï¿½ V^T
+// Given a matrix a[1..m][1..n], this routine computes its singular value decomposition, A = U · W · V^T
 //	The matrix U replaces a on output.
 //	The diagonal matrix of singular values W is output as a vector w[1..n].
 //	The matrix V (not the transpose V^T) is output as v[1..n][1..n].
@@ -1745,7 +1745,7 @@ void svdcmp_ORIGINAL(int m, int n, float **a, float w[], float **v) {
 	%
 	% Given a set of pixel values observed for several pixels in several
 	% images with different exposure times, this function returns the
-	% imaging systemï¿½s response function g as well as the log film irradiance
+	% imaging system’s response function g as well as the log film irradiance
 	% values for the observed pixels.
 	%
 	% Assumes:
