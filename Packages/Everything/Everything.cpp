@@ -2,45 +2,6 @@
 
 #include "Everything.h"
 
-
-Everything::Search::Query::Query( String^ _searchExpression, bool _matchCase, bool _matchWholeWord, bool _matchPath, bool _isRegEx ) {
-	try {
-		System::Threading::Monitor::Enter( Search::ms_lock );
-
-		MatchCase = _matchCase;
-		MatchPath = _matchPath;
-		MatchWholeWord = _matchWholeWord;
-		IsRegEx = _isRegEx;
-
-		SearchExpression = _searchExpression;
-
-		// Execute
-		ExecuteQuery();
-
-		// Copy results immediately
-		cli::array<Search::Result^>^	results = Results;
-
-		m_results = gcnew cli::array<Result^>( results->Length );
-		for ( int i=0; i < results->Length; i++ ) {
-			Search::Result^	source = results[i];
-			Result^			target = gcnew Result();
-			m_results[i] = target;
-
-			// Copy source result into target result
-			target->m_isVolume = source->IsVolume;
-			target->m_isFolder = source->IsFolder;
-			target->m_isFile = source->IsFile;
-			target->m_pathName = source->PathName;
-			target->m_fileName = source->FileName;
-			target->m_fullName = source->FullName;
-		}
-
-	} finally {
-		System::Threading::Monitor::Exit( Search::ms_lock );
-	}
-}
-
-
 String^	Everything::Search::SearchExpression::get() {
 	LPCSTR	strValue = Everything_GetSearchA();
 	return	System::Runtime::InteropServices::Marshal::PtrToStringAnsi( System::IntPtr( (void*) strValue ) );

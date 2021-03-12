@@ -130,27 +130,22 @@ PIXEL_FORMAT	BaseLib::DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONE
 		case DXGI_FORMAT_R8_SINT:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R8;
 		case DXGI_FORMAT_R8_SNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::R8;
 		case DXGI_FORMAT_R8_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::R8;
-		case DXGI_FORMAT_R8_TYPELESS:			_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::R8;
 
 		case DXGI_FORMAT_R8G8_UINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG8;
 		case DXGI_FORMAT_R8G8_SINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG8;
 		case DXGI_FORMAT_R8G8_SNORM:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RG8;
 		case DXGI_FORMAT_R8G8_UNORM:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RG8;
-		case DXGI_FORMAT_R8G8_TYPELESS:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::RG8;
 
 		case DXGI_FORMAT_R8G8B8A8_UINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA8;
 		case DXGI_FORMAT_R8G8B8A8_SINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA8;
 		case DXGI_FORMAT_R8G8B8A8_SNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RGBA8;
 		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:	_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::RGBA8;
 		case DXGI_FORMAT_R8G8B8A8_UNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RGBA8;
-		case DXGI_FORMAT_R8G8B8A8_TYPELESS:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::RGBA8;
 		case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:	_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::BGRA8;
 		case DXGI_FORMAT_B8G8R8A8_UNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BGRA8;
-		case DXGI_FORMAT_B8G8R8A8_TYPELESS:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::BGRA8;
 
 		case DXGI_FORMAT_R10G10B10A2_UNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RGB10A2;
 		case DXGI_FORMAT_R10G10B10A2_UINT:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGB10A2;
-		case DXGI_FORMAT_R10G10B10A2_TYPELESS:	_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::RGB10A2;
 
 		case DXGI_FORMAT_R11G11B10_FLOAT:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::R11G11B10;
 
@@ -159,59 +154,46 @@ PIXEL_FORMAT	BaseLib::DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONE
 		case DXGI_FORMAT_R16_SNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::R16;
 		case DXGI_FORMAT_R16_UNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::R16;
 		case DXGI_FORMAT_R16_FLOAT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::R16F;
-		case DXGI_FORMAT_R16_TYPELESS:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::R16F;
 
 		case DXGI_FORMAT_R16G16_UINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG16;
 		case DXGI_FORMAT_R16G16_SINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG16;
 		case DXGI_FORMAT_R16G16_SNORM:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RG16;
 		case DXGI_FORMAT_R16G16_UNORM:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RG16;
 		case DXGI_FORMAT_R16G16_FLOAT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RG16F;
-		case DXGI_FORMAT_R16G16_TYPELESS:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::RG16F;
 
 		case DXGI_FORMAT_R16G16B16A16_UINT:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA16;
 		case DXGI_FORMAT_R16G16B16A16_SINT:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA16;
 		case DXGI_FORMAT_R16G16B16A16_SNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RGBA16;
 		case DXGI_FORMAT_R16G16B16A16_UNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RGBA16;
 		case DXGI_FORMAT_R16G16B16A16_FLOAT:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RGBA16F;
-		case DXGI_FORMAT_R16G16B16A16_TYPELESS:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::RGBA16F;
 
  		case DXGI_FORMAT_R32_UINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::R32;
  		case DXGI_FORMAT_R32_SINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R32;
 		case DXGI_FORMAT_R32_FLOAT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::R32F;
-		case DXGI_FORMAT_R32_TYPELESS:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::R32F;
 
  		case DXGI_FORMAT_R32G32_UINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG32;
  		case DXGI_FORMAT_R32G32_SINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG32;
 		case DXGI_FORMAT_R32G32_FLOAT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RG32F;
-		case DXGI_FORMAT_R32G32_TYPELESS:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::RG32F;
 
  		case DXGI_FORMAT_R32G32B32A32_UINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA32;
  		case DXGI_FORMAT_R32G32B32A32_SINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA32;
 		case DXGI_FORMAT_R32G32B32A32_FLOAT:	_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RGBA32F;
-		case DXGI_FORMAT_R32G32B32A32_TYPELESS:	_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::RGBA32F;
 
 		// Compressed formats should be handled as raw buffers
 		case DXGI_FORMAT_BC1_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC1;
 		case DXGI_FORMAT_BC1_UNORM_SRGB:		_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::BC1_sRGB;
-		case DXGI_FORMAT_BC1_TYPELESS:			_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::BC1_sRGB;
 		case DXGI_FORMAT_BC2_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC2;
 		case DXGI_FORMAT_BC2_UNORM_SRGB:		_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::BC2_sRGB;
-		case DXGI_FORMAT_BC2_TYPELESS:			_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::BC2;
 		case DXGI_FORMAT_BC3_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC3;
 		case DXGI_FORMAT_BC3_UNORM_SRGB:		_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::BC3_sRGB;
-		case DXGI_FORMAT_BC3_TYPELESS:			_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::BC3;
 		case DXGI_FORMAT_BC4_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC4;
 		case DXGI_FORMAT_BC4_SNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::BC4;
-		case DXGI_FORMAT_BC4_TYPELESS:			_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::BC4;
 		case DXGI_FORMAT_BC5_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC5;
 		case DXGI_FORMAT_BC5_SNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::BC5;
-		case DXGI_FORMAT_BC5_TYPELESS:			_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::BC5;
 		case DXGI_FORMAT_BC6H_UF16:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC6H;
 		case DXGI_FORMAT_BC6H_SF16:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::BC6H;
-		case DXGI_FORMAT_BC6H_TYPELESS:			_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::BC6H;
 		case DXGI_FORMAT_BC7_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC7;
 		case DXGI_FORMAT_BC7_UNORM_SRGB:		_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::BC7;
-		case DXGI_FORMAT_BC7_TYPELESS:			_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::TYPELESS; return PIXEL_FORMAT::BC7;
 	}
 
 	return PIXEL_FORMAT::UNKNOWN;
@@ -227,7 +209,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8_SNORM; break;
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8_UINT; break;
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8_SINT; break;
-				case COMPONENT_FORMAT::TYPELESS:return DXGI_FORMAT_R8_TYPELESS; break;
 			}
 			break;
 
@@ -238,7 +219,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8G8_SNORM; break;
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8G8_UINT; break;
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8G8_SINT; break;
-				case COMPONENT_FORMAT::TYPELESS:return DXGI_FORMAT_R8G8_TYPELESS; break;
 			}
 			break;
 
@@ -250,14 +230,12 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8G8B8A8_SNORM; break;
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8G8B8A8_UINT; break;
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8G8B8A8_SINT; break;
-				case COMPONENT_FORMAT::TYPELESS:return DXGI_FORMAT_R8G8B8A8_TYPELESS; break;
 			}
 			break;
 		case PIXEL_FORMAT::BGRA8:
 			switch ( _componentFormat ) {
 				case COMPONENT_FORMAT::UNORM_sRGB:	return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; break;
-				case COMPONENT_FORMAT::UNORM:		return DXGI_FORMAT_B8G8R8A8_UNORM; break;
-				case COMPONENT_FORMAT::TYPELESS:	return DXGI_FORMAT_B8G8R8A8_TYPELESS; break;
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_B8G8R8A8_UNORM; break;
 			}
 			break;
 
@@ -265,16 +243,14 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 		case PIXEL_FORMAT::RGBE:
 			switch ( _componentFormat ) {
 				case COMPONENT_FORMAT::AUTO:
-				case COMPONENT_FORMAT::UNORM:		return DXGI_FORMAT_R8G8B8A8_UNORM; break;
-				case COMPONENT_FORMAT::TYPELESS:	return DXGI_FORMAT_R8G8B8A8_TYPELESS; break;
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8G8B8A8_UNORM; break;
 			}
 			break;
 		case PIXEL_FORMAT::RGB10A2:
 			switch ( _componentFormat ) {
 				case COMPONENT_FORMAT::AUTO:
-				case COMPONENT_FORMAT::UNORM:		return DXGI_FORMAT_R10G10B10A2_UNORM; break;
-				case COMPONENT_FORMAT::UINT:		return DXGI_FORMAT_R10G10B10A2_UINT; break;
-				case COMPONENT_FORMAT::TYPELESS:	return DXGI_FORMAT_R10G10B10A2_TYPELESS; break;
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R10G10B10A2_UNORM; break;
+				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R10G10B10A2_UINT; break;
 			}
 			break;
 		case PIXEL_FORMAT::R11G11B10:
@@ -291,7 +267,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16_SNORM; break;
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16_UINT; break;
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16_SINT; break;
-				case COMPONENT_FORMAT::TYPELESS:return DXGI_FORMAT_R16_TYPELESS; break;
 			}
 			break;
 		case PIXEL_FORMAT::R16F:
@@ -305,7 +280,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16G16_SNORM; break;
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16G16_UINT; break;
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16G16_SINT; break;
-				case COMPONENT_FORMAT::TYPELESS:return DXGI_FORMAT_R16G16_TYPELESS; break;
 			}
 			break;
 		case PIXEL_FORMAT::RG16F:
@@ -319,7 +293,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16G16B16A16_SNORM; break;
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16G16B16A16_UINT; break;
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16G16B16A16_SINT; break;
-				case COMPONENT_FORMAT::TYPELESS:return DXGI_FORMAT_R16G16B16A16_TYPELESS; break;
 			}
 			break;
 		case PIXEL_FORMAT::RGBA16F:
@@ -333,7 +306,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32_SNORM; break;	// Doesn't exist anyway
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R32_UINT; break;
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R32_SINT; break;
-				case COMPONENT_FORMAT::TYPELESS:return DXGI_FORMAT_R32_TYPELESS; break;
 			}
 			break;
 		case PIXEL_FORMAT::R32F:
@@ -346,7 +318,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32G32_SNORM; break;	// Doesn't exist anyway
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R32G32_UINT; break;
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R32G32_SINT; break;
-				case COMPONENT_FORMAT::TYPELESS:return DXGI_FORMAT_R32G32_TYPELESS; break;
 			}
 			break;
 		case PIXEL_FORMAT::RG32F:
@@ -359,7 +330,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32G32B32A32_SNORM; break;	// Doesn't exist anyway
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R32G32B32A32_UINT; break;
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R32G32B32A32_SINT; break;
-				case COMPONENT_FORMAT::TYPELESS:return DXGI_FORMAT_R32G32B32A32_TYPELESS; break;
 			}
 			break;
 		case PIXEL_FORMAT::RGBA32F:
@@ -372,7 +342,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 			switch ( _componentFormat ) {
 			case COMPONENT_FORMAT::AUTO:
 			case COMPONENT_FORMAT::UNORM:			return DXGI_FORMAT_BC1_UNORM;
-			case COMPONENT_FORMAT::TYPELESS:		return DXGI_FORMAT_BC1_TYPELESS;
 			}
 			break;
 
@@ -387,7 +356,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 			switch ( _componentFormat ) {
 			case COMPONENT_FORMAT::AUTO:
 			case COMPONENT_FORMAT::UNORM:			return DXGI_FORMAT_BC2_UNORM;
-			case COMPONENT_FORMAT::TYPELESS:		return DXGI_FORMAT_BC2_TYPELESS;
 			}
 			break;
 
@@ -395,7 +363,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 			switch ( _componentFormat ) {
 			case COMPONENT_FORMAT::AUTO:
 			case COMPONENT_FORMAT::UNORM_sRGB:		return DXGI_FORMAT_BC2_UNORM_SRGB;
-			case COMPONENT_FORMAT::TYPELESS:		return DXGI_FORMAT_BC2_TYPELESS;
 			}
 			break;
 
@@ -403,7 +370,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 			switch ( _componentFormat ) {
 			case COMPONENT_FORMAT::AUTO:
 			case COMPONENT_FORMAT::UNORM:			return DXGI_FORMAT_BC3_UNORM;
-			case COMPONENT_FORMAT::TYPELESS:		return DXGI_FORMAT_BC3_TYPELESS;
 			}
 			break;
 
@@ -419,7 +385,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 			case COMPONENT_FORMAT::AUTO:
 			case COMPONENT_FORMAT::UNORM:			return DXGI_FORMAT_BC4_UNORM;
 			case COMPONENT_FORMAT::SNORM:			return DXGI_FORMAT_BC4_SNORM;
-			case COMPONENT_FORMAT::TYPELESS:		return DXGI_FORMAT_BC4_TYPELESS;
 			}
 			break;
 
@@ -428,7 +393,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 			case COMPONENT_FORMAT::AUTO:
 			case COMPONENT_FORMAT::UNORM:			return DXGI_FORMAT_BC5_UNORM;
 			case COMPONENT_FORMAT::SNORM:			return DXGI_FORMAT_BC5_SNORM;
-			case COMPONENT_FORMAT::TYPELESS:		return DXGI_FORMAT_BC5_TYPELESS;
 			}
 			break;
 
@@ -437,7 +401,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 			case COMPONENT_FORMAT::AUTO:
 			case COMPONENT_FORMAT::UNORM:			return DXGI_FORMAT_BC6H_UF16;
 			case COMPONENT_FORMAT::SNORM:			return DXGI_FORMAT_BC6H_SF16;
-			case COMPONENT_FORMAT::TYPELESS:		return DXGI_FORMAT_BC6H_TYPELESS;
 			}
 			break;
 
@@ -446,7 +409,6 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 			case COMPONENT_FORMAT::AUTO:
 			case COMPONENT_FORMAT::UNORM:			return DXGI_FORMAT_BC7_UNORM;
 			case COMPONENT_FORMAT::UNORM_sRGB:		return DXGI_FORMAT_BC7_UNORM_SRGB;
-			case COMPONENT_FORMAT::TYPELESS:		return DXGI_FORMAT_BC7_TYPELESS;
 			}
 			break;
 	}

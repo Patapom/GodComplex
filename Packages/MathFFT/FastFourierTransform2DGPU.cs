@@ -148,12 +148,12 @@ namespace SharpMath.FFT {
 				Shader.AssertOnSaveBinaryBlobFailed = false;
 
 				#if DEBUG
-					m_CS__1to16 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__1to16", server );
-					m_CS__Generic = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__Generic", server );
+					m_CS__1to16 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__1to16", null, server );
+					m_CS__Generic = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__Generic", null, server );
 				#else
 					using ( new ScopedForceShadersLoadFromBinary() ) {
-						m_CS__1to16 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__1to16", server );
-						m_CS__Generic = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__Generic", server );
+						m_CS__1to16 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__1to16", null, server );
+						m_CS__Generic = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__Generic", null, server );
 					}
 				#endif
 			} catch ( Exception _e ) {

@@ -119,15 +119,15 @@ namespace TestVoxelGI
 			try {
 				m_device.Init( panelOutput.Handle, false, true );
 
-				m_shader_voxelizeScene = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS" );
-				m_shader_buildVoxelMips = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS_Mip" );
-				m_shader_buildSingleVoxelMips = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS_SingleMip" );
-				m_shader_accumulateVoxelLighting = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS_Accumulate" );
-				m_shader_computeIndirectLighting = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeIndirectLighting.hlsl" ), "CS" );
-				m_shader_renderGBuffer = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderGBuffer.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_shader_renderVoxels = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderVoxels.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS" );
-				m_shader_postProcess = new Shader( m_device, new System.IO.FileInfo( "./Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_shader_voxelizeScene = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS", null );
+				m_shader_buildVoxelMips = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS_Mip", null );
+				m_shader_buildSingleVoxelMips = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS_SingleMip", null );
+				m_shader_accumulateVoxelLighting = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS_Accumulate", null );
+				m_shader_computeIndirectLighting = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeIndirectLighting.hlsl" ), "CS", null );
+				m_shader_renderGBuffer = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderGBuffer.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_renderVoxels = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderVoxels.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_shader_postProcess = new Shader( m_device, new System.IO.FileInfo( "./Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 				m_tex_GBuffer = new Texture2D( m_device, (uint) panelOutput.Width, (uint) panelOutput.Height, 4, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.UNORM, false, false, null );
 				m_tex_sceneRadiance = new Texture2D( m_device, (uint) panelOutput.Width, (uint) panelOutput.Height, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.UNORM, false, false, null );

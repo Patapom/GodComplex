@@ -129,9 +129,9 @@ namespace TestFourier
 				m_FFT1D_GPU = new FFT1D_GPU( m_device1D, SIGNAL_SIZE );
 
 				m_CB_Main1D = new ConstantBuffer<CB_Main>( m_device1D, 0 );
-				m_Shader_GenerateSignal1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/GenerateSignal.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_Shader_FilterSignal1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/FilterSignal.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_Shader_Display1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_Shader_GenerateSignal1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/GenerateSignal.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_FilterSignal1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/FilterSignal.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_Display1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_texSpectrumCopy = new Texture2D( m_device1D, SIGNAL_SIZE, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 
 			} catch ( Exception ) {
@@ -159,9 +159,9 @@ namespace TestFourier
 				m_FFT2D_GPU = new FFT2D_GPU( m_device2D, SIGNAL_SIZE_2D );
 
  				m_CB_Main2D = new ConstantBuffer<CB_Main>( m_device2D, 0 );
- 				m_Shader_GenerateSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/GenerateSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_Shader_FilterSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/FilterSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
- 				m_Shader_Display2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/Display2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+ 				m_Shader_GenerateSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/GenerateSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_FilterSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/FilterSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+ 				m_Shader_Display2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/Display2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_texOriginalSignalCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 				m_texSpectrumCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 

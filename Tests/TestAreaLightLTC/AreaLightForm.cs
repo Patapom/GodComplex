@@ -1294,14 +1294,14 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_CB_Object = new ConstantBuffer<CB_Object>( m_Device, 4 );
 
 			try {
-				m_Shader_RenderAreaLight = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderAreaLight.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS" );
+				m_Shader_RenderAreaLight = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderAreaLight.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader \"RenderAreaLight\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderAreaLight = null;
 			}
 
 			try {
-				m_Shader_RenderScene = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS" );
+				m_Shader_RenderScene = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader \"RenderScene\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderScene = null;

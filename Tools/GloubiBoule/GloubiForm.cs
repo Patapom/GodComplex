@@ -178,18 +178,18 @@ namespace GloubiBoule
 			}
 
 			try {
-				m_Shader_UpdateHeightMap = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/UpdateHeightMap.hlsl" ), "CS" );
-				m_shader_GenerateDensity = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/GenerateDensity.hlsl" ), "CS" );
-				m_Shader_ClearAccumulator = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ), "CS_ClearAccumulator" );
-				m_Shader_InitPhotons = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ), "CS_InitPhotons" );
-				m_Shader_TracePhotons = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ), "CS_TracePhotons" );
+				m_Shader_UpdateHeightMap = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/UpdateHeightMap.hlsl" ), "CS", null );
+				m_shader_GenerateDensity = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/GenerateDensity.hlsl" ), "CS", null );
+				m_Shader_ClearAccumulator = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ), "CS_ClearAccumulator", null );
+				m_Shader_InitPhotons = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ), "CS_InitPhotons", null );
+				m_Shader_TracePhotons = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ), "CS_TracePhotons", null );
 
-				m_Shader_RenderRoom = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderRoom.hlsl" ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS" );
-				m_Shader_RenderSphere = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderSphere.hlsl" ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS" );
-				m_Shader_RayMarcher = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RayMarch.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_Shader_PostProcess = new Shader( m_Device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_Shader_RenderRoom = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderRoom.hlsl" ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS", null );
+				m_Shader_RenderSphere = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderSphere.hlsl" ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS", null );
+				m_Shader_RayMarcher = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RayMarch.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_PostProcess = new Shader( m_Device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
-//				m_ShaderDownsample = new Shader( m_Device, new System.IO.FileInfo( "Shaders/Downsample.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+//				m_ShaderDownsample = new Shader( m_Device, new System.IO.FileInfo( "Shaders/Downsample.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			}
 			catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );

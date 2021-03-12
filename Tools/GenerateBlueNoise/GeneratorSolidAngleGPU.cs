@@ -94,18 +94,18 @@ namespace GenerateBlueNoise
 
 			try {
 
-				m_CS_Copy = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__Copy" );
-				m_CS_Mutate = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__Mutate" );
+				m_CS_Copy = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__Copy", null );
+				m_CS_Mutate = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__Mutate", null );
 				switch ( m_vectorDimension ) {
-					case 1:	m_CS_ComputeScore = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__ComputeScore1D" ); break;
-					case 2:	m_CS_ComputeScore = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__ComputeScore2D" ); break;
+					case 1:	m_CS_ComputeScore = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__ComputeScore1D", null ); break;
+					case 2:	m_CS_ComputeScore = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__ComputeScore2D", null ); break;
 					default:
 						throw new Exception( "Unsupported vector dimension!" );
 				}
-				m_CS_AccumulateScore16 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore16" );
-				m_CS_AccumulateScore8 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore8" );
-				m_CS_AccumulateScore4 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore4" );
-				m_CS_AccumulateScore2 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore2" );
+				m_CS_AccumulateScore16 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore16", null );
+				m_CS_AccumulateScore8 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore8", null );
+				m_CS_AccumulateScore4 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore4", null );
+				m_CS_AccumulateScore2 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore2", null );
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( _device, 0 );
 				m_CB_Mips = new ConstantBuffer<CB_Mips>( _device, 1 );

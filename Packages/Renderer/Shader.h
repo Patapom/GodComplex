@@ -45,12 +45,12 @@ namespace Renderer {
 
 	public:
 
-		Shader( Device^ _device, System::IO::FileInfo^ _shaderFileName, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, ... cli::array<ShaderMacro^>^ _macros ) {
-			Init( _device, _shaderFileName, _format, _entryPointVS, _entryPointGS, _entryPointPS, nullptr, _macros );
+		Shader( Device^ _device, System::IO::FileInfo^ _shaderFileName, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, cli::array<ShaderMacro^>^ _macros ) {
+			Init( _device, _shaderFileName, _format, _entryPointVS, _entryPointGS, _entryPointPS, _macros, nullptr );
 		}
 
-		Shader( Device^ _device, System::IO::FileInfo^ _shaderFileName, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, FileServer^ _fileServerOverride, ... cli::array<ShaderMacro^>^ _macros ) {
-			Init( _device, _shaderFileName, _format, _entryPointVS, _entryPointGS, _entryPointPS, _fileServerOverride, _macros );
+		Shader( Device^ _device, System::IO::FileInfo^ _shaderFileName, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, cli::array<ShaderMacro^>^ _macros, FileServer^ _fileServerOverride ) {
+			Init( _device, _shaderFileName, _format, _entryPointVS, _entryPointGS, _entryPointPS, _macros, _fileServerOverride );
 		}
 
 		~Shader() {
@@ -63,7 +63,7 @@ namespace Renderer {
 		}
 
 	private:
-		void	Init( Device^ _device, System::IO::FileInfo^ _shaderFileName, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, FileServer^ _fileServerOverride, ... cli::array<ShaderMacro^>^ _macros );
+		void	Init( Device^ _device, System::IO::FileInfo^ _shaderFileName, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, cli::array<ShaderMacro^>^ _macros, FileServer^ _fileServerOverride );
 	};
 
 	public ref class	ScopedForceShadersLoadFromBinary {

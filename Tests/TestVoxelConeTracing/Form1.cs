@@ -74,7 +74,7 @@ namespace VoxelConeTracing
 			try {
 				m_device.Init( outputPanel.Handle, false, true );
 
-				m_shader_RenderDistanceField = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderDistanceField.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_shader_RenderDistanceField = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderDistanceField.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 				m_CB_camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
