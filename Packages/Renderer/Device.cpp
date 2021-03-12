@@ -109,6 +109,8 @@ void	Renderer::Device::SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE
 		case BLEND_STATE::ALPHA_BLEND:			pBS = m_pDevice->m_pBS_AlphaBlend; break;
 		case BLEND_STATE::PREMULTIPLIED_ALPHA:	pBS = m_pDevice->m_pBS_PremultipliedAlpha; break;
 		case BLEND_STATE::ADDITIVE:				pBS = m_pDevice->m_pBS_Additive; break;
+		case BLEND_STATE::MAX:					pBS = m_pDevice->m_pBS_Max; break;
+		case BLEND_STATE::MIN:					pBS = m_pDevice->m_pBS_Min; break;
 		default: throw gcnew Exception( "Unsupported blend state!" );
 	}
 

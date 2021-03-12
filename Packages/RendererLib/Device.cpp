@@ -300,6 +300,15 @@ bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool
 		Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_MAX;
 		Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_MAX;
 		m_pBS_Max = new BlendState( *this, Desc ); m_statesCount++;
+
+		// Min (Dst = min(Src,Dst))
+		Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+		Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_MIN;
+		Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_MIN;
+		m_pBS_Min = new BlendState( *this, Desc ); m_statesCount++;
 	}
 
 	//////////////////////////////////////////////////////////////////////////

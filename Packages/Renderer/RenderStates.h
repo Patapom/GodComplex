@@ -36,5 +36,7 @@ namespace Renderer {
 		ALPHA_BLEND,
 		PREMULTIPLIED_ALPHA,
 		ADDITIVE,
+		MAX,
+		MIN,
 	};
 }

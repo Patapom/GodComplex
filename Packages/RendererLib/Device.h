@@ -113,6 +113,7 @@ public:
 	BlendState*				m_pBS_PremultipliedAlpha;
 	BlendState*				m_pBS_Additive;
 	BlendState*				m_pBS_Max;
+	BlendState*				m_pBS_Min;
 
 	BaseLib::List< BaseLib::List< AdapterOutput > >	m_adapterOutputs;
 
