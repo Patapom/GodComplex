@@ -23,8 +23,9 @@ namespace ImageUtility {
 		static const float		GAMMA_EXPONENT_ADOBE = ImageUtilityLib::ColorProfile::GAMMA_EXPONENT_ADOBE;
 		static const float		GAMMA_EXPONENT_PRO_PHOTO = ImageUtilityLib::ColorProfile::GAMMA_EXPONENT_PRO_PHOTO;
 
-		#pragma endregion
+		static const ColorProfile^	sRGB = gcnew ColorProfile( STANDARD_PROFILE::sRGB );
 
+		#pragma endregion
 
 	public:
 		#pragma region NESTED TYPES
