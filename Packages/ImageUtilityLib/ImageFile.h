@@ -381,6 +381,9 @@ namespace ImageUtilityLib {
 		static U32		ms_freeImageUsageRefCount;
 		void				UseFreeImage();
 		void				UnUseFreeImage();
+
+	public:
+		static wchar_t	ms_lastDumpedText[1024];
 	};
 
 }	// namespace

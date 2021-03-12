@@ -125,7 +125,13 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 	// Save to native memory
 	void*	nativeBuffer = nullptr;
 	U64		nativeBufferSize = 0;
-	m_nativeObject->Save( ImageUtilityLib::ImageFile::FILE_FORMAT( _format ), ImageUtilityLib::ImageFile::SAVE_FLAGS( _options ), nativeBufferSize, nativeBuffer );
+	try {
+		m_nativeObject->Save( ImageUtilityLib::ImageFile::FILE_FORMAT( _format ), ImageUtilityLib::ImageFile::SAVE_FLAGS( _options ), nativeBufferSize, nativeBuffer );
+ 	} catch ( char* _text ) {
+		throw gcnew Exception( gcnew System::String( _text ) );
+	} catch ( wchar_t* _text ) {
+		throw gcnew Exception( gcnew System::String( _text ) );
+	}
 
 	// Copy to managed array
 	return gcnew NativeByteArray( int( nativeBufferSize ), nativeBuffer );
@@ -422,6 +428,11 @@ void	ImageFile::AsBitmapInPlace( System::Drawing::Bitmap^ _bitmap ) {
 	if ( source != this )
 		delete source;	// We had to make a temporary conversion so now we must delete it
 }
+
+System::String^	ImageFile::LastDumpedText() {
+	return gcnew System::String( (Char*) ImageUtilityLib::ImageFile::ms_lastDumpedText );;
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////
