@@ -93,9 +93,8 @@ bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool
 			D3D11_SDK_VERSION,
 			&swapChainDesc, &m_swapChain,
 			&m_device, &obtainedFeatureLevel, &m_deviceContext ) )
-		) {
+		)
 		return false;
-	}
 
 	// Store the default render target
 	ID3D11Texture2D*	pDefaultRenderSurface;

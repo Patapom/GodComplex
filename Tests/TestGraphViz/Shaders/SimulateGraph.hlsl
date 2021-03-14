@@ -50,7 +50,7 @@ currentInfo.m_mass = DEBUG_MASS;
 
 //		float2	force = currentInfo.m_mass * neighborInfo.m_mass * pow2( recDistance ) * delta;
 //float2	force =  currentInfo.m_mass * neighborInfo.m_mass * (log( 1.0 + 0.1 * distance ) - log( 1.5 + 0.01 * distance )) * delta;
-float2	force = currentInfo.m_mass * neighborInfo.m_mass * (log( _K.x + _K.y * distance ) - log( _K.z + _K.w * distance )) * delta;
+float2	force =  currentInfo.m_mass * neighborInfo.m_mass * (log( _K.x + _K.y * distance ) - log( _K.z + _K.w * distance )) * delta;
 
 //force = 0;
 

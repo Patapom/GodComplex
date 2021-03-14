@@ -23,8 +23,9 @@ namespace ImageUtility {
 		static const float		GAMMA_EXPONENT_ADOBE = ImageUtilityLib::ColorProfile::GAMMA_EXPONENT_ADOBE;
 		static const float		GAMMA_EXPONENT_PRO_PHOTO = ImageUtilityLib::ColorProfile::GAMMA_EXPONENT_PRO_PHOTO;
 
-		#pragma endregion
+		static const ColorProfile^	sRGB = gcnew ColorProfile( STANDARD_PROFILE::sRGB );
 
+		#pragma endregion
 
 	public:
 		#pragma region NESTED TYPES
@@ -150,28 +151,6 @@ namespace ImageUtility {
 		}
 
 	public:	// PROPERTIES
-
-		#pragma region Standard Profiles
-
-		static ColorProfile^			ms_sRGB = nullptr;
-		static property ColorProfile^	sRGB { ColorProfile^ get() { return ms_sRGB == nullptr ? (ms_sRGB = gcnew ColorProfile( STANDARD_PROFILE::sRGB )) : ms_sRGB; } }
-
-		static ColorProfile^			ms_linear = nullptr;
-		static property ColorProfile^	Linear { ColorProfile^ get() { return ms_linear == nullptr ? (ms_linear = gcnew ColorProfile( STANDARD_PROFILE::LINEAR )) : ms_linear; } }
-
-		static ColorProfile^			ms_proPhoto = nullptr;
-		static property ColorProfile^	ProPhoto { ColorProfile^ get() { return ms_proPhoto == nullptr ? (ms_proPhoto = gcnew ColorProfile( STANDARD_PROFILE::PRO_PHOTO )) : ms_proPhoto; } }
-
-		static ColorProfile^			ms_adobeRGB_D50 = nullptr;
-		static property ColorProfile^	AdobeRGB_D50 { ColorProfile^ get() { return ms_adobeRGB_D50 == nullptr ? (ms_adobeRGB_D50 = gcnew ColorProfile( STANDARD_PROFILE::ADOBE_RGB_D50 )) : ms_adobeRGB_D50; } }
-
-		static ColorProfile^			ms_adobeRGB_D65 = nullptr;
-		static property ColorProfile^	AdobeRGB_D65 { ColorProfile^ get() { return ms_adobeRGB_D65 == nullptr ? (ms_adobeRGB_D65 = gcnew ColorProfile( STANDARD_PROFILE::ADOBE_RGB_D65 )) : ms_adobeRGB_D65; } }
-
-		static ColorProfile^			ms_radiance = nullptr;
-		static property ColorProfile^	Radiance { ColorProfile^ get() { return ms_radiance == nullptr ? (ms_radiance = gcnew ColorProfile( STANDARD_PROFILE::RADIANCE )) : ms_radiance; } }
-
-		#pragma endregion
 
 // 		property ImageUtilityLib::ColorProfile&	NativeObject	{
 // 			ImageUtilityLib::ColorProfile& get() { return *m_nativeObject; }

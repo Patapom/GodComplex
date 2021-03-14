@@ -63,7 +63,7 @@ namespace GenerateTranslucencyMap
 				using ( ScopedForceShadersLoadFromBinary scope = new ScopedForceShadersLoadFromBinary() )
 			#endif
 			{
-				m_PS_Display = new Shader( Device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_PS_Display = new Shader( Device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			}
 
 			m_CB_Display = new ConstantBuffer<CBDisplay>( Device, 0 );

@@ -151,23 +151,23 @@ namespace SharpMath.FFT {
 				Shader.AssertOnSaveBinaryBlobFailed = false;
 
 				#if DEBUG
-					m_CS__1to256 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to256", server );
+					m_CS__1to256 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to256", null, server );
 					switch ( m_POT ) {
 						case 8:  m_CS__Remainder = null; break;
-						case 9:  m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to512", server ); break;
-						case 10: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to1024", server ); break;
-						case 11: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to2048", server ); break;
-						case 12: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to4096", server ); break;
+						case 9:  m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to512", null, server ); break;
+						case 10: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to1024", null, server ); break;
+						case 11: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to2048", null, server ); break;
+						case 12: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to4096", null, server ); break;
 					}
 				#else
 					using ( new ScopedForceShadersLoadFromBinary() ) {
-						m_CS__1to256 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to256", server );
+						m_CS__1to256 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to256", null, server );
 						switch ( m_POT ) {
 							case 8:  m_CS__Remainder = null; break;
-							case 9:  m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to512", server ); break;
-							case 10: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to1024", server ); break;
-							case 11: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to2048", server ); break;
-							case 12: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to4096", server ); break;
+							case 9:  m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to512", null, server ); break;
+							case 10: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to1024", null, server ); break;
+							case 11: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to2048", null, server ); break;
+							case 12: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to4096", null, server ); break;
 						}
 					}
 				#endif

@@ -105,7 +105,6 @@ namespace BaseLib {
 		SNORM,
 		UINT,
 		SINT,
-		TYPELESS,
 	};
 
 	// Additional information about how the individual components of a pixel structure should be treated (for depth stencil)

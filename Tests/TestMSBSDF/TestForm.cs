@@ -225,15 +225,15 @@ namespace TestMSBSDF
 			m_CB_RenderCylinder = new ConstantBuffer<CB_RenderCylinder>( m_device, 10 );
 
 			try {
-				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_device, new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ), "CS" );
-				m_Shader_RayTraceSurface_Conductor = new ComputeShader( m_device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Conductor" );
-				m_Shader_RayTraceSurface_Dielectric = new ComputeShader( m_device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Dielectric" );
-				m_Shader_RayTraceSurface_Diffuse = new ComputeShader( m_device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Diffuse" );
-				m_Shader_AccumulateOutgoingDirections = new ComputeShader( m_device, new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ), "CS" );
-				m_Shader_FinalizeOutgoingDirections = new ComputeShader( m_device, new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ), "CS_Finalize" );
-				m_Shader_RenderHeightField = new Shader( m_device, new FileInfo( "Shaders/RenderHeightField.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS" );
-				m_Shader_RenderLobe = new Shader( m_device, new FileInfo( "Shaders/RenderLobe.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS" );
-				m_Shader_RenderCylinder = new Shader( m_device, new FileInfo( "Shaders/RenderCylinder.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS" );
+				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_device, new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ), "CS", null );
+				m_Shader_RayTraceSurface_Conductor = new ComputeShader( m_device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Conductor", null );
+				m_Shader_RayTraceSurface_Dielectric = new ComputeShader( m_device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Dielectric", null );
+				m_Shader_RayTraceSurface_Diffuse = new ComputeShader( m_device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Diffuse", null );
+				m_Shader_AccumulateOutgoingDirections = new ComputeShader( m_device, new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ), "CS", null );
+				m_Shader_FinalizeOutgoingDirections = new ComputeShader( m_device, new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ), "CS_Finalize", null );
+				m_Shader_RenderHeightField = new Shader( m_device, new FileInfo( "Shaders/RenderHeightField.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_Shader_RenderLobe = new Shader( m_device, new FileInfo( "Shaders/RenderLobe.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_Shader_RenderCylinder = new Shader( m_device, new FileInfo( "Shaders/RenderCylinder.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
 				MessageBox( "Shader \"RenderHeightField\" failed to compile!\n\n" + _e.Message );
 			}

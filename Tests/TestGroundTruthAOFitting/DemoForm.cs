@@ -343,10 +343,10 @@ namespace TestGroundTruthAOFitting
 			try {
 				m_device.Init( panelOutput.Handle, false, true );
 
-				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-//				m_shader_ComputeIndirectMap = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/ComputeIndirectMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_shader_ComputeIndirectIrradiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/ComputeIndirectIrradiance2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-//				m_shader_FilterIndirectIrradiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/FilterIndirectIrradiance.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+//				m_shader_ComputeIndirectMap = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/ComputeIndirectMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_ComputeIndirectIrradiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/ComputeIndirectIrradiance2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+//				m_shader_FilterIndirectIrradiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/FilterIndirectIrradiance.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 				m_CB_Main.m._resolutionX = (uint) panelOutput.Width;

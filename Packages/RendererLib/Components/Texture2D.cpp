@@ -26,7 +26,6 @@ Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, int _arraySize, 
 	} else {
 		// Regular case
 		m_arraySize = _arraySize;
-		ASSERT( m_arraySize <= 2048, "DirectX 11 doesn't support texture arrays with more than 2048 slices!" );
 	}
 
 	Init( _ppContent, _staging, _UAV );
@@ -141,7 +140,7 @@ Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, 
 	desc.Height = m_height;
 	desc.ArraySize = m_arraySize;
 	desc.MipLevels = m_mipLevelsCount;
-	desc.Format = DepthDXGIFormat( m_format, DEPTH_ACCESS_TYPE::SURFACE_CREATION );	// Use typeless formats when creating the surface
+	desc.Format = DepthDXGIFormat( DEPTH_ACCESS_TYPE::SURFACE_CREATION );	// Use typeless formats when creating the surface
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.Usage = D3D11_USAGE_DEFAULT;
@@ -225,12 +224,12 @@ void	Texture2D::Init( const void* const* _ppContent, bool _staging, bool _UAV, M
 			// Compressed formats use 4x4 blocks of pixels
 			U32	srcBlockBytes = 16;
 			switch ( m_format ) {
-				case DXGI_FORMAT_BC1_TYPELESS	:
-				case DXGI_FORMAT_BC1_UNORM		:
-				case DXGI_FORMAT_BC1_UNORM_SRGB	:
-				case DXGI_FORMAT_BC4_TYPELESS	:
-				case DXGI_FORMAT_BC4_UNORM		:
-				case DXGI_FORMAT_BC4_SNORM		:
+				case DXGI_FORMAT_BC1_TYPELESS		:
+				case DXGI_FORMAT_BC1_UNORM			:
+				case DXGI_FORMAT_BC1_UNORM_SRGB		:
+				case DXGI_FORMAT_BC4_TYPELESS		:
+				case DXGI_FORMAT_BC4_UNORM			:
+				case DXGI_FORMAT_BC4_SNORM			:
 					srcBlockBytes = 8;
 					break;
 			}
@@ -273,25 +272,16 @@ bool	Texture2D::IsDepthFormat() const {
 	return false;
 }
 
-ID3D11ShaderResourceView*	Texture2D::GetSRV( U32 _mipLevelStart, U32 _mipLevelsCount, U32 _arrayStart, U32 _arraySize, bool _asArray, BaseLib::COMPONENT_FORMAT _formatOverride ) const {
+ID3D11ShaderResourceView*	Texture2D::GetSRV( U32 _mipLevelStart, U32 _mipLevelsCount, U32 _arrayStart, U32 _arraySize, bool _asArray ) const {
 	if ( _arraySize == 0 )
 		_arraySize = m_arraySize - _arrayStart;
 	if ( _mipLevelsCount == 0 )
 		_mipLevelsCount = m_mipLevelsCount - _mipLevelStart;
 
-	DXGI_FORMAT	formatOverride = m_format;
-	if ( _formatOverride != BaseLib::COMPONENT_FORMAT::AUTO ) {
-		BaseLib::COMPONENT_FORMAT	dummyComponentFormat;
-		U32							dummyPixelSize;
-		BaseLib::PIXEL_FORMAT		pixelFormat = DXGIFormat2PixelFormat( m_format, dummyComponentFormat, dummyPixelSize );
-		formatOverride = PixelFormat2DXGIFormat( pixelFormat, _formatOverride );
-	}
-
 	// Check if we already have it
-//	U32	Hash = _arraySize | ((_arrayStart | ((_MipLevelsCount | (_MipLevelStart << 4)) << 12)) << 12);
+//	U32	Hash = _ArraySize | ((_ArrayStart | ((_MipLevelsCount | (_MipLevelStart << 4)) << 12)) << 12);
 	U32	Hash = (_mipLevelStart << 0) | (_arrayStart << 4) | (_mipLevelsCount << (4+12)) | (_arraySize << (4+12+4));	// Re-organized to have most likely changes (i.e. mip & array starts) first
 		Hash ^= _asArray ? 0x80000000UL : 0;
-		Hash ^= formatOverride;
 
 	ID3D11ShaderResourceView*	existingView = (ID3D11ShaderResourceView*) m_cachedSRVs.Get( Hash );
 	if ( existingView != NULL )
@@ -300,9 +290,9 @@ ID3D11ShaderResourceView*	Texture2D::GetSRV( U32 _mipLevelStart, U32 _mipLevelsC
 	// Create a new one
 	D3D11_SHADER_RESOURCE_VIEW_DESC	desc;
 	if ( IsDepthFormat() ) {
-		desc.Format = DepthDXGIFormat( formatOverride, DEPTH_ACCESS_TYPE::VIEW_READABLE );
+		desc.Format = DepthDXGIFormat( DEPTH_ACCESS_TYPE::VIEW_READABLE );
 	} else {
-		desc.Format = formatOverride;
+		desc.Format = m_format;
 	}
 	if ( _asArray ) {
 		// Force as a Texture2DArray
@@ -334,34 +324,24 @@ ID3D11ShaderResourceView*	Texture2D::GetSRV( U32 _mipLevelStart, U32 _mipLevelsC
 	return pView;
 }
 
-ID3D11RenderTargetView*		Texture2D::GetRTV( U32 _mipLevelIndex, U32 _arrayStart, U32 _arraySize, BaseLib::COMPONENT_FORMAT _formatOverride ) const {
-	if ( _arraySize == 0 )
-		_arraySize = m_arraySize - _arrayStart;
-
-	DXGI_FORMAT	formatOverride = m_format;
-	if ( _formatOverride != BaseLib::COMPONENT_FORMAT::AUTO ) {
-		BaseLib::COMPONENT_FORMAT	dummyComponentFormat;
-		U32							dummyPixelSize;
-		BaseLib::PIXEL_FORMAT		pixelFormat = DXGIFormat2PixelFormat( m_format, dummyComponentFormat, dummyPixelSize );
-		formatOverride = PixelFormat2DXGIFormat( pixelFormat, _formatOverride );
-	}
+ID3D11RenderTargetView*		Texture2D::GetRTV( U32 _mipLevelIndex, U32 _ArrayStart, U32 _ArraySize ) const {
+	if ( _ArraySize == 0 )
+		_ArraySize = m_arraySize - _ArrayStart;
 
 	// Check if we already have it
-//	U32	Hash = _arraySize | ((_arrayStart | (_mipLevelIndex << 12)) << 12);
-	U32	Hash = (_mipLevelIndex << 0) | (_arrayStart << 4) | (_arraySize << (4+12));	// Re-organized to have most likely changes (i.e. mip & array starts) first
-		Hash ^= formatOverride;
-
+//	U32	Hash = _ArraySize | ((_ArrayStart | (_mipLevelIndex << 12)) << 12);
+	U32	Hash = (_mipLevelIndex << 0) | (_ArrayStart << 4) | (_ArraySize << (4+12));	// Re-organized to have most likely changes (i.e. mip & array starts) first
 	ID3D11RenderTargetView*	existingView = (ID3D11RenderTargetView*) m_cachedRTVs.Get( Hash );
 	if ( existingView != NULL )
 		return existingView;
 
 	// Create a new one
 	D3D11_RENDER_TARGET_VIEW_DESC	Desc;
-	Desc.Format = formatOverride;
+	Desc.Format = m_format;
 	Desc.ViewDimension = m_arraySize > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DARRAY : D3D11_RTV_DIMENSION_TEXTURE2D;
 	Desc.Texture2DArray.MipSlice = _mipLevelIndex;
-	Desc.Texture2DArray.FirstArraySlice = _arrayStart;
-	Desc.Texture2DArray.ArraySize = _arraySize;
+	Desc.Texture2DArray.FirstArraySlice = _ArrayStart;
+	Desc.Texture2DArray.ArraySize = _ArraySize;
 
 	ID3D11RenderTargetView*	pView;
 	Check( m_device.DXDevice().CreateRenderTargetView( m_texture, &Desc, &pView ) );
@@ -371,34 +351,28 @@ ID3D11RenderTargetView*		Texture2D::GetRTV( U32 _mipLevelIndex, U32 _arrayStart,
 	return pView;
 }
 
-ID3D11UnorderedAccessView*	Texture2D::GetUAV( U32 _mipLevelIndex, U32 _arrayStart, U32 _arraySize, BaseLib::COMPONENT_FORMAT _formatOverride ) const {
-	if ( _arraySize == 0 )
-		_arraySize = m_arraySize - _arrayStart;
-
-	DXGI_FORMAT	formatOverride = m_format;
-	if ( _formatOverride != BaseLib::COMPONENT_FORMAT::AUTO ) {
-		BaseLib::COMPONENT_FORMAT	dummyComponentFormat;
-		U32							dummyPixelSize;
-		BaseLib::PIXEL_FORMAT		pixelFormat = DXGIFormat2PixelFormat( m_format, dummyComponentFormat, dummyPixelSize );
-		formatOverride = PixelFormat2DXGIFormat( pixelFormat, _formatOverride );
-	}
+ID3D11UnorderedAccessView*	Texture2D::GetUAV( U32 _mipLevelIndex, U32 _ArrayStart, U32 _ArraySize ) const {
+	if ( _ArraySize == 0 )
+		_ArraySize = m_arraySize - _ArrayStart;
 
 	// Check if we already have it
-//	U32	Hash = _arraySize | ((_arrayStart | (_mipLevelIndex << 12)) << 12);
-	U32	Hash = (_mipLevelIndex << 0) | (_arrayStart << 4) | (_arraySize << (4+12));	// Re-organized to have most likely changes (i.e. mip & array starts) first
-		Hash ^= formatOverride;
-
+//	U32	Hash = _ArraySize | ((_ArrayStart | (_mipLevelIndex << 12)) << 12);
+	U32	Hash = (_mipLevelIndex << 0) | (_ArrayStart << 4) | (_ArraySize << (4+12));	// Re-organized to have most likely changes (i.e. mip & array starts) first
 	ID3D11UnorderedAccessView*	existingView = (ID3D11UnorderedAccessView*) m_cachedUAVs.Get( Hash );
 	if ( existingView != NULL )
 		return existingView;
 
 	// Create a new one
 	D3D11_UNORDERED_ACCESS_VIEW_DESC	desc;
-	desc.Format = formatOverride;
+// 	if ( IsDepthFormat() ) {
+// 		desc.Format = DepthDXGIFormat( DEPTH_ACCESS_TYPE::VIEW_READABLE );
+// 	} else {
+		desc.Format = m_format;
+//	}
 	desc.ViewDimension = m_arraySize > 1 ? D3D11_UAV_DIMENSION_TEXTURE2DARRAY : D3D11_UAV_DIMENSION_TEXTURE2D;
 	desc.Texture2DArray.MipSlice = _mipLevelIndex;
-	desc.Texture2DArray.FirstArraySlice = _arrayStart;
-	desc.Texture2DArray.ArraySize = _arraySize;
+	desc.Texture2DArray.FirstArraySlice = _ArrayStart;
+	desc.Texture2DArray.ArraySize = _ArraySize;
 
 	ID3D11UnorderedAccessView*	pView = NULL;
 	Check( m_device.DXDevice().CreateUnorderedAccessView( m_texture, &desc, &pView ) );
@@ -408,33 +382,23 @@ ID3D11UnorderedAccessView*	Texture2D::GetUAV( U32 _mipLevelIndex, U32 _arrayStar
 	return pView;
 }
 
-ID3D11DepthStencilView*		Texture2D::GetDSV( U32 _arrayStart, U32 _arraySize, BaseLib::COMPONENT_FORMAT _formatOverride ) const {
-	if ( _arraySize == 0 )
-		_arraySize = m_arraySize - _arrayStart;
-
-	DXGI_FORMAT	formatOverride = m_format;
-	if ( _formatOverride != BaseLib::COMPONENT_FORMAT::AUTO ) {
-		BaseLib::COMPONENT_FORMAT	dummyComponentFormat;
-		U32							dummyPixelSize;
-		BaseLib::PIXEL_FORMAT		pixelFormat = DXGIFormat2PixelFormat( m_format, dummyComponentFormat, dummyPixelSize );
-		formatOverride = PixelFormat2DXGIFormat( pixelFormat, _formatOverride );
-	}
+ID3D11DepthStencilView*		Texture2D::GetDSV( U32 _ArrayStart, U32 _ArraySize ) const {
+	if ( _ArraySize == 0 )
+		_ArraySize = m_arraySize - _ArrayStart;
 
 	// Check if we already have it
-	U32	Hash = (_arrayStart << 0) | (_arraySize << 12);
-		Hash ^= formatOverride;
-
+	U32	Hash = (_ArrayStart << 0) | (_ArraySize << 12);
 	ID3D11DepthStencilView*	existingView = (ID3D11DepthStencilView*) m_cachedDSVs.Get( Hash );
 	if ( existingView != NULL )
 		return existingView;
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC	desc;
-	desc.Format = DepthDXGIFormat( formatOverride, DEPTH_ACCESS_TYPE::VIEW_WRITABLE );
+	desc.Format = DepthDXGIFormat( DEPTH_ACCESS_TYPE::VIEW_WRITABLE );
 	desc.ViewDimension = m_arraySize == 1 ? D3D11_DSV_DIMENSION_TEXTURE2D : D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 	desc.Flags = 0;
 	desc.Texture2DArray.MipSlice = 0;
-	desc.Texture2DArray.FirstArraySlice = _arrayStart;
-	desc.Texture2DArray.ArraySize = _arraySize;
+	desc.Texture2DArray.FirstArraySlice = _ArrayStart;
+	desc.Texture2DArray.ArraySize = _ArraySize;
 
 	ID3D11DepthStencilView*	pView = NULL;
 	Check( m_device.DXDevice().CreateDepthStencilView( m_texture, &desc, &pView ) );
@@ -608,8 +572,8 @@ void	Texture2D::ReadAsImagesMatrix( ImageUtilityLib::ImagesMatrix& _images ) con
 // 	return textureFormat;
 // }
 // 
-DXGI_FORMAT	Texture2D::DepthDXGIFormat( DXGI_FORMAT _format, DEPTH_ACCESS_TYPE _accessType ) const {
-	switch ( _format ) {
+DXGI_FORMAT	Texture2D::DepthDXGIFormat( DEPTH_ACCESS_TYPE _accessType ) const {
+	switch ( m_format ) {
 	case DXGI_FORMAT_D32_FLOAT:
 		switch ( _accessType ) {
 			case DEPTH_ACCESS_TYPE::SURFACE_CREATION:		return DXGI_FORMAT_R32_TYPELESS;
@@ -642,97 +606,6 @@ DXGI_FORMAT	Texture2D::DepthDXGIFormat( DXGI_FORMAT _format, DEPTH_ACCESS_TYPE _
 
 	return DXGI_FORMAT_UNKNOWN;
 }
-
-// DXGI_FORMAT	Texture2D::TypelessDXGIFormat( DXGI_FORMAT _format ) const {
-// 	switch ( _format ) {
-// 		case DXGI_FORMAT_R32G32B32A32_FLOAT         :
-// 		case DXGI_FORMAT_R32G32B32A32_UINT          :
-// 		case DXGI_FORMAT_R32G32B32A32_SINT          :
-// 			return DXGI_FORMAT_R32G32B32A32_TYPELESS;
-// 		case DXGI_FORMAT_R32G32B32_FLOAT            :
-// 		case DXGI_FORMAT_R32G32B32_UINT             :
-// 		case DXGI_FORMAT_R32G32B32_SINT             :
-// 			return DXGI_FORMAT_R32G32B32_TYPELESS;
-// 		case DXGI_FORMAT_R16G16B16A16_FLOAT         :
-// 		case DXGI_FORMAT_R16G16B16A16_UNORM         :
-// 		case DXGI_FORMAT_R16G16B16A16_UINT          :
-// 		case DXGI_FORMAT_R16G16B16A16_SNORM         :
-// 		case DXGI_FORMAT_R16G16B16A16_SINT          :
-// 			return DXGI_FORMAT_R16G16B16A16_TYPELESS;
-// 		case DXGI_FORMAT_R32G32_FLOAT               :
-// 		case DXGI_FORMAT_R32G32_UINT                :
-// 		case DXGI_FORMAT_R32G32_SINT                :
-// 			return DXGI_FORMAT_R32G32_TYPELESS;
-// 		case DXGI_FORMAT_R10G10B10A2_UNORM          :
-// 		case DXGI_FORMAT_R10G10B10A2_UINT           :
-// 			return DXGI_FORMAT_R10G10B10A2_TYPELESS;
-// 		case DXGI_FORMAT_R8G8B8A8_UNORM             :
-// 		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB        :
-// 		case DXGI_FORMAT_R8G8B8A8_UINT              :
-// 		case DXGI_FORMAT_R8G8B8A8_SNORM             :
-// 		case DXGI_FORMAT_R8G8B8A8_SINT              :
-// 			return DXGI_FORMAT_R8G8B8A8_TYPELESS;
-// 		case DXGI_FORMAT_R16G16_FLOAT               :
-// 		case DXGI_FORMAT_R16G16_UNORM               :
-// 		case DXGI_FORMAT_R16G16_UINT                :
-// 		case DXGI_FORMAT_R16G16_SNORM               :
-// 		case DXGI_FORMAT_R16G16_SINT                :
-// 			return DXGI_FORMAT_R16G16_TYPELESS;
-// 		case DXGI_FORMAT_D32_FLOAT                  :
-// 		case DXGI_FORMAT_R32_FLOAT                  :
-// 		case DXGI_FORMAT_R32_UINT                   :
-// 		case DXGI_FORMAT_R32_SINT                   :
-// 			return DXGI_FORMAT_R32_TYPELESS;
-// //		case DXGI_FORMAT_R24G8_TYPELESS             :
-// //		case DXGI_FORMAT_D24_UNORM_S8_UINT          :
-// //		case DXGI_FORMAT_R24_UNORM_X8_TYPELESS      :
-// //		case DXGI_FORMAT_X24_TYPELESS_G8_UINT       :
-// 		case DXGI_FORMAT_R8G8_UNORM                 :
-// 		case DXGI_FORMAT_R8G8_UINT                  :
-// 		case DXGI_FORMAT_R8G8_SNORM                 :
-// 		case DXGI_FORMAT_R8G8_SINT                  :
-// 			return DXGI_FORMAT_R8G8_TYPELESS;
-// 		case DXGI_FORMAT_R16_FLOAT                  :
-// 		case DXGI_FORMAT_D16_UNORM                  :
-// 		case DXGI_FORMAT_R16_UNORM                  :
-// 		case DXGI_FORMAT_R16_UINT                   :
-// 		case DXGI_FORMAT_R16_SNORM                  :
-// 		case DXGI_FORMAT_R16_SINT                   :
-// 			return DXGI_FORMAT_R16_TYPELESS;
-// 		case DXGI_FORMAT_R8_UNORM                   :
-// 		case DXGI_FORMAT_R8_UINT                    :
-// 		case DXGI_FORMAT_R8_SNORM                   :
-// 		case DXGI_FORMAT_R8_SINT                    :
-// 		case DXGI_FORMAT_A8_UNORM                   :
-// 			return DXGI_FORMAT_R8_TYPELESS;
-// 		case DXGI_FORMAT_BC1_UNORM                  :
-// 		case DXGI_FORMAT_BC1_UNORM_SRGB             :
-// 			return DXGI_FORMAT_BC1_TYPELESS;
-// 		case DXGI_FORMAT_BC2_UNORM                  :
-// 		case DXGI_FORMAT_BC2_UNORM_SRGB             :
-// 			return DXGI_FORMAT_BC2_TYPELESS;
-// 		case DXGI_FORMAT_BC3_UNORM                  :
-// 		case DXGI_FORMAT_BC3_UNORM_SRGB             :
-// 			return DXGI_FORMAT_BC3_TYPELESS;
-// 		case DXGI_FORMAT_BC4_UNORM                  :
-// 		case DXGI_FORMAT_BC4_SNORM                  :
-// 			return DXGI_FORMAT_BC4_TYPELESS;
-// 		case DXGI_FORMAT_BC5_UNORM                  :
-// 		case DXGI_FORMAT_BC5_SNORM                  :
-// 			return DXGI_FORMAT_BC5_TYPELESS;
-// 		case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB        :
-// 			return DXGI_FORMAT_B8G8R8A8_TYPELESS;
-// 		case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB        :
-// 			return DXGI_FORMAT_B8G8R8X8_TYPELESS;
-// 		case DXGI_FORMAT_BC6H_UF16                  :
-// 		case DXGI_FORMAT_BC6H_SF16                  :
-// 			return DXGI_FORMAT_BC6H_TYPELESS;
-// 		case DXGI_FORMAT_BC7_UNORM                  :
-// 		case DXGI_FORMAT_BC7_UNORM_SRGB             :
-// 			return DXGI_FORMAT_BC7_TYPELESS;
-// 	}
-// 	return DXGI_FORMAT_UNKNOWN;
-// }
 
 void	Texture2D::NextMipSize( U32& _Width, U32& _Height ) {
 	_Width = MAX( 1U, _Width >> 1 );

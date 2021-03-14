@@ -176,10 +176,10 @@ namespace GenerateSelfShadowedBumpMap
 					using ( Renderer.ScopedForceShadersLoadFromBinary scope = new Renderer.ScopedForceShadersLoadFromBinary() )
 				#endif
 				{
-					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS" );
-					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS" );
-					m_CS_GenerateBentConeMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMap.hlsl" ), "CS" );
-					m_CS_GenerateBentConeMapOpt = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMapOpt3.hlsl" ), "CS" );
+					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
+					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
+					m_CS_GenerateBentConeMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMap.hlsl" ), "CS", null );
+					m_CS_GenerateBentConeMapOpt = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMapOpt3.hlsl" ), "CS", null );
 				}
 
 				// Create our constant buffers
@@ -1035,7 +1035,7 @@ minAngle_Back = Mathf.Min( minAngle_Back, tsAngle );
 
 			string	DraggedFileName = (data as string[])[0];
 
-			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( DraggedFileName ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
 				m_DraggedFileName = DraggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}
@@ -1075,7 +1075,7 @@ minAngle_Back = Mathf.Min( minAngle_Back, tsAngle );
 
 			string	DraggedFileName = (data as string[])[0];
 
-			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( DraggedFileName ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
 				m_DraggedFileName = DraggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}

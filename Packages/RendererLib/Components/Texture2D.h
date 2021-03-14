@@ -64,10 +64,10 @@ public:	 // METHODS
 	~Texture2D();
 
 	// _asArray is used to force the SRV as viewing a Texture2DArray instead of a TextureCube or TextureCubeArray
-	ID3D11ShaderResourceView*	GetSRV( U32 _mipLevelStart=0, U32 _mipLevelsCount=0, U32 _arrayStart=0, U32 _arraySize=0, bool _asArray=false, BaseLib::COMPONENT_FORMAT _formatOverride=BaseLib::COMPONENT_FORMAT::AUTO ) const;	// Shader Resource View => Read-Only Input
-	ID3D11RenderTargetView*		GetRTV( U32 _mipLevelIndex=0, U32 _arrayStart=0, U32 _arraySize=0, BaseLib::COMPONENT_FORMAT _formatOverride=BaseLib::COMPONENT_FORMAT::AUTO ) const;												// Render Target View => Write-Only Output
-	ID3D11UnorderedAccessView*	GetUAV( U32 _mipLevelIndex=0, U32 _arrayStart=0, U32 _arraySize=0, BaseLib::COMPONENT_FORMAT _formatOverride=BaseLib::COMPONENT_FORMAT::AUTO ) const;												// Unordered Access View => Read/Write
-	ID3D11DepthStencilView*		GetDSV( U32 _arrayStart=0, U32 _arraySize=0, BaseLib::COMPONENT_FORMAT _formatOverride=BaseLib::COMPONENT_FORMAT::AUTO ) const;																		// Depth Stencil View => Write-Only Depth Stencil Output
+	ID3D11ShaderResourceView*	GetSRV( U32 _mipLevelStart=0, U32 _mipLevelsCount=0, U32 _arrayStart=0, U32 _arraySize=0, bool _asArray=false ) const;	// Shader Resource View => Read-Only Input
+	ID3D11RenderTargetView*		GetRTV( U32 _mipLevelIndex=0, U32 _arrayStart=0, U32 _arraySize=0 ) const;												// Render Target View => Write-Only Output
+	ID3D11UnorderedAccessView*	GetUAV( U32 _mipLevelIndex=0, U32 _arrayStart=0, U32 _arraySize=0 ) const;												// Unordered Access View => Read/Write
+	ID3D11DepthStencilView*		GetDSV( U32 _arrayStart=0, U32 _arraySize=0 ) const;																	// Depth Stencil View => Write-Only Depth Stencil Output
 
 	// Uploads the texture to the shader
 	void		Set( U32 _slotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _view=NULL ) const;
@@ -109,8 +109,7 @@ public:	// HELPERS
 		VIEW_WRITABLE,		// The DXGI format used by a shader to write the depth values (i.e. surface is used as depth stencil buffer)
 		VIEW_READABLE,		// The DXGI format used by a shader to read the depth values (i.e. surface is used as a regular texture)
 	};
-	DXGI_FORMAT			DepthDXGIFormat( DXGI_FORMAT _format, DEPTH_ACCESS_TYPE _accessType ) const;
-//	DXGI_FORMAT			TypelessDXGIFormat( DXGI_FORMAT _format ) const;
+	DXGI_FORMAT			DepthDXGIFormat( DEPTH_ACCESS_TYPE _accessType ) const;
 
 	static void			NextMipSize( U32& _width, U32& _height );
 	static U32			ComputeMipLevelsCount( U32 _width, U32 _height, U32 _mipLevelsCount );

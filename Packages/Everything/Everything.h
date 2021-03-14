@@ -10,35 +10,7 @@ namespace Everything {
 	//////////////////////////////////////////////////////////////////////////
 	//
 	public ref class Search {
-	private:
-		static Object^		ms_lock = gcnew Object();
-
 	public:
-
-		//////////////////////////////////////////////////////////////////////////
-		// Advanced thread-safe wrapper
-		[System::Diagnostics::DebuggerDisplayAttribute( "{m_results.Length,d}" )]
-		ref class Query {
-		public:
-			[System::Diagnostics::DebuggerDisplayAttribute( "{m_fullName}" )]
-			ref class	Result {
-			public:
-				bool		m_isVolume;
-				bool		m_isFolder;
-				bool		m_isFile;
-				String^		m_pathName;
-				String^		m_fileName;
-				String^		m_fullName;
-			};
-
-			cli::array<Result^>^	m_results;
-
-			Query( String^ _searchExpression, bool _matchCase, bool _matchWholeWord, bool _matchPath, bool _isRegEx );
-		};
-
-
-		#pragma region Basic Wrapper (not thread-safe!)
-
 		//////////////////////////////////////////////////////////////////////////
 		// Options
 		//
@@ -95,7 +67,5 @@ namespace Everything {
 		property static cli::array< Result^ >^	Results {
 			cli::array< Result^ >^	get();
 		}
-
-		#pragma endregion
 	};
 }

@@ -84,10 +84,10 @@ namespace TestGraphHeatEquation
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 
-			m_shader_HeatDiffusion0 = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-			m_shader_HeatDiffusion1 = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-			m_shader_RenderHeatMap = new Shader( m_device, new FileInfo( "./Shaders/RenderHeatMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-			m_shader_DrawObstacles = new Shader( m_device, new FileInfo( "./Shaders/DrawObstacles.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+			m_shader_HeatDiffusion0 = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_HeatDiffusion1 = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_RenderHeatMap = new Shader( m_device, new FileInfo( "./Shaders/RenderHeatMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_DrawObstacles = new Shader( m_device, new FileInfo( "./Shaders/DrawObstacles.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 			m_tex_HeatMap_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
 			m_tex_HeatMap0 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );

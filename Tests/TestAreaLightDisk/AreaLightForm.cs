@@ -129,11 +129,11 @@ namespace AreaLightTest {
 			m_CB_TestQuad = new ConstantBuffer<CB_TestQuad>( m_device, 3 );
 
 			try {
-				m_shader_RenderLight = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderLight.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS" );
-				m_shader_RenderScene = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_shader_RenderScene_Reference = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene_Reference.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_shader_RenderDiff = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderDiff.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_shader_RenderTestQuad = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderTestQuad.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_shader_RenderLight = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderLight.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );;
+				m_shader_RenderScene = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_shader_RenderScene_Reference = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene_Reference.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_shader_RenderDiff = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderDiff.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_shader_RenderTestQuad = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderTestQuad.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				return;
