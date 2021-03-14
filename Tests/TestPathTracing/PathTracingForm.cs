@@ -70,9 +70,9 @@ namespace TestPathTracing {
 			try {
 				m_device.Init( panelOutput3D.Handle, false, true );
 
-				m_Shader_renderWall = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderWall.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_Shader_renderGBuffer = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderGBuffer.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_renderWall = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderWall.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_Shader_renderGBuffer = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderGBuffer.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 				
 				m_CB_Main = new ConstantBuffer< CB_Main >( m_device, 0 );
 				m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );

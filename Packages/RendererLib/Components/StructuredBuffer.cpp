@@ -8,19 +8,19 @@
 //
 StructuredBuffer*	StructuredBuffer::ms_ppOutputs[D3D11_PS_CS_UAV_REGISTER_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
-StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _ElementsCount, bool _bWriteable, bool _allowRawView )
-	: Component( _Device )
+StructuredBuffer::StructuredBuffer( Device& _device, U32 _elementSize, U32 _elementsCount, bool _bWriteable, bool _allowRawView )
+	: Component( _device )
 {
-	ASSERT( _ElementSize > 0, "Buffer must have at least one element!" );
-	ASSERT( (_ElementSize&3)==0, "Element size must be a multiple of 4!" );
+	ASSERT( _elementSize > 0, "Buffer must have at least one element!" );
+	ASSERT( (_elementSize&3)==0, "Element size must be a multiple of 4!" );
 
 	for ( int shaderStageIndex=0; shaderStageIndex < 6; shaderStageIndex++ )
 		m_LastAssignedSlots[shaderStageIndex] = -1;
 	for ( int i=0; i < D3D11_PS_CS_UAV_REGISTER_COUNT; i++ )
 		m_pAssignedToOutputSlot[i] = -1;
-	m_ElementSize = _ElementSize;
-	m_ElementsCount = _ElementsCount;
-	m_Size = _ElementSize * _ElementsCount;
+	m_ElementSize = _elementSize;
+	m_ElementsCount = _elementsCount;
+	m_Size = _elementSize * _elementsCount;
 
 	// Create the buffer
 	D3D11_BUFFER_DESC   desc;
@@ -30,7 +30,7 @@ StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _Elem
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	desc.MiscFlags = (_allowRawView ? 0 : D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
 					| (_allowRawView ? D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS : 0);
-	desc.StructureByteStride = _ElementSize;
+	desc.StructureByteStride = _elementSize;
 
 	Check( m_device.DXDevice().CreateBuffer( &desc, NULL, &m_pBuffer ) );
 
@@ -49,7 +49,7 @@ StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _Elem
 	ViewDesc.Format = _allowRawView ? DXGI_FORMAT_R32_TYPELESS : DXGI_FORMAT_UNKNOWN;
 	ViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
 	ViewDesc.BufferEx.FirstElement = 0;
-	ViewDesc.BufferEx.NumElements = _ElementsCount;
+	ViewDesc.BufferEx.NumElements = _elementsCount;
 	ViewDesc.BufferEx.Flags = _allowRawView ? D3D11_BUFFEREX_SRV_FLAG_RAW : 0;
 
 	Check( m_device.DXDevice().CreateShaderResourceView( m_pBuffer, &ViewDesc, &m_pShaderView ) );
@@ -61,7 +61,7 @@ StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _Elem
 	UnorderedViewDesc.Format = _allowRawView ? DXGI_FORMAT_R32_TYPELESS : DXGI_FORMAT_UNKNOWN;
 	UnorderedViewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
 	UnorderedViewDesc.Buffer.FirstElement = 0;
-	UnorderedViewDesc.Buffer.NumElements = _ElementsCount;
+	UnorderedViewDesc.Buffer.NumElements = _elementsCount;
 	UnorderedViewDesc.Buffer.Flags = _allowRawView ? D3D11_BUFFER_UAV_FLAG_RAW : 0;
 
 	Check( m_device.DXDevice().CreateUnorderedAccessView( m_pBuffer, &UnorderedViewDesc, &m_pUnorderedAccessView ) );
@@ -74,8 +74,8 @@ StructuredBuffer::~StructuredBuffer() {
 	m_pBuffer->Release();
 }
 
-void	StructuredBuffer::Read( void* _pData, U32 _ElementsCount ) const {
-	U32	Size = m_ElementSize * (_ElementsCount == ~0U ? m_ElementsCount : _ElementsCount);
+void	StructuredBuffer::Read( void* _pData, U32 _elementsCount ) const {
+	U32	Size = m_ElementSize * (_elementsCount == ~0U ? m_ElementsCount : _elementsCount);
 
 	// Copy from actual buffer
 	m_device.DXContext().CopyResource( m_pCPUBuffer, m_pBuffer );
@@ -90,8 +90,8 @@ void	StructuredBuffer::Read( void* _pData, U32 _ElementsCount ) const {
 	m_device.DXContext().Unmap( m_pCPUBuffer, 0 );
 }
 
-void	StructuredBuffer::Write( void* _pData, U32 _ElementsCount ) {
-	U32	Size = m_ElementSize * (_ElementsCount == ~0U ? m_ElementsCount : _ElementsCount);
+void	StructuredBuffer::Write( void* _pData, U32 _elementsCount ) {
+	U32	Size = m_ElementSize * (_elementsCount == ~0U ? m_ElementsCount : _elementsCount);
 
 	// Write to staging resource
 	D3D11_MAPPED_SUBRESOURCE	SubResource;

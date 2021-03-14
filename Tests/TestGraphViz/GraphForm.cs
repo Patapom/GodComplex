@@ -131,27 +131,28 @@ namespace TestGraphViz
 
 			try {
 				m_device.Init( panelOutput.Handle, false, true );
-			}
-			catch ( Exception _e ) {
+			} catch ( Exception _e ) {
 				m_device = null;
 				MessageBox.Show( "Failed to initialize DX device!\n\n" + _e.Message, "Heat Wave Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				return;
 			}
 
-			//////////////////////////////////////////////////////////////////////////
-			// Load the graph we need to simulate
-			m_graph = new ProtoParser.Graph();
+			try {
+				//////////////////////////////////////////////////////////////////////////
+				// Load the graph we need to simulate
+				m_graph = new ProtoParser.Graph();
 
-			FileInfo	file = new FileInfo( "../../../AI/Projects/Semantic Memory/Tests/Birds Database/Tools/ProtoParser/Concepts.graph" );
-			if ( !file.Exists )
-				file = new FileInfo( "./Graphs/TestGraph.graph" );
+//				FileInfo	file = new FileInfo( "../../../AI/Projects/Semantic Memory/Tests/Birds Database/Tools/ProtoParser/Concepts.graph" );
+				FileInfo	file = new FileInfo( "../../../AI/Projects/Semantic Memory/Tests/Birds Database/Tools/ProtoParser/TestGraph.graph" );
+				if ( !file.Exists )
+					file = new FileInfo( "./Graphs/TestGraph.graph" );
 
-			using ( FileStream S = file.OpenRead() )
-				using ( BinaryReader R = new BinaryReader( S ) )
-					m_graph.Read( R );
+				using ( FileStream S = file.OpenRead() )
+					using ( BinaryReader R = new BinaryReader( S ) )
+						m_graph.Read( R );
 
-			ProtoParser.Neuron[]	neurons = m_graph.Neurons;
-			m_nodesCount = (uint) neurons.Length;
+				ProtoParser.Neuron[]	neurons = m_graph.Neurons;
+				m_nodesCount = (uint) neurons.Length;
 
 /*
 m_nodesCount = 2;
@@ -162,108 +163,113 @@ neurons[0].LinkChild( neurons[1] );
 //*/
 
 
-			//////////////////////////////////////////////////////////////////////////
-			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
-			m_CB_Simulation = new ConstantBuffer<CB_Simulation>( m_device, 1 );
-			m_CB_Text = new ConstantBuffer<CB_Text>( m_device, 2 );
+				//////////////////////////////////////////////////////////////////////////
+				m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
+				m_CB_Simulation = new ConstantBuffer<CB_Simulation>( m_device, 1 );
+				m_CB_Text = new ConstantBuffer<CB_Text>( m_device, 2 );
 
-			m_shader_ComputeForces = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS", null );
-			m_shader_Simulate = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS2", null );
-#if RENDER_GRAPH_PROPER
-			m_shader_RenderGraphNode = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			m_shader_RenderGraphLink = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph2.hlsl" ), VERTEX_FORMAT.Pt4, "VS2", null, "PS2", null );
-#else
-			m_shader_RenderGraph = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-#endif
+				m_shader_ComputeForces = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS" );
+				m_shader_Simulate = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS2" );
+	#if RENDER_GRAPH_PROPER
+				m_shader_RenderGraphNode = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_shader_RenderGraphLink = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph2.hlsl" ), VERTEX_FORMAT.Pt4, "VS2", null, "PS2" );
+	#else
+				m_shader_RenderGraph = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+	#endif
 
-			m_shader_RenderText = new Shader( m_device, new FileInfo( "./Shaders/RenderText.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_RenderText = new Shader( m_device, new FileInfo( "./Shaders/RenderText.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 
-			// Build node info
-			m_SB_Nodes = new StructuredBuffer<SB_NodeInfo>( m_device, m_nodesCount, true );
+				// Build node info
+				m_SB_Nodes = new StructuredBuffer<SB_NodeInfo>( m_device, m_nodesCount, true );
 
-			m_neuron2ID = new Dictionary<ProtoParser.Neuron, uint>( neurons.Length );
+				m_neuron2ID = new Dictionary<ProtoParser.Neuron, uint>( neurons.Length );
 
-			float	maxMass = 0.0f;
-			for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
-				ProtoParser.Neuron	N = neurons[neuronIndex];
-				m_neuron2ID[N] = (uint) neuronIndex;
+				float	maxMass = 0.0f;
+				for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
+					ProtoParser.Neuron	N = neurons[neuronIndex];
+					m_neuron2ID[N] = (uint) neuronIndex;
 
-				uint	linksCount = (uint) (N.ParentsCount + N.ChildrenCount + N.FeaturesCount);
-//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 10.0f * linksCount) / (0.1f + N.Distance2Root);			// Works with S=1e4 D=-1e3
-//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 1.0f * linksCount) / (0.01f + 0.0f * N.Distance2Root);	// Works with S=1e4 D=-1e3
-//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 0.1f * linksCount) / (0.1f + N.Distance2Root);			// Works with S=10 D=-10
-				m_SB_Nodes.m[neuronIndex].m_mass = 100.0f * (1 + 1.0f * linksCount);	// Works with S=1e4 D=-1e3
-				m_SB_Nodes.m[neuronIndex].m_linkOffset = m_totalLinksCount;
-				m_SB_Nodes.m[neuronIndex].m_linksCount = linksCount;
-				m_SB_Nodes.m[neuronIndex].m_flags = 0U;
+					uint	linksCount = (uint) (N.ParentsCount + N.ChildrenCount + N.FeaturesCount);
+	//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 10.0f * linksCount) / (0.1f + N.Distance2Root);			// Works with S=1e4 D=-1e3
+	//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 1.0f * linksCount) / (0.01f + 0.0f * N.Distance2Root);	// Works with S=1e4 D=-1e3
+	//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 0.1f * linksCount) / (0.1f + N.Distance2Root);			// Works with S=10 D=-10
+					m_SB_Nodes.m[neuronIndex].m_mass = 100.0f * (1 + 1.0f * linksCount);	// Works with S=1e4 D=-1e3
+					m_SB_Nodes.m[neuronIndex].m_linkOffset = m_totalLinksCount;
+					m_SB_Nodes.m[neuronIndex].m_linksCount = linksCount;
+					m_SB_Nodes.m[neuronIndex].m_flags = 0U;
 
-				maxMass = Mathf.Max( maxMass, m_SB_Nodes.m[neuronIndex].m_mass );
+					maxMass = Mathf.Max( maxMass, m_SB_Nodes.m[neuronIndex].m_mass );
 
-				m_totalLinksCount += linksCount;
-			}
-
-			m_SB_Nodes.m[0].m_mass = 1e4f;
-
-			m_SB_Nodes.Write();
-
-			// Build node links
-			m_SB_Links = new StructuredBuffer<uint>( m_device, m_totalLinksCount, true );
-			m_SB_LinkSources = new StructuredBuffer<uint>( m_device, m_totalLinksCount, true );
-			m_totalLinksCount = 0;
-			for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
-				ProtoParser.Neuron	N = neurons[neuronIndex];
-				foreach ( ProtoParser.Neuron O in N.Parents ) {
-					m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
-					m_SB_Links.m[m_totalLinksCount++] = m_neuron2ID[O];
+					m_totalLinksCount += linksCount;
 				}
-				foreach ( ProtoParser.Neuron O in N.Children ) {
-					m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
-					m_SB_Links.m[m_totalLinksCount++] = m_neuron2ID[O];
+
+				m_SB_Nodes.m[0].m_mass = 1e4f;
+
+				m_SB_Nodes.Write();
+
+				// Build node links
+				m_SB_Links = new StructuredBuffer<uint>( m_device, m_totalLinksCount, true );
+				m_SB_LinkSources = new StructuredBuffer<uint>( m_device, m_totalLinksCount, true );
+				m_totalLinksCount = 0;
+				for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
+					ProtoParser.Neuron	N = neurons[neuronIndex];
+					foreach ( ProtoParser.Neuron O in N.Parents ) {
+						m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
+						m_SB_Links.m[m_totalLinksCount++] = m_neuron2ID[O];
+					}
+					foreach ( ProtoParser.Neuron O in N.Children ) {
+						m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
+						m_SB_Links.m[m_totalLinksCount++] = m_neuron2ID[O];
+					}
+					foreach ( ProtoParser.Neuron O in N.Features ) {
+						m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
+						m_SB_Links.m[m_totalLinksCount++] = m_neuron2ID[O];
+					}
 				}
-				foreach ( ProtoParser.Neuron O in N.Features ) {
-					m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
-					m_SB_Links.m[m_totalLinksCount++] = m_neuron2ID[O];
+				m_SB_Links.Write();
+				m_SB_LinkSources.Write();
+
+				// Setup initial CB
+				m_CB_Main.m._nodesCount = m_nodesCount;
+				m_CB_Main.m._resX = (uint) panelOutput.Width;
+				m_CB_Main.m._resY = (uint) panelOutput.Height;
+				m_CB_Main.m._maxMass = maxMass;
+				m_CB_Main.m._cameraCenter = float2.Zero;
+				m_CB_Main.m._cameraSize.Set( 10.0f, 10.0f );
+				m_CB_Main.m._hoveredNodeIndex = ~0U;
+				m_CB_Main.UpdateData();
+
+				// Initialize sim buffers
+				m_SB_Forces = new StructuredBuffer<float2>( m_device, m_nodesCount * m_nodesCount, false );
+				m_SB_NodeSims[0] = new StructuredBuffer<SB_NodeSim>( m_device, m_nodesCount, true );
+				m_SB_NodeSims[1] = new StructuredBuffer<SB_NodeSim>( m_device, m_nodesCount, true );
+
+				buttonReset_Click( null, EventArgs.Empty );
+
+	//			m_shader_HeatDiffusion = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+
+	// 			m_tex_Search = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
+	// 			m_tex_Search_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
+
+				// Load false colors
+	//			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Viridis.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
+				using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Magma.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
+					ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
+					convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
+					using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
+						m_tex_FalseColors = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 				}
+
+				// Prepare font atlas
+				m_SB_Text = new StructuredBuffer<SB_Letter>( m_device, 1024U, true );
+				BuildFont();
+
+				Application.Idle += Application_Idle;
+			} catch ( Exception _e ) {
+				m_device = null;
+				MessageBox.Show( "Failed to initialize shaders!\n\n" + _e.Message, "Heat Wave Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				return;
 			}
-			m_SB_Links.Write();
-			m_SB_LinkSources.Write();
-
-			// Setup initial CB
-			m_CB_Main.m._nodesCount = m_nodesCount;
-			m_CB_Main.m._resX = (uint) panelOutput.Width;
-			m_CB_Main.m._resY = (uint) panelOutput.Height;
-			m_CB_Main.m._maxMass = maxMass;
-			m_CB_Main.m._cameraCenter = float2.Zero;
-			m_CB_Main.m._cameraSize.Set( 10.0f, 10.0f );
-			m_CB_Main.m._hoveredNodeIndex = ~0U;
-			m_CB_Main.UpdateData();
-
-			// Initialize sim buffers
-			m_SB_Forces = new StructuredBuffer<float2>( m_device, m_nodesCount * m_nodesCount, false );
-			m_SB_NodeSims[0] = new StructuredBuffer<SB_NodeSim>( m_device, m_nodesCount, true );
-			m_SB_NodeSims[1] = new StructuredBuffer<SB_NodeSim>( m_device, m_nodesCount, true );
-
-			buttonReset_Click( null, EventArgs.Empty );
-
-//			m_shader_HeatDiffusion = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-
-// 			m_tex_Search = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
-// 			m_tex_Search_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
-
-			// Load false colors
-//			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Viridis.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
-			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Magma.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
-				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
-				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
-				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
-					m_tex_FalseColors = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
-			}
-
-			// Prepare font atlas
-			m_SB_Text = new StructuredBuffer<SB_Letter>( m_device, 1024U, true );
-			BuildFont();
-
-			Application.Idle += Application_Idle;
 		}
 
 		void Application_Idle( object sender, EventArgs e ) {
@@ -652,6 +658,9 @@ neurons[0].LinkChild( neurons[1] );
 		}
 
 		float2	Client2Pos( Point _clientPos ) {
+			if ( m_CB_Main == null )
+				return float2.Zero;
+
 			return new float2(	m_CB_Main.m._cameraCenter.x + ((float) _clientPos.X / panelOutput.Width - 0.5f) * m_CB_Main.m._cameraSize.x,
 								m_CB_Main.m._cameraCenter.y - (0.5f - (float) _clientPos.Y / panelOutput.Height) * m_CB_Main.m._cameraSize.y );
 		}

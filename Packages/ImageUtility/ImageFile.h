@@ -61,6 +61,7 @@ namespace ImageUtility {
 		SNORM,
 		UINT,
 		SINT,
+		TYPELESS,
 	};
 
 	// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
@@ -430,6 +431,9 @@ namespace ImageUtility {
 			m_nativeObject = new ImageUtilityLib::ImageFile();
 			ConvertFrom( _other, _targetFormat );
 		}
+		ImageFile( ImageFile^ _other, U32 _width, U32 _height, PIXEL_FORMAT _targetFormat, ImageUtility::ColorProfile^ _colorProfile ) : ImageFile( _width, _height, _targetFormat, _colorProfile ) {
+			RescaleSource( _other );
+		}
 
 		// Creates a bitmap from a System::Drawing.Bitmap and a color profile
 		ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfile^ _colorProfile );
@@ -465,6 +469,13 @@ namespace ImageUtility {
 
 		// Tone maps a HDR image into a LDR RGBA8 format
 		void				ToneMapFrom( ImageFile^ _source, ToneMapper^ _toneMapper );
+
+		// Rescales the source image into this image
+		void				CopySource( ImageFile^ _source ) { CopySource( _source, 0, 0 ); }
+		void				CopySource( ImageFile^ _source, UInt32 _offsetX, UInt32 _offsetY );
+
+		// Rescales the source image into this image
+		void				RescaleSource( ImageFile^ _source );
 
 		// Makes the image signed/unsigned
 		// WARNING: Works only for integer formats: throws if called on floating-point formats!

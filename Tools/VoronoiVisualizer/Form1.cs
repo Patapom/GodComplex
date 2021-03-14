@@ -61,11 +61,11 @@ namespace VoronoiVisualizer
 			m_Device = new Device();
 			m_Device.Init( panel1.Handle, false, false );
 
-			m_Shader_RenderCellPlanes = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderCellPlanes.hlsl" ), VERTEX_FORMAT.T2, "VS", null, "PS", null );
-			m_Shader_RenderCellMesh = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderCellMesh.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );
-			m_Shader_RenderCellMesh_Opaque = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderCellMesh_Opaque.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );
-			m_Shader_PostProcess = new Shader( m_Device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			m_Shader_PostProcess2 = new Shader( m_Device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_Shader_RenderCellPlanes = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderCellPlanes.hlsl" ), VERTEX_FORMAT.T2, "VS", null, "PS" );
+			m_Shader_RenderCellMesh = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderCellMesh.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS" );
+			m_Shader_RenderCellMesh_Opaque = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderCellMesh_Opaque.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS" );
+			m_Shader_PostProcess = new Shader( m_Device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+			m_Shader_PostProcess2 = new Shader( m_Device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 
 			VertexT2[]	Vertices = new VertexT2[4] {
 				new VertexT2() { UV = new float2( 0, 0 ) },

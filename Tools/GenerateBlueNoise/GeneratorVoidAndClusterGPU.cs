@@ -110,12 +110,12 @@ namespace GenerateBlueNoise
 				return;	// Use CPU version
 
 			try {
-				m_CS_Filter = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__Filter", null );
-				m_CS_DownsampleScore16 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__DownsampleScore16", null );
-				m_CS_DownsampleScore8 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__DownsampleScore8", null );
-				m_CS_DownsampleScore4 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__DownsampleScore4", null );
-				m_CS_DownsampleScore2 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__DownsampleScore2", null );
-				m_CS_Splat = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__Splat", null );
+				m_CS_Filter = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__Filter" );
+				m_CS_DownsampleScore16 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__DownsampleScore16" );
+				m_CS_DownsampleScore8 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__DownsampleScore8" );
+				m_CS_DownsampleScore4 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__DownsampleScore4" );
+				m_CS_DownsampleScore2 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__DownsampleScore2" );
+				m_CS_Splat = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/VoidAndCluster.hlsl" ), "CS__Splat" );
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( _device, 0 );
 				m_CB_Mips = new ConstantBuffer<CB_Mips>( _device, 1 );

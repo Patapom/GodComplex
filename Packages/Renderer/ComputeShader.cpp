@@ -4,12 +4,12 @@
 
 #include "ComputeShader.h"
 
-void	Renderer::ComputeShader::Init( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros, FileServer^ _fileServerOverride ) {
+void	Renderer::ComputeShader::Init( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, FileServer^ _fileServerOverride, cli::array<ShaderMacro^>^ _macros ) {
 	const char*	shaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFileName->FullName ).ToPointer();
 	const char*	entryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
 
 	D3D_SHADER_MACRO*	macros = NULL;
-	if ( _macros != nullptr ) {
+	if ( _macros != nullptr && _macros->Length > 0 ) {
 		int i=0;
 		macros = new D3D_SHADER_MACRO[_macros->Length + 1];
 		for ( ; i < _macros->Length; i++ ) {

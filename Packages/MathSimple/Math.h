@@ -101,10 +101,29 @@ namespace SharpMath {
 		static bool				Almost( float a, float b, float _epsilon )			{ return Abs( a - b ) < _epsilon; }
 		static bool				Almost( double a, double b )						{ return Almost( a, b, double(ALMOST_EPSILON) ); }
 		static bool				Almost( double a, double b, double _epsilon )		{ return Abs( a - b ) < _epsilon; }
+		static bool				AlmostRelative( float a, float b )					{ return AlmostRelative( a, b, ALMOST_EPSILON ); }
+		static bool				AlmostRelative( float a, float b, float _epsilon )	{
+			if ( Abs(a) < Abs(b) ) {
+				// Make sure b is always smaller than a
+				float	temp = a;
+				a = b;
+				b = temp;
+			}
+			if ( b == 0.0f )
+				return a == b;
+
+			float	ratio = a / b;	// Always >= 1 in absolute value
+					ratio -= 1.0f;
+
+			return Abs( ratio ) < _epsilon;
+		}
 
 		static float			Log2( float v )										{ return 1.4426950408889634073599246810019f * Log( v ); }	// Ln(x)/Ln(2)
 		static float			Step( float a, float b )							{ return a < b ? 1.0f : 0.0f; }
 		static float			Smoothstep( float a, float b, float x )				{ float t = (x - a) / (b - a); return 3*t*t - 2*t*t*t; }
+
+		generic<typename T>
+		static void				Swap( T% a, T%b )									{ T temp = a; a = b; b = temp; }
 
 		//////////////////////////////////////////////////////////////////////////
 		// Conversions

@@ -257,8 +257,16 @@ void	ImageFile::ToneMapFrom( ImageFile^ _source, ToneMapper^ _toneMapper ) {
 
 	m_nativeObject->ToneMapFrom( *_source->m_nativeObject, static_cast< ImageUtilityLib::ImageFile::toneMapper_t >( ip.ToPointer() ) );
 
-	// release reference to delegate  
+	// Release reference to delegate  
 	gch.Free();  
+}
+
+void	ImageFile::CopySource( ImageFile^ _source, UInt32 _offsetX, UInt32 _offsetY ) {
+	m_nativeObject->CopySource( *_source->m_nativeObject, _offsetX, _offsetY );
+}
+
+void	ImageFile::RescaleSource( ImageFile^ _source ) {
+	m_nativeObject->RescaleSource( *_source->m_nativeObject );
 }
 
 // Retrieves the image file type based on the image file name

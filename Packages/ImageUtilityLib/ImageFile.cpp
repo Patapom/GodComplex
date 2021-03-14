@@ -532,6 +532,53 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 	m_fileFormat = _source.m_fileFormat;
 }
 
+void	ImageFile::CopySource( const ImageFile& _source, U32 _offsetX, U32 _offsetY ) {
+	U32			sourceWidth = _source.Width();
+	U32			sourceHeight = _source.Height();
+	U32			targetWidth = Width();
+	U32			targetHeight = Height();
+
+	// Clip source rectangle with offset to target dimensions
+	U32			right = MIN( targetWidth, _offsetX + sourceWidth );
+	U32			W = right - _offsetX;
+	U32			bottom = MIN( targetHeight, _offsetY + sourceHeight );
+	U32			H = bottom - _offsetY;
+
+	// Copy each scanline
+	bfloat4*	sourceScanline = new bfloat4[sourceWidth];
+
+	for ( U32 Y=0; Y < H; Y++ ) {
+		_source.ReadScanline( Y, sourceScanline );
+		WriteScanline( _offsetY + Y, sourceScanline, _offsetX, W );
+	}
+
+	SAFE_DELETE_ARRAY( sourceScanline );
+}
+
+void	ImageFile::RescaleSource( const ImageFile& _source ) {
+	U32			sourceWidth = _source.Width();
+	U32			sourceHeight = _source.Height();
+	U32			targetWidth = Width();
+	U32			targetHeight = Height();
+	float		horizontalScale = (float) sourceWidth / targetWidth;
+
+	// Read "height" scanlines
+	bfloat4*	sourceScanline = new bfloat4[sourceWidth];
+	bfloat4*	targetScanline = new bfloat4[targetWidth];
+
+	for ( U32 Y=0; Y < targetHeight; Y++ ) {
+		U32	sourceY = U32( sourceHeight * Y / targetHeight );
+		_source.ReadScanline( sourceY, sourceScanline );
+		for ( U32 X=0; X < targetWidth; X++ ) {
+			targetScanline[X] = sourceScanline[U32( horizontalScale * (X+0.5f) )];
+		}
+		WriteScanline( Y, targetScanline );
+	}
+
+	SAFE_DELETE_ARRAY( targetScanline );
+	SAFE_DELETE_ARRAY( sourceScanline );
+}
+
 void	U8toS8( U8*& _scanline ) {
 	S16	signedValue = S16( *_scanline );
 	S8	temp = S8( signedValue - 128 );
@@ -797,7 +844,7 @@ void	ImageFile::WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX, U32 _
 
 	U32	pitch  = FreeImage_GetPitch( m_bitmap );
 	U8*	bits = (BYTE*) FreeImage_GetBits( m_bitmap );
-	bits += pitch * _Y + _startX * pixelSize;
+		bits += pitch * _Y + _startX * pixelSize;
 
 	_count = MIN( _count, W-_startX );
 	for ( U32 i=_count; i > 0; i--, bits += pixelSize, _color++ ) {

@@ -112,14 +112,14 @@ namespace TriangleCurvature
 
 				#if USE_SUBDIVIDED_CUBE
 					m_Prim_Cube = BuildSubdividedCube();
-					m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene_Subdiv.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
+					m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene_Subdiv.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS" );
 				#else
 					m_Prim_Cube = BuildCube();
-					m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
+					m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS" );
 				#endif
 
 				m_Prim_Torus = BuildTorus();
-				m_Shader_renderSceneFinal = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene_Final.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
+				m_Shader_renderSceneFinal = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene_Final.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS" );
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( this, "Exception: " + _e.Message, "Curvature Test", MessageBoxButtons.OK, MessageBoxIcon.Error );

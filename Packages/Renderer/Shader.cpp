@@ -25,7 +25,7 @@ void	Renderer::Shader::AssertOnSaveBinaryBlobFailed::set( bool value ) {
 	::ShaderCompiler::ms_assertOnSaveBinaryBlobFailed = value;
 }
 
-void	Renderer::Shader::Init( Device^ _device, System::IO::FileInfo^ _shaderFileName, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, cli::array<ShaderMacro^>^ _macros, FileServer^ _fileServerOverride ) {
+void	Renderer::Shader::Init( Device^ _device, System::IO::FileInfo^ _shaderFileName, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, FileServer^ _fileServerOverride, cli::array<ShaderMacro^>^ _macros ) {
 	const char*	shaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFileName->FullName ).ToPointer();
 	const char*	entryPointVS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPointVS ).ToPointer();
 	const char*	entryPointHS = NULL;	//TODO?
@@ -46,7 +46,7 @@ void	Renderer::Shader::Init( Device^ _device, System::IO::FileInfo^ _shaderFileN
 // 	}
 
 	D3D_SHADER_MACRO*	pMacros = NULL;
-	if ( _macros != nullptr ) {
+	if ( _macros != nullptr && _macros->Length > 0 ) {
 		int i=0;
 		pMacros = new D3D_SHADER_MACRO[_macros->Length + 1];
 		for ( ; i < _macros->Length; i++ ) {
