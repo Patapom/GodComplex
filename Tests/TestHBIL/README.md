@@ -15,7 +15,7 @@ Below you can see what the technique can bring to the table, the little insets s
 
 You pretty much need the entire [GodComplex](../../) repository because the project relies on various image, rendering, math and tool libraries present in the framework.
 
-* Open the [Tests.sln](../../Tests.sln) solution file, preferably with **Visual Studio 2012** (I know I should have updated to something more recent like Visual 2017 but I haven't found the time yet)
+* Open the [Tests.sln](../../Tests.sln) solution file, preferably with **Visual Studio 2019**
 * Choose the "Debug/Release" configuration and the "x64" platform
 * Edit the project properties for all configurations/platforms and select the **project's directory** (*i.e.* the directory where this README.md file is standing) as runtime directory:
   ![DebugDirConfig.png](DebugDirConfig.png)
