@@ -923,7 +923,7 @@ ImageFile::FILE_FORMAT	ImageFile::GetFileTypeFromFileNameOnly( const wchar_t* _i
 		if ( _imageFileNameName[extensionIndex] == '.' )
 			break;
 	}
-	if ( extensionIndex == 0 )
+	if ( extensionIndex == 0 && _imageFileNameName[extensionIndex] != '.' )
 		return FILE_FORMAT::UNKNOWN;
 
 	const wchar_t*	extension = _imageFileNameName + extensionIndex;

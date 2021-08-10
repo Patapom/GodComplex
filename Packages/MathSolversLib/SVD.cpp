@@ -65,9 +65,9 @@ static float pythag(float a, float b) {
 	float	absa = fabs(a);
 	float	absb = fabs(b);
 	if ( absa > absb )
-		return absa*sqrt( 1.0f + SQR(absb/absa) );
+		return absa*sqrtf( 1.0f + SQR(absb/absa) );
 	else
-		return absb == 0.0f ? 0.0f : absb*sqrt( 1.0f + SQR(absa/absb) );
+		return absb == 0.0f ? 0.0f : absb*sqrtf( 1.0f + SQR(absa/absb) );
 }
 
 template<class T>

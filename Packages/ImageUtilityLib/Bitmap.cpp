@@ -1263,9 +1263,9 @@ static float pythag(float a, float b) {
 	float	absa = fabs(a);
 	float	absb = fabs(b);
 	if ( absa > absb )
-		return absa*sqrt( 1.0f + SQR(absb/absa) );
+		return absa*sqrtf( 1.0f + SQR(absb/absa) );
 	else
-		return absb == 0.0f ? 0.0f : absb*sqrt( 1.0f + SQR(absa/absb) );
+		return absb == 0.0f ? 0.0f : absb*sqrtf( 1.0f + SQR(absa/absb) );
 }
 
 template<class T>
@@ -1745,7 +1745,7 @@ void svdcmp_ORIGINAL(int m, int n, float **a, float w[], float **v) {
 	%
 	% Given a set of pixel values observed for several pixels in several
 	% images with different exposure times, this function returns the
-	% imaging system’s response function g as well as the log film irradiance
+	% imaging system's response function g as well as the log film irradiance
 	% values for the observed pixels.
 	%
 	% Assumes:
