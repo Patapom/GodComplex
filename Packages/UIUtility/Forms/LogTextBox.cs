@@ -63,7 +63,7 @@ namespace UIUtility
 		protected void	UpdateRTF() {
 			string RTFText = @"{\rtf1\ansi\deff0" +
 			@"{\colortbl;\red0\green0\blue0;\red32\green128\blue32;\red192\green128\blue0;\red255\green0\blue0;\red127\green20\blue127;}" +
-			m_Log.ToString() + "}";
+			m_Log.ToString() + @"\line }";
 
 			this.SuspendLayout();
 			this.Rtf = RTFText;
