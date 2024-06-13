@@ -215,8 +215,7 @@ namespace GloubiBoule
 			m_Tex_AccumPhoton3D = new Texture3D( m_Device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
 			BuildNoiseTextures();
 
-//BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\docs\BRDF" ) );
-BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\www.patapom.com\Web\blog\patapom\docs\BRDF" ) );
+BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\docs\BRDF" ) );
 
 			// Structured buffer
 			m_SB_PhotonInfos = new StructuredBuffer< SB_PhotonInfo_t >( m_Device, PHOTONS_COUNT, false );
