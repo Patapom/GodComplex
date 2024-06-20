@@ -108,6 +108,7 @@ namespace WaterTankMonitor {
 
 		string			m_COMPortName = "COM11";		// Default COM port name
 		SerialPort		m_COMPort;
+		bool			m_COMPortReady = false;
 
 		bool			m_followRunTime = true;			// Default is realtime following of measurements
 		float			m_windowSize_Hours = 1.0f;		// Default window size is 1 hour
@@ -184,6 +185,13 @@ namespace WaterTankMonitor {
 			panelOutput.MouseWheel += PanelOutput_MouseWheel;
 			panelOutput.BitmapUpdating += PanelOutput_BitmapUpdating;
 
+			Application.Idle += Application_Idle;
+		}
+
+		protected override void OnLoad( EventArgs e ) {
+			base.OnLoad( e );
+			RestoreLocationAndSize( this );
+
 			try {
 				// Retrieve parameters
 				m_COMPortName = GetRegKey( "m_COMPortName", m_COMPortName );
@@ -215,13 +223,6 @@ namespace WaterTankMonitor {
 			} catch ( Exception _e ) {
 				MessageBoxError( "An exception occurred while opening the application!", _e );
 			}
-
-			Application.Idle += Application_Idle;
-		}
-
-		protected override void OnLoad( EventArgs e ) {
-			base.OnLoad( e );
-			RestoreLocationAndSize( this );
 
 			// Start timer
 			m_startTime = DateTime.Now;
@@ -290,13 +291,21 @@ if ( checkBox1.Checked ) {
 }
 
 			if ( (now - m_lastMeasurementTime).TotalMinutes > measurementInterval_minutes ) {
-				LogEntry	lastMeasurement = PerformMeasurement();
-				m_lastMeasurementTime = now;
+				PerformMeasurement(
+					( LogEntry _newMeasurement ) => {
+						// Update window's end time to match this measurement
+						if ( m_followRunTime ) {
+							WindowEndTime = _newMeasurement.m_timeStamp;
+						}
+					},
 
-				// Update window's end time to match this measurement
-				if ( m_followRunTime && lastMeasurement != null ) {
-					WindowEndTime = lastMeasurement.m_timeStamp;
-				}
+					( string _error ) => {
+						ShowError( "An error occurred while sending a measurement command!\r\n" + _error );
+						m_lastMeasurementTime = now - TimeSpan.FromMinutes( 2 * MEASURE_INTERVAL_MINUTES_MAX );	// Make sure we take a new measurement next time...
+					}
+				);
+
+				m_lastMeasurementTime = now;
 			}
 		}
 
@@ -337,41 +346,259 @@ if ( checkBox1.Checked ) {
 			foreach ( string portName in SerialPort.GetPortNames() ) {
 				comboBoxCOMPort.Items.Add( portName );
 			}
-			comboBoxCOMPort.SelectedItem = m_COMPortName;
+			lock ( this ) {
+				comboBoxCOMPort.SelectedItem = m_COMPortName;
+			}
 		}
 
-		void	OpenCOMPort( string _COMPortName ) {
-			if ( m_COMPort != null ) {
-				// Dispose of existing port first...
-				m_COMPort.Close();
-				m_COMPort.Dispose();
+		System.Threading.Thread	m_COMThread = null;
+
+		[System.Diagnostics.DebuggerDisplay( "[{m_ID,d}] {m_command}" )]
+		class COMCommand {
+			public ushort			m_ID = 0;	// Invalid ID
+			public string			m_command;
+			public uint				m_timeOut_ms;
+			public Action<string>	m_onSuccess;
+			public Action<string>	m_onError;
+
+			static ushort	ms_commandIDCounter = 0;
+
+			public COMCommand( string _command, uint _timeOut_ms, Action<string> _onSuccess, Action<string> _onError ) {
+				m_ID = ++ms_commandIDCounter;
+				m_command = _command;
+				m_timeOut_ms = _timeOut_ms;
+				m_onSuccess = _onSuccess;
+				m_onError = _onError;
 			}
 
-			// Build the serial port object
-//				m_COMPort = new SerialPort( m_COMPortName, DEFAULT_BAUD_RATE, Parity.Even, 8, StopBits.Two );	// I tried to follow Arduino's documentation but doesn't seem to be working?
-			m_COMPort = new SerialPort( _COMPortName, DEFAULT_BAUD_RATE, Parity.None, 8, StopBits.One );
+			public void	Send( SerialPort _COMPort ) {
+				_COMPort.WriteLine( m_ID.ToString() + "," + m_command );
+			}
+
+		}
+		Queue<COMCommand>		m_COMCommands = new Queue<COMCommand>();
+
+		void	OpenCOMPort( string _COMPortName, Action _onPortOpen ) {
+
+			// Abort any existing thread
+			m_COMThread?.Abort();
+
+			// Start a new thread that will open the COM port and start listening for commands and replies...
+			m_COMThread = new System.Threading.Thread( ( object _userParm ) => {
+				WaterTankMonitorForm	that = _userParm as WaterTankMonitorForm;
+
+				try {
+					lock ( that ) {
+
+						// Dispose of existing port first...
+						if ( m_COMPort != null ) {
+							m_COMPortReady = false;
+							m_COMPort.Close();
+							m_COMPort.Dispose();
+						}
+
+						// Build the serial port object
+//						m_COMPort = new SerialPort( m_COMPortName, DEFAULT_BAUD_RATE, Parity.Even, 8, StopBits.Two );	// I tried to follow Arduino's documentation but doesn't seem to be working?
+						m_COMPort = new SerialPort( _COMPortName, DEFAULT_BAUD_RATE, Parity.None, 8, StopBits.One );
 // m_COMPort = new SerialPort( m_COMPortName );
 // m_COMPort.BaudRate = DEFAULT_BAUD_RATE;
-			m_COMPort.NewLine = "\r\n";
+						m_COMPort.NewLine = "\n";
 
-			m_COMPort.ReadTimeout = 500;
-			m_COMPort.WriteTimeout = 500;
+						m_COMPort.ReadTimeout = 500;
+						m_COMPort.WriteTimeout = 500;
 
-//			m_COMPort.DataReceived += COMPort_DataReceived;
+//						m_COMPort.DataReceived += COMPort_DataReceived;
 
-			m_COMPort.Open();
+						m_COMPort.Open();
 
-			// Wait for the port to be ready before issuing some commands...
-			System.Threading.Thread.Sleep( 1000 );
+						// Wait for the port to be ready before issuing some commands...
+						System.Threading.Thread.Sleep( 2000 );
 
-			// Reset last measurement time so a new measurement is issued immediately...
-			m_lastMeasurementTime = DateTime.FromFileTime( 0 );
+						// Reset last measurement time so a new measurement is issued immediately...
+						m_lastMeasurementTime = DateTime.FromFileTime( 0 );
+
+						// Port is now ready to use!
+						m_COMPortReady = true;
+					}
+
+				} catch ( Exception _e ) {
+					// Notify and exit thread...
+					that.BeginInvoke( (Action) (() => {
+						MessageBoxError( "Failed to open COM port!", _e );
+					}) );
+					return;
+				}
+
+				// Notify port is open
+				_onPortOpen?.Invoke();
+
+				// Listen for commands
+				while ( true ) {
+					COMCommand	command = null;
+					lock ( this ) {
+						if ( m_COMCommands.Count == 0 ) {
+							System.Threading.Thread.Sleep( 10 );
+							continue;
+						}
+						command = m_COMCommands.Dequeue();
+					}
+
+					// Execute command and wait for reply
+					command.Send( m_COMPort );
+
+					// Wait for a response or a timeout
+					COMReply	reply = null;
+					DateTime	sendTime = DateTime.Now;
+					while ( reply == null && (DateTime.Now - sendTime).TotalMilliseconds < command.m_timeOut_ms ) {
+//while ( reply == null ) {
+						#if true	// This code simply waits for a new line
+							try {
+								string	newLine = m_COMPort.ReadLine();
+								reply = new COMReply( newLine );
+							} catch ( TimeoutException ) {
+								continue;	// Nothing on the line for us yet...
+							}
+
+						#else	// This code uses the COM strings filled up by the even handler
+							System.Threading.Thread.Sleep( 10 );
+							lock ( this ) {
+								if ( m_COMReplies.Count > 0 )
+									reply = m_COMReplies.Dequeue();
+							}
+						#endif
+
+						if ( reply == null )
+							continue;	// Still no reply
+
+						if ( reply.m_type == COMReply.TYPE.DEBUG || reply.m_type == COMReply.TYPE.LOG ) {
+							// Just log regular strings, don't count as actual replies to the command...
+							System.Diagnostics.Debug.WriteLine( "<" + reply.m_type + "> " + reply.m_string );
+							reply = null;
+						} else if ( reply.m_commandID != command.m_ID ) {
+							// Ignore replies to other commands
+							System.Diagnostics.Debug.WriteLine( "(from other command) <" + reply.m_type + "> " + reply.m_string );
+							reply = null;
+						}
+
+// 						int	bytesToRead = m_COMPort.BytesToRead;
+// 						if ( bytesToRead > 0 ) {
+// // 							if ( bytesToRead > m_serialBuffer.Length )
+// // 								m_serialBuffer = new byte[2*bytesToRead];
+// //							m_COMPort.Read( m_serialBuffer, 0, bytesToRead );
+// 							string	reply = m_COMPort.ReadLine();
+// 							if ( reply.StartsWith( "<DEBUG>" ) ) {
+// 								System.Diagnostics.Debug.WriteLine( reply );	// Ignore, not the reply we're waiting for!
+// 							} else {
+// 								return reply;
+// 							}
+// 						}
+					}
+
+					if ( reply == null ) {
+						command.m_onError( "Timeout!" );
+					} else if ( reply.m_type == COMReply.TYPE.REPLY ) {
+						command.m_onSuccess( reply.m_string );
+					} else if ( reply.m_type == COMReply.TYPE.ERROR ) {
+						command.m_onError( reply.m_string );
+					}
+				}
+
+			} );
+
+			m_COMThread.Start( this );
 		}
 
-		void	SendString( string _string ) {
-			m_COMPort.WriteLine( _string );
+		[System.Diagnostics.DebuggerDisplay( "[{m_commandID}] {m_string} ({m_type})" )]
+		class COMReply {
+			public enum TYPE {
+				UNKNOWN = -1,
+				LOG = 0,
+				REPLY,
+				ERROR,
+				DEBUG,
+			}
+			public ushort	m_commandID = 0;	// Invalid ID!
+			public TYPE		m_type = TYPE.UNKNOWN;
+			public string	m_string;
+
+			static string[]	ms_stringTypes = new string[] {
+				"<LOG> ",
+				"<OK> ",
+				"<ERROR> ",
+				"<DEBUG> "
+			};
+
+			public COMReply( byte[] _buffer, int _length ) : this( System.Text.Encoding.ASCII.GetString( _buffer, 0, _length ) ) {
+			}
+
+			public COMReply( string _string ) {
+				m_string = _string.Trim();
+
+				// Check for command ID prefix
+				int	indexOfComma = m_string.IndexOf( ',' );
+				if ( indexOfComma != -1 ) {
+					string	strCommandID = m_string.Substring( 0, indexOfComma );
+					m_string = m_string.Substring( indexOfComma+1 );
+					if ( !ushort.TryParse( strCommandID, out m_commandID ) )
+						m_commandID = 0;	// Invalid command ID!
+				}
+
+				// Check for reply type
+				for ( int stringTypeIndex=0; stringTypeIndex < 4; stringTypeIndex++ ) {
+					if ( m_string.StartsWith( ms_stringTypes[stringTypeIndex] ) ) {
+						m_string = m_string.Substring( ms_stringTypes[stringTypeIndex].Length );
+						m_type = (TYPE) stringTypeIndex;
+						break;
+					}
+				}
+			}
 		}
 
+		Queue<COMReply>		m_COMReplies = new Queue<COMReply>();
+		Action<COMReply>	m_onNewCOMReplyReceived = null;
+
+		byte[]	m_tempCOMBuffer = new byte[4096];
+		int		m_tempCOMBufferOffset = 0;
+		private void COMPort_DataReceived( object sender, SerialDataReceivedEventArgs e ) {
+			// Read new data
+			int	bytesCount = m_COMPort.BytesToRead;
+			m_COMPort.Read( m_tempCOMBuffer, m_tempCOMBufferOffset, bytesCount );
+			int	oldTempCOMBufferOffset = m_tempCOMBufferOffset;
+			m_tempCOMBufferOffset += bytesCount;
+
+			// Check if there's any new-line character in the temp buffer
+			for ( int i=oldTempCOMBufferOffset; i < m_tempCOMBufferOffset; i++ ) {
+				if ( m_tempCOMBuffer[i] == '\n' ) {
+					// Okay, log a new line!
+					COMReply	str = null;
+					lock ( this ) {
+						str = new COMReply( m_tempCOMBuffer, i+1 );
+						m_COMReplies.Enqueue( str );
+					}
+
+					// Copy what's left of the bytes after the '\n' so it's the begining of a new line
+					Array.Copy( m_tempCOMBuffer, i+1, m_tempCOMBuffer, 0, m_tempCOMBufferOffset - i - 1 );
+					m_tempCOMBufferOffset = 0;
+
+					// Notify of a new line
+					m_onNewCOMReplyReceived?.Invoke( str );
+					return;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Executes a new command
+		/// </summary>
+		void	ExecuteCommand( string _command, uint _timeOut_ms, Action<string> _onSuccess, Action<string> _onError ) {
+			ExecuteCommand( new COMCommand( _command, _timeOut_ms, _onSuccess, _onError ) );
+		}
+		void	ExecuteCommand( COMCommand _command ) {
+			lock ( this ) {
+				m_COMCommands.Enqueue( _command );
+			}
+		}
+/*
 		/// <summary>
 		/// Sends a command and waits for a response
 		/// A command should consist of <COMMAND_NAME>,[<PAYLOAD>] with <COMMAND_NAME> being a 4 letter command name.
@@ -405,45 +632,43 @@ if ( checkBox1.Checked ) {
 
 			throw new CommandTimeOutException();
 		}
+*/
 
 		/// <summary>
 		/// Asks the module to perform a new volume measurement
 		/// </summary>
 		/// <returns></returns>
-		LogEntry	PerformMeasurement() {
-			LogEntry	result = null;
-			try {
-				string	reply = SendCommand( "MEASURE", 10 * 1000 );
-
+		void	PerformMeasurement( Action<LogEntry> _onMeasurement, Action<string> _onError ) {
+			ExecuteCommand( "MEASURE", 10 * 1000, ( string _reply ) => {
 				// Handle reply!
-				if ( reply.StartsWith( "<OK> TIME=" ) ) {
+				if ( _reply.StartsWith( "TIME=" ) ) {
 					// Prepare a new entry
-					uint	rawTime_microSeconds;
-					if ( uint.TryParse( reply.Substring( 10 ), out rawTime_microSeconds ) ) {
-						if ( rawTime_microSeconds == ~0U ) {
+					int	rawTime_microSeconds;
+					if ( int.TryParse( _reply.Substring( 5 ), out rawTime_microSeconds ) ) {
+						if ( rawTime_microSeconds == -1 ) {
 							ShowError( "Out of range!" );
-							return null;
+						} else if ( rawTime_microSeconds < 1000 ) {
+							ShowError( "Time < 1000µs, measurement error?" );
 						}
-						result = new LogEntry( rawTime_microSeconds );
+
+						LogEntry	result = new LogEntry( (uint) rawTime_microSeconds );
 						m_logEntries.Add( result );
+
 						UpdateGraph();
+
+						// Notify measurement is ready
+						_onMeasurement?.Invoke( result );
+
 					} else {
 						System.Diagnostics.Debug.WriteLine( "Failed to parse proper time value from MEASURE command reply:" );
-						System.Diagnostics.Debug.WriteLine( reply );
+						System.Diagnostics.Debug.WriteLine( _reply );
 					}
 
 				} else {
 					System.Diagnostics.Debug.WriteLine( "Unexpected reply after MEASURE command:" );
-					System.Diagnostics.Debug.WriteLine( reply );
+					System.Diagnostics.Debug.WriteLine( _reply );
 				}
-
-			} catch ( CommandTimeOutException ) {
-//				ShowError()
-			} catch ( Exception _e ) {
-				ShowError( "An error occurred while sending a measurement command!\r\n" + _e.Message );
-			}
-
-			return result;
+			}, ( string _error ) => _onError?.Invoke( _error ) );
 		}
 
 		/// <summary>
@@ -451,53 +676,48 @@ if ( checkBox1.Checked ) {
 		/// </summary>
 		/// <param name="_referenceTime"></param>
 		void	SetReferenceTime( DateTime _referenceTime ) {
-			try {
-				DateTime	baseTime = new DateTime( 2024, 06, 12, 0, 0, 0 );	// This is the day this application was born
-				int			referenceTime_seconds = (int) (_referenceTime - baseTime).TotalSeconds;
+			DateTime	baseTime = new DateTime( 2024, 06, 12, 0, 0, 0 );	// This is the day this application was born
+			int			referenceTime_seconds = (int) (_referenceTime - baseTime).TotalSeconds;
 
-				string	reply = SendCommand( "SETTIME=" + referenceTime_seconds, 10 * 1000 );
-				if ( !reply.StartsWith( "<OK>" ) ) {
-					throw new Exception( "Unexpected reply: " + reply );
+			ExecuteCommand( "SETTIME=" + referenceTime_seconds, 10 * 1000,
+				( string _reply ) => {},
+				( string _error ) => {
+					ShowError( "An error occurred while setting type reference!\r\n" + _error );
 				}
-
-			} catch ( CommandTimeOutException ) {
-				ShowError( "Timeout while setting reference time!" );
-			} catch ( Exception _e ) {
-				ShowError( "An error occurred while retrieving unread measurements!\r\n" + _e.Message );
-			}
+			);
 		}
 
-		/// <summary>
-		/// Retrieve any unread measurements stored in the buffer
-		/// </summary>
-		void	RetrieveUnreadMeasurements() {
-			try {
-				string	reply = SendCommand( "GETBUFFERSIZE", 10 * 1000 );
-
-				// Handle reply!
-				if ( !reply.StartsWith( "<OK>" ) ) {
-					throw new Exception( "Unexpected reply: " + reply );
-				}
-
-				int	bufferSize = int.Parse( reply.Substring( 4 ) );
-				if ( bufferSize == 0 )
-					return;	// Buffer is empty...
-
-				reply = SendCommand( "READBUFFER", 10 * 1000 );
-				if ( !reply.StartsWith( "<OK>" ) ) {
-					throw new Exception( "Unexpected reply: " + reply );
-				}
-
-throw new Exception( "@TODO!" );
-// 				read lines
-// 				read checksum
-
-			} catch ( CommandTimeOutException ) {
-				ShowError( "Timeout while retrieving unread measurements!" );
-			} catch ( Exception _e ) {
-				ShowError( "An error occurred while retrieving unread measurements!\r\n" + _e.Message );
-			}
-		}
+// 		/// <summary>
+// 		/// Retrieve any unread measurements stored in the buffer
+// 		/// </summary>
+// 		void	RetrieveUnreadMeasurements() {
+// 			try {
+// 				string	reply = SendCommand( "GETBUFFERSIZE", 10 * 1000 );
+// 
+// 				// Handle reply!
+// 				if ( !reply.StartsWith( "<OK>" ) ) {
+// 					throw new Exception( "Unexpected reply: " + reply );
+// 				}
+// 
+// 				int	bufferSize = int.Parse( reply.Substring( 4 ) );
+// 				if ( bufferSize == 0 )
+// 					return;	// Buffer is empty...
+// 
+// 				reply = SendCommand( "READBUFFER", 10 * 1000 );
+// 				if ( !reply.StartsWith( "<OK>" ) ) {
+// 					throw new Exception( "Unexpected reply: " + reply );
+// 				}
+// 
+// throw new Exception( "@TODO!" );
+// // 				read lines
+// // 				read checksum
+// 
+// 			} catch ( CommandTimeOutException ) {
+// 				ShowError( "Timeout while retrieving unread measurements!" );
+// 			} catch ( Exception _e ) {
+// 				ShowError( "An error occurred while retrieving unread measurements!\r\n" + _e.Message );
+// 			}
+// 		}
 
 		#endregion
 
@@ -761,14 +981,16 @@ throw new Exception( "@TODO!" );
 
 		private void PanelOutput_MouseWheel( object sender, MouseEventArgs e ) {
 			float	factor = 1.1f;
-			WindowSize_Hours *= e.Delta > 0.0f ? factor : 1.0f / factor;
+			WindowSize_Hours *= e.Delta < 0.0f ? factor : 1.0f / factor;
 
 			FollowRuntime = false;	// Stop following runtime if we're resizing the window
 		}
 
-//		SolidBrush	m_background = new SolidBrush( Color.FromArgb( 255, 255, 224 ) );	// Light yellow
-		SolidBrush	m_background = new SolidBrush( Color.FromArgb( 255, 240, 200 ) );
-		SolidBrush	m_brushMarkers = new SolidBrush( Color.FromArgb( 255, 200, 100 ) );
+//		SolidBrush	m_brushBackground = new SolidBrush( Color.FromArgb( 255, 255, 224 ) );	// Light yellow
+		SolidBrush	m_brushBackground = new SolidBrush( Color.FromArgb( 255, 240, 200 ) );
+		SolidBrush	m_brushMarker = new SolidBrush( Color.FromArgb( 255, 200, 100 ) );
+		Brush		m_brushTextBackground = Brushes.IndianRed;
+		Brush		m_brushTextMarker = Brushes.Orange;
 		Pen			m_penGraph = new Pen( Color.Black, 2 );
 
 		enum MARKER_TYPE {
@@ -783,7 +1005,7 @@ throw new Exception( "@TODO!" );
 
 		private void PanelOutput_BitmapUpdating( int W, int H, Graphics G ) {
 //			G.FillRectangle( Brushes.LemonChiffon, 0, 0, W, H );
-			G.FillRectangle( Brushes.LightYellow, 0, 0, W, H );
+			G.FillRectangle( m_brushBackground, 0, 0, W, H );
 
 			if ( m_COMPort == null || !m_COMPort.IsOpen ) {
 				// Draw an invalid graph
@@ -838,7 +1060,7 @@ throw new Exception( "@TODO!" );
 			float	markerStartX = -markerWidth * windowStartTime_markers;
 			for ( int markerIndex=startMarkerIndex; markerIndex < endMarkerIndex; markerIndex++ ) {
 				if ( (markerIndex & 1) != 0 ) {
-					G.FillRectangle( m_brushMarkers, markerStartX + markerIndex * markerWidth, 0, markerWidth, H );
+					G.FillRectangle( m_brushMarker, markerStartX + markerIndex * markerWidth, 0, markerWidth, H );
 				}
 
 				string	markerText = "";
@@ -850,7 +1072,7 @@ throw new Exception( "@TODO!" );
 					case MARKER_TYPE.QUARTER_HOUR: markerText = ((markerIndex & 3) * 15).ToString( "G02" ); break;
 				}
 				SizeF	markerTextSize = G.MeasureString( markerText, panelOutput.Font );
-				G.DrawString( markerText, panelOutput.Font, (markerIndex & 1) != 0 ? Brushes.LightYellow : m_brushMarkers, markerStartX + markerIndex * markerWidth + 0.5f * (markerWidth - markerTextSize.Width), 8 );
+				G.DrawString( markerText, panelOutput.Font, (markerIndex & 1) != 0 ? m_brushTextBackground : m_brushTextMarker, markerStartX + markerIndex * markerWidth + 0.5f * (markerWidth - markerTextSize.Width), 8 );
 			}
 
 			// Paint level lines
@@ -968,8 +1190,7 @@ throw new Exception( "@TODO!" );
 			m_COMPortName = comboBoxCOMPort.SelectedItem as string;
 			SetRegKey( "m_COMPortName", m_COMPortName );
 
-			try {
-				OpenCOMPort( m_COMPortName );
+			OpenCOMPort( m_COMPortName, () => {
 
 				// Set the reference time
 				SetReferenceTime( DateTime.Now );
@@ -977,19 +1198,10 @@ throw new Exception( "@TODO!" );
 				// Ask if there are some unread values in the buffer
 //				RetrieveUnreadMeasurements();
 
-			} catch ( Exception _e ) {
-				MessageBoxError( "Failed to open COM port!", _e );
-			}
+				UpdateGraph();
 
-			UpdateGraph();
+			} );
 		}
-
-// 		byte[]	temp = new byte[4096];
-// 		private void COMPort_DataReceived( object sender, SerialDataReceivedEventArgs e ) {
-// 			m_COMPort.Read( temp, 0, m_COMPort.BytesToRead );
-// // string	line = m_COMPort.ReadLine();
-// // System.Diagnostics.Debug.WriteLine( line );
-// 		}
 
 		private void buttonMonth_Click( object sender, EventArgs e ) {
 			WindowSize_Hours = 24 * 7 * 31;
@@ -1042,7 +1254,7 @@ throw new Exception( "@TODO!" );
 		}
 
 		private void takeMeasurementToolStripMenuItem_Click( object sender, EventArgs e ) {
-			PerformMeasurement();
+			PerformMeasurement( null, null );
 		}
 
 		private void saveLogFileNowToolStripMenuItem_Click( object sender, EventArgs e ) {
@@ -1065,8 +1277,15 @@ throw new Exception( "@TODO!" );
 		#endregion
 
 		private void button1_Click( object sender, EventArgs e ) {
-			string	reply = SendCommand( "GETBUFFERSIZE", 10 * 1000 );
-			System.Diagnostics.Debug.WriteLine( reply );
+			ExecuteCommand( "GETBUFFERSIZE", 10 * 1000, ( string _reply ) => {
+				System.Diagnostics.Debug.WriteLine( _reply );
+			}, ( string _error ) => {
+				System.Diagnostics.Debug.WriteLine( "Error: " + _error );
+			} );
+		}
+
+		private void notifyIcon_MouseClick( object sender, MouseEventArgs e ) {
+			this.Visible = true;	// Show the form again!
 		}
 	}
 }

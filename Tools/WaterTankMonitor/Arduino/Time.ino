@@ -1,0 +1,19 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Defines a precise 64-bits time structure measuring time in milliseconds and handling overflow after 50 days
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+#include "Global.h"
+
+U32 lastMillis = 0;
+U32 timeOverflowCounter = 0;
+
+void  GetTime( Time_ms& _time ) {
+  U32 ms = millis();
+  if ( ms < lastMillis ) {
+    timeOverflowCounter++;  // One more overflow!
+  }
+  lastMillis = ms;
+
+  _time.time0_ms = ms;
+  _time.time1_ms = timeOverflowCounter;
+}

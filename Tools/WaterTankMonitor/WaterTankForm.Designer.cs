@@ -27,6 +27,10 @@
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(WaterTankMonitorForm));
 			this.buttonNow = new System.Windows.Forms.Button();
 			this.panelOutput = new UIUtility.PanelOutput(this.components);
+			this.contextMenuStripPanel = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.setLowLevelWarningLimitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.setTimeReferenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.clearTimeReferenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.buttonMonth = new System.Windows.Forms.Button();
 			this.comboBoxCOMPort = new System.Windows.Forms.ComboBox();
 			this.buttonWeek = new System.Windows.Forms.Button();
@@ -41,13 +45,9 @@
 			this.buttonRefreshCOMPorts = new System.Windows.Forms.Button();
 			this.checkBox1 = new System.Windows.Forms.CheckBox();
 			this.button1 = new System.Windows.Forms.Button();
-			this.contextMenuStripPanel = new System.Windows.Forms.ContextMenuStrip(this.components);
-			this.setLowLevelWarningLimitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.setTimeReferenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.clearTimeReferenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.buttonHour = new System.Windows.Forms.Button();
-			this.contextMenuStripTray.SuspendLayout();
 			this.contextMenuStripPanel.SuspendLayout();
+			this.contextMenuStripTray.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// buttonNow
@@ -73,6 +73,37 @@
 			this.panelOutput.PanelBitmap = ((System.Drawing.Bitmap)(resources.GetObject("panelOutput.PanelBitmap")));
 			this.panelOutput.Size = new System.Drawing.Size(859, 463);
 			this.panelOutput.TabIndex = 6;
+			// 
+			// contextMenuStripPanel
+			// 
+			this.contextMenuStripPanel.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.setLowLevelWarningLimitToolStripMenuItem,
+            this.setTimeReferenceToolStripMenuItem,
+            this.clearTimeReferenceToolStripMenuItem});
+			this.contextMenuStripPanel.Name = "contextMenuStripPanel";
+			this.contextMenuStripPanel.Size = new System.Drawing.Size(224, 70);
+			this.contextMenuStripPanel.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripPanel_Opening);
+			// 
+			// setLowLevelWarningLimitToolStripMenuItem
+			// 
+			this.setLowLevelWarningLimitToolStripMenuItem.Name = "setLowLevelWarningLimitToolStripMenuItem";
+			this.setLowLevelWarningLimitToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
+			this.setLowLevelWarningLimitToolStripMenuItem.Text = "Set Low Level Warning Limit";
+			this.setLowLevelWarningLimitToolStripMenuItem.Click += new System.EventHandler(this.setLowLevelWarningLimitToolStripMenuItem_Click);
+			// 
+			// setTimeReferenceToolStripMenuItem
+			// 
+			this.setTimeReferenceToolStripMenuItem.Name = "setTimeReferenceToolStripMenuItem";
+			this.setTimeReferenceToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
+			this.setTimeReferenceToolStripMenuItem.Text = "Set Time Reference";
+			this.setTimeReferenceToolStripMenuItem.Click += new System.EventHandler(this.setTimeReferenceToolStripMenuItem_Click);
+			// 
+			// clearTimeReferenceToolStripMenuItem
+			// 
+			this.clearTimeReferenceToolStripMenuItem.Name = "clearTimeReferenceToolStripMenuItem";
+			this.clearTimeReferenceToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
+			this.clearTimeReferenceToolStripMenuItem.Text = "Clear Time Reference";
+			this.clearTimeReferenceToolStripMenuItem.Click += new System.EventHandler(this.clearTimeReferenceToolStripMenuItem_Click);
 			// 
 			// buttonMonth
 			// 
@@ -125,6 +156,7 @@
 			this.notifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon.Icon")));
 			this.notifyIcon.Text = "Water Level Monitor";
 			this.notifyIcon.Visible = true;
+			this.notifyIcon.MouseClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon_MouseClick);
 			// 
 			// contextMenuStripTray
 			// 
@@ -194,37 +226,6 @@
 			this.button1.UseVisualStyleBackColor = true;
 			this.button1.Click += new System.EventHandler(this.button1_Click);
 			// 
-			// contextMenuStripPanel
-			// 
-			this.contextMenuStripPanel.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.setLowLevelWarningLimitToolStripMenuItem,
-            this.setTimeReferenceToolStripMenuItem,
-            this.clearTimeReferenceToolStripMenuItem});
-			this.contextMenuStripPanel.Name = "contextMenuStripPanel";
-			this.contextMenuStripPanel.Size = new System.Drawing.Size(224, 70);
-			this.contextMenuStripPanel.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripPanel_Opening);
-			// 
-			// setLowLevelWarningLimitToolStripMenuItem
-			// 
-			this.setLowLevelWarningLimitToolStripMenuItem.Name = "setLowLevelWarningLimitToolStripMenuItem";
-			this.setLowLevelWarningLimitToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
-			this.setLowLevelWarningLimitToolStripMenuItem.Text = "Set Low Level Warning Limit";
-			this.setLowLevelWarningLimitToolStripMenuItem.Click += new System.EventHandler(this.setLowLevelWarningLimitToolStripMenuItem_Click);
-			// 
-			// setTimeReferenceToolStripMenuItem
-			// 
-			this.setTimeReferenceToolStripMenuItem.Name = "setTimeReferenceToolStripMenuItem";
-			this.setTimeReferenceToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
-			this.setTimeReferenceToolStripMenuItem.Text = "Set Time Reference";
-			this.setTimeReferenceToolStripMenuItem.Click += new System.EventHandler(this.setTimeReferenceToolStripMenuItem_Click);
-			// 
-			// clearTimeReferenceToolStripMenuItem
-			// 
-			this.clearTimeReferenceToolStripMenuItem.Name = "clearTimeReferenceToolStripMenuItem";
-			this.clearTimeReferenceToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
-			this.clearTimeReferenceToolStripMenuItem.Text = "Clear Time Reference";
-			this.clearTimeReferenceToolStripMenuItem.Click += new System.EventHandler(this.clearTimeReferenceToolStripMenuItem_Click);
-			// 
 			// buttonHour
 			// 
 			this.buttonHour.Location = new System.Drawing.Point(267, 1);
@@ -254,8 +255,8 @@
 			this.MinimumSize = new System.Drawing.Size(640, 400);
 			this.Name = "WaterTankMonitorForm";
 			this.Text = "Water Level Monitor";
-			this.contextMenuStripTray.ResumeLayout(false);
 			this.contextMenuStripPanel.ResumeLayout(false);
+			this.contextMenuStripTray.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
