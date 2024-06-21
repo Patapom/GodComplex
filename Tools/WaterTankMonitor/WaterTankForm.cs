@@ -27,14 +27,14 @@ namespace WaterTankMonitor {
 		public const float	DEBIT_SLOW_LITRE_PER_MINUTE = 0.1f;		// Debit is considered slow when at 0.1 litre / minute
 		public const float	DEBIT_FAST_LITRE_PER_MINUTE = 1.0f;		// Debit is considered fast when at 1.0 litre / minute
 
-		public const float	DEFAULT_SPEED_OF_SOUND = 343.4f;	// Default speed of sound at 1 bar and 20°C is 343.4 m/s
+		public const float	DEFAULT_SPEED_OF_SOUND = 343.4f;		// Default speed of sound at 1 bar and 20°C is 343.4 m/s
 
-		public const float	TANK_CAPACITY_LITRES = 4000;		// Tank capacity in litres
-		public const float	TANK_HEIGHT_FULL = 1.73f;			// Tank height when full
+		public const float	TANK_CAPACITY_LITRES = 4000;			// Tank capacity in litres
+		public const float	TANK_HEIGHT_FULL = 1.73f;				// Tank height when full
 
 		// Reference tank measurements at time of installation
-		public const float	TANK_HEIGHT_REFERENCE = 1.395f;		// Tank height reference (measured for 3225L)
-		public const uint	MEASURED_TIME_REFERENCE = 3724;		// Raw time reference value (measured for 3225L)
+		public const float	TANK_HEIGHT_REFERENCE = 1.395f;			// Tank height reference (measured for 3225L)
+		public const uint	MEASURED_TIME_REFERENCE = 3724;			// Raw time reference value (measured for 3225L)
 
 		#endregion
 
@@ -44,11 +44,26 @@ namespace WaterTankMonitor {
 
 		}
 
-		[System.Diagnostics.DebuggerDisplay( "{m_timeStamp} {Volume}" )]
+		[System.Diagnostics.DebuggerDisplay( "{Volume}L  ({m_timeStamp})" )]
 		class LogEntry {
 
 			public DateTime	m_timeStamp;
 			public uint		m_rawTime_microSeconds;	// The raw sensor time of flight, in µs
+
+			/// <summary>
+			/// Tells if the entry represents an out of range measure
+			/// </summary>
+			public bool		IsOutOfRange => m_rawTime_microSeconds == ~0U;
+
+			/// <summary>
+			/// Tells if the volume measure is out of range (indicates a problem in the sensor measurement)
+			/// </summary>
+			public bool		IsVolumeOutOfRange {
+				get {
+					float	volume = Volume;
+					return volume < 0 || volume > TANK_CAPACITY_LITRES;
+				}
+			}
 
 			/// <summary>
 			/// Gets the tank volume in litres
@@ -102,13 +117,15 @@ namespace WaterTankMonitor {
 
 		RegistryKey		m_appKey;
 		string			m_applicationPath;
-		FileInfo		m_fileNameLog;
+		FileInfo		m_fileNameLogEntries;
+		FileInfo		m_fileNameSessionLog;
 
 		List<LogEntry>	m_logEntries = new List<LogEntry>();
+		List<string>	m_sessionLog = new List<string>();
 
 		string			m_COMPortName = "COM11";		// Default COM port name
-		SerialPort		m_COMPort;
-		bool			m_COMPortReady = false;
+		SerialPort		m_COMPort = null;
+//		bool			m_COMPortReady = false;
 
 		bool			m_followRunTime = true;			// Default is realtime following of measurements
 		float			m_windowSize_Hours = 1.0f;		// Default window size is 1 hour
@@ -171,6 +188,11 @@ namespace WaterTankMonitor {
 		/// </summary>
 		public DateTime	WindowStartTime => WindowEndTime - TimeSpan.FromHours( WindowSize_Hours );
 
+		/// <summary>
+		/// Tells if the time reference is valid
+		/// </summary>
+		public bool	IsTimeReferenceValid => (DateTime.Now - m_timeReference).TotalSeconds >= 0;	// An invalid reference time is set in the future
+
 		#endregion
 
 		public WaterTankMonitorForm() {
@@ -203,16 +225,19 @@ namespace WaterTankMonitor {
 				}
 
 				m_timeReference = DateTime.FromFileTime( long.Parse( GetRegKey( "TimeReference", m_timeReference.ToFileTime().ToString( "X08" ) ), System.Globalization.NumberStyles.HexNumber ) ) ;
-				if ( (DateTime.Now - m_timeReference).TotalSeconds < 0 ) {
+				if ( !IsTimeReferenceValid ) {
 					m_timeReference = DateTime.Today + TimeSpan.FromDays( 10000 );	// Make sure it's always invalid!
 				}
 				m_lowWaterLevelWarningLimit_litres = float.Parse( GetRegKey( "m_lowWaterLevelWarningLimit_litres", m_lowWaterLevelWarningLimit_litres.ToString() ) );
 
 				// Open log file
-				m_fileNameLog = new FileInfo( GetRegKey( "LogFileName", Path.Combine( m_applicationPath, "Tank3.log" ) ) );
-				if ( m_fileNameLog.Exists ) {
-					ReadLog( m_fileNameLog );
+				m_fileNameLogEntries = new FileInfo( GetRegKey( "LogFileName", Path.Combine( m_applicationPath, "Tank3.log" ) ) );
+				if ( m_fileNameLogEntries.Exists ) {
+					ReadLogEntries( m_fileNameLogEntries );
 				}
+
+				// Create a new session log file
+				m_fileNameSessionLog = new FileInfo( Path.Combine( m_applicationPath, DateTime.Today.ToString( "MMMM dd HH-mm" ) + ".log" ) );
 
 				// List available COM ports
 				ListCOMPorts();
@@ -260,11 +285,8 @@ namespace WaterTankMonitor {
 			// Check if we should save the log
 			if ( (now - m_lastLogSaveTime).TotalMinutes > SAVE_LOG_INTERVAL_MINUTES
 				|| (m_logEntries.Count - m_entriesCountOnLastLogSave) > SAVE_LOG_AFTER_UNSAVED_ENTRIES_COUNT ) {
-				try {
-					WriteLog( m_fileNameLog );
-				} catch ( Exception _e ) {
-					ShowError( "Failed to save log!\r\n" + _e.Message );
-				}
+				saveLogFileNowToolStripMenuItem_Click( null, EventArgs.Empty );
+
 				m_lastLogSaveTime = DateTime.Now;
 				m_entriesCountOnLastLogSave = m_logEntries.Count;
 			}
@@ -287,20 +309,13 @@ namespace WaterTankMonitor {
 					measurementInterval_minutes = Math.Max( MEASURE_INTERVAL_MINUTES_MIN, Math.Min( MEASURE_INTERVAL_MINUTES_MAX, measurementInterval_minutes ) );
 
 if ( checkBox1.Checked ) {
-	measurementInterval_minutes = 5 / 60.0f;	// very 5 seconds
+	measurementInterval_minutes = 5 / 60.0f;	// Every 5 seconds
 }
 
 			if ( (now - m_lastMeasurementTime).TotalMinutes > measurementInterval_minutes ) {
 				PerformMeasurement(
-					( LogEntry _newMeasurement ) => {
-						// Update window's end time to match this measurement
-						if ( m_followRunTime ) {
-							WindowEndTime = _newMeasurement.m_timeStamp;
-						}
-					},
-
 					( string _error ) => {
-						ShowError( "An error occurred while sending a measurement command!\r\n" + _error );
+						LogError( "An error occurred while sending a measurement command!\r\n" + _error );
 						m_lastMeasurementTime = now - TimeSpan.FromMinutes( 2 * MEASURE_INTERVAL_MINUTES_MAX );	// Make sure we take a new measurement next time...
 					}
 				);
@@ -319,7 +334,8 @@ if ( checkBox1.Checked ) {
 
 			// Save the log before exiting
 			try {
-				WriteLog( m_fileNameLog );
+				WriteLogEntries( m_fileNameLogEntries );
+				WriteSessionLog( m_fileNameSessionLog );
 			} catch ( Exception _e ) {
 				MessageBoxError( "Failed to save log file on exit!\r\nCan't close application...", _e );
 				e.Cancel = true;
@@ -327,6 +343,13 @@ if ( checkBox1.Checked ) {
 			}
 
 			base.OnFormClosing( e );
+		}
+
+		protected override void OnFormClosed( FormClosedEventArgs e ) {
+			base.OnFormClosed( e );
+
+			// Abort COM thread so this application can close properly...
+			m_COMThread?.Abort();
 		}
 
 		protected override void OnVisibleChanged( EventArgs e ) {
@@ -342,13 +365,14 @@ if ( checkBox1.Checked ) {
 		#region COM Ports / Serial Interface
 
 		void	ListCOMPorts() {
+
 			comboBoxCOMPort.Items.Clear();
 			foreach ( string portName in SerialPort.GetPortNames() ) {
 				comboBoxCOMPort.Items.Add( portName );
 			}
-			lock ( this ) {
-				comboBoxCOMPort.SelectedItem = m_COMPortName;
-			}
+
+			// Select the port, this will have the effect of trying to connect to it...
+			comboBoxCOMPort.SelectedItem = m_COMPortName;
 		}
 
 		System.Threading.Thread	m_COMThread = null;
@@ -364,7 +388,9 @@ if ( checkBox1.Checked ) {
 			static ushort	ms_commandIDCounter = 0;
 
 			public COMCommand( string _command, uint _timeOut_ms, Action<string> _onSuccess, Action<string> _onError ) {
-				m_ID = ++ms_commandIDCounter;
+				while( m_ID == 0 ) {
+					m_ID = ++ms_commandIDCounter;
+				}
 				m_command = _command;
 				m_timeOut_ms = _timeOut_ms;
 				m_onSuccess = _onSuccess;
@@ -378,7 +404,7 @@ if ( checkBox1.Checked ) {
 		}
 		Queue<COMCommand>		m_COMCommands = new Queue<COMCommand>();
 
-		void	OpenCOMPort( string _COMPortName, Action _onPortOpen ) {
+		void	OpenCOMPort( string _COMPortName, Action _onPortOpen, Action _onPortClosed ) {
 
 			// Abort any existing thread
 			m_COMThread?.Abort();
@@ -392,9 +418,9 @@ if ( checkBox1.Checked ) {
 
 						// Dispose of existing port first...
 						if ( m_COMPort != null ) {
-							m_COMPortReady = false;
 							m_COMPort.Close();
 							m_COMPort.Dispose();
+							m_COMPort = null;
 						}
 
 						// Build the serial port object
@@ -416,9 +442,6 @@ if ( checkBox1.Checked ) {
 
 						// Reset last measurement time so a new measurement is issued immediately...
 						m_lastMeasurementTime = DateTime.FromFileTime( 0 );
-
-						// Port is now ready to use!
-						m_COMPortReady = true;
 					}
 
 				} catch ( Exception _e ) {
@@ -432,75 +455,81 @@ if ( checkBox1.Checked ) {
 				// Notify port is open
 				_onPortOpen?.Invoke();
 
-				// Listen for commands
-				while ( true ) {
-					COMCommand	command = null;
-					lock ( this ) {
-						if ( m_COMCommands.Count == 0 ) {
-							System.Threading.Thread.Sleep( 10 );
-							continue;
+				try {
+					// Listen for commands
+					while ( true ) {
+						COMCommand	command = null;
+						lock ( this ) {
+							if ( !m_COMPort.IsOpen )
+								throw new InvalidOperationException( "Port closed while waiting for commands" );
+
+							if ( m_COMCommands.Count == 0 ) {
+								System.Threading.Thread.Sleep( 10 );
+								continue;
+							}
+							command = m_COMCommands.Dequeue();
 						}
-						command = m_COMCommands.Dequeue();
-					}
 
-					// Execute command and wait for reply
-					command.Send( m_COMPort );
+						// Execute command and wait for reply
+						command.Send( m_COMPort );
 
-					// Wait for a response or a timeout
-					COMReply	reply = null;
-					DateTime	sendTime = DateTime.Now;
-					while ( reply == null && (DateTime.Now - sendTime).TotalMilliseconds < command.m_timeOut_ms ) {
+						// Wait for a response or a timeout
+						COMReply	reply = null;
+						DateTime	sendTime = DateTime.Now;
+						while ( reply == null && (DateTime.Now - sendTime).TotalMilliseconds < command.m_timeOut_ms ) {
 //while ( reply == null ) {
-						#if true	// This code simply waits for a new line
-							try {
-								string	newLine = m_COMPort.ReadLine();
-								reply = new COMReply( newLine );
-							} catch ( TimeoutException ) {
-								continue;	// Nothing on the line for us yet...
+							#if true	// This code simply waits for a new line
+								try {
+									string	newLine = m_COMPort.ReadLine();
+									reply = new COMReply( newLine );
+								} catch ( TimeoutException ) {
+									continue;	// Nothing on the line for us yet...
+								}
+
+							#else	// This code uses the COM strings filled up by the even handler
+								System.Threading.Thread.Sleep( 10 );
+								lock ( this ) {
+									if ( m_COMReplies.Count > 0 )
+										reply = m_COMReplies.Dequeue();
+								}
+							#endif
+
+							if ( reply == null )
+								continue;	// Still no reply
+
+							if ( reply.m_type == COMReply.TYPE.LOG || reply.m_type == COMReply.TYPE.DEBUG ) {
+								// Just log regular strings, don't count as actual replies to the command...
+								Log( "<Module Reply " + reply.m_type + "> " + reply.m_string );
+								reply = null;
+							} else if ( reply.m_commandID != command.m_ID ) {
+								// Ignore replies to other commands
+								Log( "<Module Reply from other command " + reply.m_type + "> " + reply.m_string );
+								reply = null;
 							}
 
-						#else	// This code uses the COM strings filled up by the even handler
-							System.Threading.Thread.Sleep( 10 );
-							lock ( this ) {
-								if ( m_COMReplies.Count > 0 )
-									reply = m_COMReplies.Dequeue();
-							}
-						#endif
+						}	// While no reply and no time out
 
-						if ( reply == null )
-							continue;	// Still no reply
-
-						if ( reply.m_type == COMReply.TYPE.DEBUG || reply.m_type == COMReply.TYPE.LOG ) {
-							// Just log regular strings, don't count as actual replies to the command...
-							System.Diagnostics.Debug.WriteLine( "<" + reply.m_type + "> " + reply.m_string );
-							reply = null;
-						} else if ( reply.m_commandID != command.m_ID ) {
-							// Ignore replies to other commands
-							System.Diagnostics.Debug.WriteLine( "(from other command) <" + reply.m_type + "> " + reply.m_string );
-							reply = null;
+						if ( reply == null ) {
+							command.m_onError( "Timeout!" );
+						} else if ( reply.m_type == COMReply.TYPE.REPLY ) {
+							command.m_onSuccess( reply.m_string );
+						} else if ( reply.m_type == COMReply.TYPE.ERROR ) {
+							command.m_onError( reply.m_string );
 						}
 
-// 						int	bytesToRead = m_COMPort.BytesToRead;
-// 						if ( bytesToRead > 0 ) {
-// // 							if ( bytesToRead > m_serialBuffer.Length )
-// // 								m_serialBuffer = new byte[2*bytesToRead];
-// //							m_COMPort.Read( m_serialBuffer, 0, bytesToRead );
-// 							string	reply = m_COMPort.ReadLine();
-// 							if ( reply.StartsWith( "<DEBUG>" ) ) {
-// 								System.Diagnostics.Debug.WriteLine( reply );	// Ignore, not the reply we're waiting for!
-// 							} else {
-// 								return reply;
-// 							}
-// 						}
-					}
+					}	// While ( true )
 
-					if ( reply == null ) {
-						command.m_onError( "Timeout!" );
-					} else if ( reply.m_type == COMReply.TYPE.REPLY ) {
-						command.m_onSuccess( reply.m_string );
-					} else if ( reply.m_type == COMReply.TYPE.ERROR ) {
-						command.m_onError( reply.m_string );
+				} catch ( InvalidOperationException _e ) {
+					if ( !m_COMPort.IsOpen ) {
+						LogError( "COM Port closed unexpectedly" );
+					} else {
+						LogError( "Unknown invalid operation", _e );
 					}
+				} catch ( Exception _e ) {
+					LogError( "Unknown error", _e );
+				} finally {
+					// Notify port closed
+					_onPortClosed?.Invoke();
 				}
 
 			} );
@@ -555,37 +584,39 @@ if ( checkBox1.Checked ) {
 		}
 
 		Queue<COMReply>		m_COMReplies = new Queue<COMReply>();
-		Action<COMReply>	m_onNewCOMReplyReceived = null;
 
-		byte[]	m_tempCOMBuffer = new byte[4096];
-		int		m_tempCOMBufferOffset = 0;
-		private void COMPort_DataReceived( object sender, SerialDataReceivedEventArgs e ) {
-			// Read new data
-			int	bytesCount = m_COMPort.BytesToRead;
-			m_COMPort.Read( m_tempCOMBuffer, m_tempCOMBufferOffset, bytesCount );
-			int	oldTempCOMBufferOffset = m_tempCOMBufferOffset;
-			m_tempCOMBufferOffset += bytesCount;
-
-			// Check if there's any new-line character in the temp buffer
-			for ( int i=oldTempCOMBufferOffset; i < m_tempCOMBufferOffset; i++ ) {
-				if ( m_tempCOMBuffer[i] == '\n' ) {
-					// Okay, log a new line!
-					COMReply	str = null;
-					lock ( this ) {
-						str = new COMReply( m_tempCOMBuffer, i+1 );
-						m_COMReplies.Enqueue( str );
-					}
-
-					// Copy what's left of the bytes after the '\n' so it's the begining of a new line
-					Array.Copy( m_tempCOMBuffer, i+1, m_tempCOMBuffer, 0, m_tempCOMBufferOffset - i - 1 );
-					m_tempCOMBufferOffset = 0;
-
-					// Notify of a new line
-					m_onNewCOMReplyReceived?.Invoke( str );
-					return;
-				}
-			}
-		}
+// This code handle COM replies asynchronously but I eventually prefered to read new lines from the COM port continuously, it's easier and safer...
+//		Action<COMReply>	m_onNewCOMReplyReceived = null;
+//
+// 		byte[]	m_tempCOMBuffer = new byte[4096];
+// 		int		m_tempCOMBufferOffset = 0;
+// 		private void COMPort_DataReceived( object sender, SerialDataReceivedEventArgs e ) {
+// 			// Read new data
+// 			int	bytesCount = m_COMPort.BytesToRead;
+// 			m_COMPort.Read( m_tempCOMBuffer, m_tempCOMBufferOffset, bytesCount );
+// 			int	oldTempCOMBufferOffset = m_tempCOMBufferOffset;
+// 			m_tempCOMBufferOffset += bytesCount;
+// 
+// 			// Check if there's any new-line character in the temp buffer
+// 			for ( int i=oldTempCOMBufferOffset; i < m_tempCOMBufferOffset; i++ ) {
+// 				if ( m_tempCOMBuffer[i] == '\n' ) {
+// 					// Okay, log a new line!
+// 					COMReply	str = null;
+// 					lock ( this ) {
+// 						str = new COMReply( m_tempCOMBuffer, i+1 );
+// 						m_COMReplies.Enqueue( str );
+// 					}
+// 
+// 					// Copy what's left of the bytes after the '\n' so it's the begining of a new line
+// 					Array.Copy( m_tempCOMBuffer, i+1, m_tempCOMBuffer, 0, m_tempCOMBufferOffset - i - 1 );
+// 					m_tempCOMBufferOffset = 0;
+// 
+// 					// Notify of a new line
+// 					m_onNewCOMReplyReceived?.Invoke( str );
+// 					return;
+// 				}
+// 			}
+// 		}
 
 		/// <summary>
 		/// Executes a new command
@@ -638,37 +669,66 @@ if ( checkBox1.Checked ) {
 		/// Asks the module to perform a new volume measurement
 		/// </summary>
 		/// <returns></returns>
+		void	PerformMeasurement( Action<string> _onError ) {
+			PerformMeasurement(
+				( LogEntry _newMeasurement ) => {
+					// Register new measurement
+					m_logEntries.Add( _newMeasurement );
+
+					// Update graph (on main thread only!)
+					this.BeginInvoke( (Action) (() => {
+						if ( m_followRunTime ) {
+							WindowEndTime = _newMeasurement.m_timeStamp;	// Update window's end time to match this measurement
+						} else {
+							UpdateGraph();
+						}
+					}) );
+				},
+				_onError
+			);
+		}
+
+		bool	m_pipoMeasurement = false;
 		void	PerformMeasurement( Action<LogEntry> _onMeasurement, Action<string> _onError ) {
-			ExecuteCommand( "MEASURE", 10 * 1000, ( string _reply ) => {
-				// Handle reply!
-				if ( _reply.StartsWith( "TIME=" ) ) {
-					// Prepare a new entry
-					int	rawTime_microSeconds;
-					if ( int.TryParse( _reply.Substring( 5 ), out rawTime_microSeconds ) ) {
-						if ( rawTime_microSeconds == -1 ) {
-							ShowError( "Out of range!" );
-						} else if ( rawTime_microSeconds < 1000 ) {
-							ShowError( "Time < 1000µs, measurement error?" );
+			ExecuteCommand( m_pipoMeasurement ? "MEASUREPIPO" : "MEASURE", 10 * 1000,
+				( string _reply ) => {
+					// Handle reply!
+
+m_pipoMeasurement = false;
+
+					if ( _reply.StartsWith( "TIME=" ) ) {
+						// Prepare a new entry
+						int	rawTime_microSeconds;
+						if ( int.TryParse( _reply.Substring( 5 ), out rawTime_microSeconds ) ) {
+							LogEntry	result = null;
+							if ( rawTime_microSeconds == -1 ) {
+								// Register an out of range entry
+								result = new LogEntry( ~0U );
+								LogError( "Out of range!" );
+							} else if ( rawTime_microSeconds < 1000 ) {
+								LogError( "Time < 1000µs, measurement error?" );
+							} else {
+								result = new LogEntry( (uint) rawTime_microSeconds );
+							}
+
+							// Notify
+							if ( result != null ) {
+								_onMeasurement?.Invoke( result );
+							}
+
+						} else {
+							LogError( "Failed to parse proper time value from MEASURE command reply!" );
+							LogError( "Reply = " + _reply );
 						}
 
-						LogEntry	result = new LogEntry( (uint) rawTime_microSeconds );
-						m_logEntries.Add( result );
-
-						UpdateGraph();
-
-						// Notify measurement is ready
-						_onMeasurement?.Invoke( result );
-
 					} else {
-						System.Diagnostics.Debug.WriteLine( "Failed to parse proper time value from MEASURE command reply:" );
-						System.Diagnostics.Debug.WriteLine( _reply );
+						LogError( "Unexpected reply after MEASURE command!" );
+						LogError( "Reply = " + _reply );
 					}
+				},
 
-				} else {
-					System.Diagnostics.Debug.WriteLine( "Unexpected reply after MEASURE command:" );
-					System.Diagnostics.Debug.WriteLine( _reply );
-				}
-			}, ( string _error ) => _onError?.Invoke( _error ) );
+				( string _error ) => _onError?.Invoke( _error )
+			);
 		}
 
 		/// <summary>
@@ -680,9 +740,13 @@ if ( checkBox1.Checked ) {
 			int			referenceTime_seconds = (int) (_referenceTime - baseTime).TotalSeconds;
 
 			ExecuteCommand( "SETTIME=" + referenceTime_seconds, 10 * 1000,
-				( string _reply ) => {},
+				( string _reply ) => {
+					Log( "Successfully set reference time!" );
+				},
+
 				( string _error ) => {
-					ShowError( "An error occurred while setting type reference!\r\n" + _error );
+					LogError( "An error occurred while setting type reference!" );
+					LogError( _error );
 				}
 			);
 		}
@@ -721,9 +785,9 @@ if ( checkBox1.Checked ) {
 
 		#endregion
 
-		#region Log File
+		#region Log Files
 
-		void	ReadLog( FileInfo _fileNameLog ) {
+		void	ReadLogEntries( FileInfo _fileNameLog ) {
 			if ( !_fileNameLog.Exists )
 				throw new FileNotFoundException();
 
@@ -741,7 +805,7 @@ if ( checkBox1.Checked ) {
 			m_entriesCountOnLastLogSave = m_logEntries.Count;
 		}
 
-		void	WriteLog( FileInfo _fileNameLog ) {
+		void	WriteLogEntries( FileInfo _fileNameLog ) {
 			if ( _fileNameLog.Exists ) {
 				// Backup any existing file first...
 				string	backupFileName = _fileNameLog.FullName + ".bak";
@@ -758,17 +822,38 @@ if ( checkBox1.Checked ) {
 			}
 		}
 
+		void	WriteSessionLog( FileInfo _fileNameLog ) {
+			using ( StreamWriter W = _fileNameLog.CreateText() ) {
+				foreach ( string entry in m_sessionLog ) {
+					W.WriteLine( entry );
+				}
+			}
+		}
+
 		#endregion
 
 		#region Info / Warning / Error Notification
 
-		void	ShowWarning( string _message ) {
-			notifyIcon.ShowBalloonTip( 5000, "Water Tank Monitor", _message, ToolTipIcon.Warning );
+		void	Log( string _text ) {
+			string	logText = DateTime.Now.ToString( "MM/dd HH:mm" ) + "> " + _text;
+			m_sessionLog.Add( logText );
+
+			System.Diagnostics.Debug.WriteLine( logText );
+		}
+		void	LogError( string _text, Exception _e=null ) {
+			Log( "<ERROR> " + _text );
+			if ( _e != null ) {
+				Log( "	Exception: " + _e.Message );
+			}
 		}
 
-		void	ShowError( string _message ) {
-			notifyIcon.ShowBalloonTip( 5000, "Water Tank Monitor", _message, ToolTipIcon.Error );
-		}
+// 		void	ShowWarning( string _message ) {
+// 			notifyIcon.ShowBalloonTip( 5000, "Water Tank Monitor", _message, ToolTipIcon.Warning );
+// 		}
+// 
+// 		void	ShowError( string _message ) {
+// 			notifyIcon.ShowBalloonTip( 5000, "Water Tank Monitor", _message, ToolTipIcon.Error );
+// 		}
 
 		void	MessageBoxError( string _message, Exception _e ) {
 			_message += "\r\n";
@@ -992,6 +1077,10 @@ if ( checkBox1.Checked ) {
 		Brush		m_brushTextBackground = Brushes.IndianRed;
 		Brush		m_brushTextMarker = Brushes.Orange;
 		Pen			m_penGraph = new Pen( Color.Black, 2 );
+		Pen			m_penLowLevelLimit = new Pen( Color.Red );			// Dash style will be changed
+		Brush		m_brushLowLevelLimit = Brushes.Red;
+		Pen			m_penReferenceTime = new Pen( Color.DarkGray, 2 );	// Dash style will be changed
+		Brush		m_brushReferenceTime = Brushes.DarkGray;
 
 		enum MARKER_TYPE {
 			MONTH,
@@ -1004,7 +1093,10 @@ if ( checkBox1.Checked ) {
 		string[]	m_monthNames = new string[] { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
 
 		private void PanelOutput_BitmapUpdating( int W, int H, Graphics G ) {
-//			G.FillRectangle( Brushes.LemonChiffon, 0, 0, W, H );
+
+			m_penLowLevelLimit.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+			m_penReferenceTime.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+
 			G.FillRectangle( m_brushBackground, 0, 0, W, H );
 
 			if ( m_COMPort == null || !m_COMPort.IsOpen ) {
@@ -1075,32 +1167,64 @@ if ( checkBox1.Checked ) {
 				G.DrawString( markerText, panelOutput.Font, (markerIndex & 1) != 0 ? m_brushTextBackground : m_brushTextMarker, markerStartX + markerIndex * markerWidth + 0.5f * (markerWidth - markerTextSize.Width), 8 );
 			}
 
+			// =====================================
 			// Paint level lines
 			float	Y0 = Level2Client( 1.00f * TANK_CAPACITY_LITRES );	// 4000L line
 			float	Y1 = Level2Client( 0.75f * TANK_CAPACITY_LITRES );	// 3000L line
 			float	Y2 = Level2Client( 0.50f * TANK_CAPACITY_LITRES );	// 2000L line
 			float	Y3 = Level2Client( 0.25f * TANK_CAPACITY_LITRES );	// 1000L line
 			Pen		penLevelLine = Pens.Orange;
+			Brush	brushLevelLine = Brushes.Orange;
 			G.DrawLine( penLevelLine, m_margin, Y0, W - m_margin, Y0 );
 			G.DrawLine( penLevelLine, m_margin, Y1, W - m_margin, Y1 );
 			G.DrawLine( penLevelLine, m_margin, Y2, W - m_margin, Y2 );
 			G.DrawLine( penLevelLine, m_margin, Y3, W - m_margin, Y3 );
+			G.DrawString( "4000L", Font, brushLevelLine, W - m_margin - 30, Y0 + 0 );
+			G.DrawString( "3000L", Font, brushLevelLine, W - m_margin - 30, Y1 + 0 );
+			G.DrawString( "2000L", Font, brushLevelLine, W - m_margin - 30, Y2 + 0 );
+			G.DrawString( "1000L", Font, brushLevelLine, W - m_margin - 30, Y3 + 0 );
 
 			float	Y_warning = Level2Client( m_lowWaterLevelWarningLimit_litres );	// Low limit line
-			G.DrawLine( Pens.Red, m_margin, Y_warning, W - m_margin, Y_warning );
+			G.DrawLine( m_penLowLevelLimit, m_margin, Y_warning, W - m_margin, Y_warning );
+			G.DrawString( ((int) m_lowWaterLevelWarningLimit_litres).ToString(), Font, m_brushLowLevelLimit, W - m_margin - 30, Y_warning );
 
+			// =====================================
 			// Paint measurements
+			LogEntry	mouseEntry = null;
+			int			mouseEntyIndex = -1;
+			float		mouseEntryX = 0, mouseEntryY = 0;
+			float		closestMouseEntryDistance = float.MaxValue;
+			float		mouseX = panelOutput.PointToClient( Control.MousePosition ).X;
+
 			if ( m_logEntries.Count > 1 ) {
 				LogEntry	previous = null;
 				float		previousX = 0;
-				float		previousY = 0;
+				float		previousY = 10;
 				for ( int entryIndex=m_logEntries.Count-1; entryIndex >= 0; entryIndex-- ) {
 					LogEntry	current = m_logEntries[entryIndex];
 					float		X = TimeStamp2Client( current );
-					float		Y = Level2Client( current );
-					if ( previous != null ) {
-						G.DrawLine( m_penGraph, X, Y, previousX, previousY );
+					float		Y = previousY;
+
+					if ( current.IsOutOfRange || current.IsVolumeOutOfRange ) {
+						G.FillEllipse( Brushes.Red, X-3, Y-3, 7, 7 );
+						current = null;
+					} else {
+						Y = Level2Client( current );
+						if ( previous != null ) {
+							G.DrawLine( m_penGraph, X, Y, previousX, previousY );
+						}
 					}
+
+					float	mouseDistance = Math.Abs( X - mouseX );
+					if ( mouseDistance < closestMouseEntryDistance ) {
+						// Update entry closest to mouse position
+						closestMouseEntryDistance = mouseDistance;
+						mouseEntyIndex = entryIndex;
+						mouseEntry = current;
+						mouseEntryX = X;
+						mouseEntryY = Y;
+					}
+
 					previous = current;
 					previousX = X;
 					previousY = Y;
@@ -1109,9 +1233,18 @@ if ( checkBox1.Checked ) {
 				}
 			}
 
+			// =====================================
 			// Paint reference time line
 			float	X_timeRef = TimeStamp2Client( m_timeReference );
+			if ( X_timeRef >= 0 && X_timeRef < W ) {
+				G.DrawLine( m_penReferenceTime, X_timeRef, 0, X_timeRef, Height );
 
+				string	strRefTime = m_timeReference.ToString( "dddd dd MMMM HH:mm" );
+				G.DrawString( strRefTime, Font, m_brushReferenceTime, X_timeRef, 0 );
+			}
+
+
+			// =====================================
 			// Paint X axis
 			G.DrawLine( m_axesPen, m_margin, Height - m_margin, Width - m_margin, Height - m_margin );
 			PaintArrow( G, m_axesBrush, new PointF( Width - m_margin - m_arrowLength, Height - m_margin ), new PointF( 1, 0 ), new PointF( 0, -1 ), m_arrowLength, m_arrowWidth );
@@ -1125,6 +1258,62 @@ if ( checkBox1.Checked ) {
 			G.TranslateTransform( sizeLabelY.Height, 0.5f * m_margin );
 			G.RotateTransform( 90 );
 			G.DrawString( m_labelAxisY, panelOutput.Font, m_axesBrush, 0, 0 );
+			G.ResetTransform();
+
+
+			// =====================================
+			// Paint mouse info on hovered entry
+			if ( mouseEntry == null )
+				return;
+
+			// Compute volume derivative
+			LogEntry	prevMouseEntry = mouseEntyIndex > 0 ? m_logEntries[mouseEntyIndex-1] : mouseEntry;
+			LogEntry	nextMouseEntry = mouseEntyIndex < m_logEntries.Count-1 ? m_logEntries[mouseEntyIndex+1] : mouseEntry;
+			float		deltaTime = (float) (nextMouseEntry.m_timeStamp - prevMouseEntry.m_timeStamp).TotalHours;
+			float		deltaVolume = nextMouseEntry.Volume - prevMouseEntry.Volume;
+
+			// Draw hovered log entry
+			G.DrawLine( Pens.Red, mouseEntryX, 0, mouseEntryX, Height );
+			G.DrawEllipse( Pens.Red, mouseEntryX-3, mouseEntryY-3, 7, 7 );
+
+			// Draw text rectangle
+			string	textEntry = mouseEntry.m_timeStamp.ToString( "dd MMMM HH:mm" ) + "\n"
+							  + "Volume = " + ((int) mouseEntry.Volume) + " L\n";
+
+			if ( deltaTime > 1e-3f ) {
+				textEntry += "Consumption = " + (int) (deltaVolume / deltaTime) + " L/h\n";
+			} else {
+				textEntry += "(Consumption non computable)\n";
+			}
+
+			if ( IsTimeReferenceValid ) {
+				LogEntry	referenceEntry = FindEntry( m_timeReference );
+				float		totalVolume = mouseEntry.Volume - referenceEntry.Volume;
+				if ( referenceEntry != null ) {
+					textEntry += "\n"
+							  + (totalVolume < 0 ? "Consumed " : "♥ Collected +") + (int) totalVolume + " L since\n"
+							  + "reference time " + m_timeReference.ToString( "dd MMMM HH:mm" ) + "\n";
+				}
+			}
+
+			SizeF	textBoxSize = G.MeasureString( textEntry, Font );
+			float	textBoxMargin = 4;
+			float	rectW = textBoxMargin + textBoxSize.Width + textBoxMargin;
+			float	rectH = textBoxMargin + textBoxSize.Height + textBoxMargin;
+			float	rectX =  mouseEntryX + 5;
+			float	rectY =  mouseEntryY - 0.5f * rectH;
+
+			if ( rectX + rectW > panelOutput.Width ) {
+				rectX = mouseEntryX - 5 - rectW;
+			}
+			if ( rectY < 0 ) {
+				rectY = 0;
+			} else if ( rectY + rectH > panelOutput.Height ) {
+				rectY = Height - rectH;
+			}
+			G.FillRectangle( Brushes.LemonChiffon, rectX, rectY, rectW, rectH );
+			G.DrawRectangle( Pens.Black, rectX, rectY, rectW, rectH );
+			G.DrawString( textEntry, Font, Brushes.Black, rectX + textBoxMargin, rectY + textBoxMargin );
 		}
 
 		float	TimeStamp2Client( LogEntry _entry ) {
@@ -1177,6 +1366,25 @@ if ( checkBox1.Checked ) {
 			_G.FillPolygon( _brush, m_arrowPoints,System.Drawing.Drawing2D.FillMode.Winding );
 		}
 
+		/// <summary>
+		/// Finds the entry closest to the specified time
+		/// </summary>
+		/// <param name="_time"></param>
+		/// <returns></returns>
+		LogEntry	FindEntry( DateTime _time ) {
+			LogEntry	result = null;
+			double		closestSecondsToEntry = float.MaxValue;
+			foreach ( LogEntry entry in m_logEntries ) {
+				double	secondsToEntry = Math.Abs( (entry.m_timeStamp - _time).TotalSeconds );
+				if ( secondsToEntry < closestSecondsToEntry ) {
+					result = entry;
+					closestSecondsToEntry = secondsToEntry;
+				}
+			}
+
+			return result;
+		}
+
 		#endregion
 
 		private void buttonRefreshCOMPorts_Click( object sender, EventArgs e ) {
@@ -1190,17 +1398,31 @@ if ( checkBox1.Checked ) {
 			m_COMPortName = comboBoxCOMPort.SelectedItem as string;
 			SetRegKey( "m_COMPortName", m_COMPortName );
 
-			OpenCOMPort( m_COMPortName, () => {
+			OpenCOMPort( m_COMPortName,
+				() => {
+					// Change to OPEN color
+					buttonRefreshCOMPorts.BeginInvoke( (Action) (() => {
+						buttonRefreshCOMPorts.BackColor = Color.ForestGreen;
+					}) );
 
-				// Set the reference time
-				SetReferenceTime( DateTime.Now );
+					// Set the reference time
+					SetReferenceTime( DateTime.Now );
 
-				// Ask if there are some unread values in the buffer
-//				RetrieveUnreadMeasurements();
+					// Ask if there are some unread values in the buffer
+//					RetrieveUnreadMeasurements();
 
-				UpdateGraph();
+					this.BeginInvoke( (Action) (() => { 
+						UpdateGraph();
+					}) );
+				},
 
-			} );
+				() => {
+					// Change to CLOSED color
+					buttonRefreshCOMPorts.BeginInvoke( (Action) (() => {
+						buttonRefreshCOMPorts.BackColor = Color.IndianRed;
+					}) );
+				}
+			);
 		}
 
 		private void buttonMonth_Click( object sender, EventArgs e ) {
@@ -1254,14 +1476,20 @@ if ( checkBox1.Checked ) {
 		}
 
 		private void takeMeasurementToolStripMenuItem_Click( object sender, EventArgs e ) {
-			PerformMeasurement( null, null );
+			PerformMeasurement( null );
 		}
 
 		private void saveLogFileNowToolStripMenuItem_Click( object sender, EventArgs e ) {
 			try {
-				WriteLog( m_fileNameLog );
+				WriteLogEntries( m_fileNameLogEntries );
 			} catch ( Exception _e ) {
-				ShowError( "Failed to save log!\r\n" + _e.Message );
+				LogError( "Failed to save log!", _e );
+			}
+
+			try {
+				WriteSessionLog( m_fileNameSessionLog );
+			} catch ( Exception _e ) {
+				MessageBoxError( "Failed to save session log!", _e );
 			}
 		}
 
@@ -1277,15 +1505,20 @@ if ( checkBox1.Checked ) {
 		#endregion
 
 		private void button1_Click( object sender, EventArgs e ) {
-			ExecuteCommand( "GETBUFFERSIZE", 10 * 1000, ( string _reply ) => {
-				System.Diagnostics.Debug.WriteLine( _reply );
-			}, ( string _error ) => {
-				System.Diagnostics.Debug.WriteLine( "Error: " + _error );
-			} );
+// 			ExecuteCommand( "GETBUFFERSIZE", 10 * 1000, ( string _reply ) => {
+// 				System.Diagnostics.Debug.WriteLine( _reply );
+// 			}, ( string _error ) => {
+// 				System.Diagnostics.Debug.WriteLine( "Error: " + _error );
+// 			} );
+
+			// Simulate a dummy measurement
+			m_pipoMeasurement = true;
+			PerformMeasurement( null );
 		}
 
 		private void notifyIcon_MouseClick( object sender, MouseEventArgs e ) {
-			this.Visible = true;	// Show the form again!
+			if ( e.Button == MouseButtons.Left )
+				this.Visible = true;	// Show the form again!
 		}
 	}
 }

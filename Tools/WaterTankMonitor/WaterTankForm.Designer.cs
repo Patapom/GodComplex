@@ -46,6 +46,7 @@
 			this.checkBox1 = new System.Windows.Forms.CheckBox();
 			this.button1 = new System.Windows.Forms.Button();
 			this.buttonHour = new System.Windows.Forms.Button();
+			this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
 			this.contextMenuStripPanel.SuspendLayout();
 			this.contextMenuStripTray.SuspendLayout();
 			this.SuspendLayout();
@@ -77,11 +78,12 @@
 			// contextMenuStripPanel
 			// 
 			this.contextMenuStripPanel.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.setLowLevelWarningLimitToolStripMenuItem,
             this.setTimeReferenceToolStripMenuItem,
-            this.clearTimeReferenceToolStripMenuItem});
+            this.clearTimeReferenceToolStripMenuItem,
+            this.toolStripMenuItem2,
+            this.setLowLevelWarningLimitToolStripMenuItem});
 			this.contextMenuStripPanel.Name = "contextMenuStripPanel";
-			this.contextMenuStripPanel.Size = new System.Drawing.Size(224, 70);
+			this.contextMenuStripPanel.Size = new System.Drawing.Size(224, 76);
 			this.contextMenuStripPanel.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripPanel_Opening);
 			// 
 			// setLowLevelWarningLimitToolStripMenuItem
@@ -119,7 +121,7 @@
 			// 
 			this.comboBoxCOMPort.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 			this.comboBoxCOMPort.FormattingEnabled = true;
-			this.comboBoxCOMPort.Location = new System.Drawing.Point(1, 4);
+			this.comboBoxCOMPort.Location = new System.Drawing.Point(3, 4);
 			this.comboBoxCOMPort.Name = "comboBoxCOMPort";
 			this.comboBoxCOMPort.Size = new System.Drawing.Size(73, 21);
 			this.comboBoxCOMPort.TabIndex = 0;
@@ -171,33 +173,33 @@
 			// takeMeasurementToolStripMenuItem
 			// 
 			this.takeMeasurementToolStripMenuItem.Name = "takeMeasurementToolStripMenuItem";
-			this.takeMeasurementToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
+			this.takeMeasurementToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.takeMeasurementToolStripMenuItem.Text = "Take Measurement";
 			this.takeMeasurementToolStripMenuItem.Click += new System.EventHandler(this.takeMeasurementToolStripMenuItem_Click);
 			// 
 			// saveLogFileNowToolStripMenuItem
 			// 
 			this.saveLogFileNowToolStripMenuItem.Name = "saveLogFileNowToolStripMenuItem";
-			this.saveLogFileNowToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
+			this.saveLogFileNowToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.saveLogFileNowToolStripMenuItem.Text = "Save Log File Now";
 			this.saveLogFileNowToolStripMenuItem.Click += new System.EventHandler(this.saveLogFileNowToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem1
 			// 
 			this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-			this.toolStripMenuItem1.Size = new System.Drawing.Size(170, 6);
+			this.toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
 			// 
 			// exitToolStripMenuItem
 			// 
 			this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-			this.exitToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
+			this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.exitToolStripMenuItem.Text = "E&xit";
 			this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
 			// 
 			// buttonRefreshCOMPorts
 			// 
 			this.buttonRefreshCOMPorts.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-			this.buttonRefreshCOMPorts.Location = new System.Drawing.Point(76, 4);
+			this.buttonRefreshCOMPorts.Location = new System.Drawing.Point(78, 4);
 			this.buttonRefreshCOMPorts.Margin = new System.Windows.Forms.Padding(0);
 			this.buttonRefreshCOMPorts.Name = "buttonRefreshCOMPorts";
 			this.buttonRefreshCOMPorts.Size = new System.Drawing.Size(21, 20);
@@ -236,15 +238,20 @@
 			this.buttonHour.UseVisualStyleBackColor = true;
 			this.buttonHour.Click += new System.EventHandler(this.buttonHour_Click);
 			// 
+			// toolStripMenuItem2
+			// 
+			this.toolStripMenuItem2.Name = "toolStripMenuItem2";
+			this.toolStripMenuItem2.Size = new System.Drawing.Size(220, 6);
+			// 
 			// WaterTankMonitorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(859, 492);
+			this.Controls.Add(this.comboBoxCOMPort);
 			this.Controls.Add(this.button1);
 			this.Controls.Add(this.checkBox1);
 			this.Controls.Add(this.buttonRefreshCOMPorts);
-			this.Controls.Add(this.comboBoxCOMPort);
 			this.Controls.Add(this.panelOutput);
 			this.Controls.Add(this.buttonHour);
 			this.Controls.Add(this.buttonDay);
@@ -285,6 +292,7 @@
 		private System.Windows.Forms.ToolStripMenuItem setTimeReferenceToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem clearTimeReferenceToolStripMenuItem;
 		private System.Windows.Forms.Button buttonHour;
+		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
 	}
 }
 
