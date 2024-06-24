@@ -28,9 +28,10 @@
 			this.buttonNow = new System.Windows.Forms.Button();
 			this.panelOutput = new UIUtility.PanelOutput(this.components);
 			this.contextMenuStripPanel = new System.Windows.Forms.ContextMenuStrip(this.components);
-			this.setLowLevelWarningLimitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.setTimeReferenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.clearTimeReferenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
+			this.setLowLevelWarningLimitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.buttonMonth = new System.Windows.Forms.Button();
 			this.comboBoxCOMPort = new System.Windows.Forms.ComboBox();
 			this.buttonWeek = new System.Windows.Forms.Button();
@@ -46,14 +47,13 @@
 			this.checkBox1 = new System.Windows.Forms.CheckBox();
 			this.button1 = new System.Windows.Forms.Button();
 			this.buttonHour = new System.Windows.Forms.Button();
-			this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
 			this.contextMenuStripPanel.SuspendLayout();
 			this.contextMenuStripTray.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// buttonNow
 			// 
-			this.buttonNow.Location = new System.Drawing.Point(322, 2);
+			this.buttonNow.Location = new System.Drawing.Point(322, 1);
 			this.buttonNow.Name = "buttonNow";
 			this.buttonNow.Size = new System.Drawing.Size(49, 23);
 			this.buttonNow.TabIndex = 5;
@@ -86,13 +86,6 @@
 			this.contextMenuStripPanel.Size = new System.Drawing.Size(224, 76);
 			this.contextMenuStripPanel.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripPanel_Opening);
 			// 
-			// setLowLevelWarningLimitToolStripMenuItem
-			// 
-			this.setLowLevelWarningLimitToolStripMenuItem.Name = "setLowLevelWarningLimitToolStripMenuItem";
-			this.setLowLevelWarningLimitToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
-			this.setLowLevelWarningLimitToolStripMenuItem.Text = "Set Low Level Warning Limit";
-			this.setLowLevelWarningLimitToolStripMenuItem.Click += new System.EventHandler(this.setLowLevelWarningLimitToolStripMenuItem_Click);
-			// 
 			// setTimeReferenceToolStripMenuItem
 			// 
 			this.setTimeReferenceToolStripMenuItem.Name = "setTimeReferenceToolStripMenuItem";
@@ -106,6 +99,18 @@
 			this.clearTimeReferenceToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
 			this.clearTimeReferenceToolStripMenuItem.Text = "Clear Time Reference";
 			this.clearTimeReferenceToolStripMenuItem.Click += new System.EventHandler(this.clearTimeReferenceToolStripMenuItem_Click);
+			// 
+			// toolStripMenuItem2
+			// 
+			this.toolStripMenuItem2.Name = "toolStripMenuItem2";
+			this.toolStripMenuItem2.Size = new System.Drawing.Size(220, 6);
+			// 
+			// setLowLevelWarningLimitToolStripMenuItem
+			// 
+			this.setLowLevelWarningLimitToolStripMenuItem.Name = "setLowLevelWarningLimitToolStripMenuItem";
+			this.setLowLevelWarningLimitToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
+			this.setLowLevelWarningLimitToolStripMenuItem.Text = "Set Low Level Warning Limit";
+			this.setLowLevelWarningLimitToolStripMenuItem.Click += new System.EventHandler(this.setLowLevelWarningLimitToolStripMenuItem_Click);
 			// 
 			// buttonMonth
 			// 
@@ -173,26 +178,26 @@
 			// takeMeasurementToolStripMenuItem
 			// 
 			this.takeMeasurementToolStripMenuItem.Name = "takeMeasurementToolStripMenuItem";
-			this.takeMeasurementToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.takeMeasurementToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
 			this.takeMeasurementToolStripMenuItem.Text = "Take Measurement";
 			this.takeMeasurementToolStripMenuItem.Click += new System.EventHandler(this.takeMeasurementToolStripMenuItem_Click);
 			// 
 			// saveLogFileNowToolStripMenuItem
 			// 
 			this.saveLogFileNowToolStripMenuItem.Name = "saveLogFileNowToolStripMenuItem";
-			this.saveLogFileNowToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.saveLogFileNowToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
 			this.saveLogFileNowToolStripMenuItem.Text = "Save Log File Now";
 			this.saveLogFileNowToolStripMenuItem.Click += new System.EventHandler(this.saveLogFileNowToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem1
 			// 
 			this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-			this.toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
+			this.toolStripMenuItem1.Size = new System.Drawing.Size(170, 6);
 			// 
 			// exitToolStripMenuItem
 			// 
 			this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-			this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.exitToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
 			this.exitToolStripMenuItem.Text = "E&xit";
 			this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
 			// 
@@ -237,11 +242,6 @@
 			this.buttonHour.Text = "Hour";
 			this.buttonHour.UseVisualStyleBackColor = true;
 			this.buttonHour.Click += new System.EventHandler(this.buttonHour_Click);
-			// 
-			// toolStripMenuItem2
-			// 
-			this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-			this.toolStripMenuItem2.Size = new System.Drawing.Size(220, 6);
 			// 
 			// WaterTankMonitorForm
 			// 

@@ -252,7 +252,7 @@ bool  ExecuteCommand_MeasureDistance( U16 _commandID, bool _forceOutOfRange ) {
       delay( 100 );
     }
 
-    #if 1 // At the moment the sensor is busted so let's just simulate a fake measure command
+    #if 0 // At the moment the sensor is busted so let's just simulate a fake measure command
       char* reply = ExecuteAndWaitReply( 1, "PING", _commandID, "" );
 
       // Fake reply with a sawtooth signal ...
@@ -323,15 +323,20 @@ void loop() {
   U8    payloadLength;
   char* payload;
   U8    result;
+  //*
   if ( (result = ReceivePeek( senderAddress, payloadLength, payload )) != RR_OK ) {
 //  if ( (result = ReceiveWait( senderAddress, payloadLength, payload )) != RR_OK ) {
     // Nothing received...
     delay( CLIENT_POLL_INTERVAL_MS );
     return;
   }
+//*/
+// Test continuous measurements...
+//payload = "CMD=DST0,1234,";
+//payloadLength = strlen( payload );
 
   #ifdef DEBUG_LIGHT
-    Serial.println( str( "Client 1 => Received %s", payload );
+    Serial.println( str( "Client 1 => Received %s", payload ) );
   #endif
 
   if ( senderAddress != RECEIVER_ADDRESS ) {

@@ -11,6 +11,9 @@ using Microsoft.Win32;
 using System.IO;
 using System.IO.Ports;
 
+
+// @TODO: filtrer/smoother le volume sur plein d'entries! C'est trop rough!
+
 namespace WaterTankMonitor {
 	public partial class WaterTankMonitorForm : Form {
 
@@ -30,11 +33,19 @@ namespace WaterTankMonitor {
 		public const float	DEFAULT_SPEED_OF_SOUND = 343.4f;		// Default speed of sound at 1 bar and 20°C is 343.4 m/s
 
 		public const float	TANK_CAPACITY_LITRES = 4000;			// Tank capacity in litres
-		public const float	TANK_HEIGHT_FULL = 1.73f;				// Tank height when full
+		public const float	TANK_HEIGHT_FULL = 1.73f;				// Tank height when full (
 
 		// Reference tank measurements at time of installation
-		public const float	TANK_HEIGHT_REFERENCE = 1.395f;			// Tank height reference (measured for 3225L)
-		public const uint	MEASURED_TIME_REFERENCE = 3724;			// Raw time reference value (measured for 3225L)
+// 		public const float	TANK_HEIGHT_REFERENCE = 1.395f;			// Tank height reference (measured for 3225L)
+// 		public const uint	MEASURED_TIME_REFERENCE = 3724;			// Raw time reference value (measured for 3225L) (=0.6394108 meters from sensor) (sensor is at 2.034 m)
+// 
+// 			// Measured on June 21st at 18:00 (after replacement of faulty sensor by one that is inside a (hopefully) wataerproof container)
+// 		public const float	TANK_HEIGHT_REFERENCE = 1.25f;			// Tank height reference (measured for 2900L)
+// 		public const uint	MEASURED_TIME_REFERENCE = 4191;			// Raw time reference value (measured for 2900L) (=0.7195947 meters from sensor) (sensor is at 1.969 m)
+
+			// Measured on June 23st at 9:30 (after another replacement of the container so it only covers a single exha)
+		public const float	TANK_HEIGHT_REFERENCE = 1.11585f;		// Tank height reference (measured for 2580L)
+		public const uint	MEASURED_TIME_REFERENCE = 5115;			// Raw time reference value (measured for 2580L) (=0.878 meters from sensor) (sensor is at 1.9941 m)
 
 		#endregion
 
@@ -125,11 +136,10 @@ namespace WaterTankMonitor {
 
 		string			m_COMPortName = "COM11";		// Default COM port name
 		SerialPort		m_COMPort = null;
-//		bool			m_COMPortReady = false;
 
-		bool			m_followRunTime = true;			// Default is realtime following of measurements
 		float			m_windowSize_Hours = 1.0f;		// Default window size is 1 hour
 		DateTime		m_windowEndTime = DateTime.Now;	// Default window time is now
+		TimeSpan		m_timeFromNow = TimeSpan.Zero;	// Default delta time between window end time and now is 0 so we track runtime data
 
 		DateTime		m_timeReference = DateTime.Today + TimeSpan.FromDays( 10000 );	// Invalid time reference!
 		float			m_lowWaterLevelWarningLimit_litres = 400;	// Default warning limit is 400 litres
@@ -142,20 +152,7 @@ namespace WaterTankMonitor {
 		float			m_arrowWidth = 8.0f;
 		float			m_arrowLength = 10.0f;
 
-		public bool		FollowRuntime {
-			get => m_followRunTime;
-			set {
-				if ( value == m_followRunTime )
-					return;
-
-				m_followRunTime = value;
-				SetRegKey( "m_followRunTime", m_followRunTime.ToString() );
-
-				if ( m_followRunTime ) {
-					WindowEndTime = DateTime.Now;	// Go to now
-				}
-			}
-		}
+ 		public bool		FollowRuntime => m_timeFromNow.TotalHours >= 0.0;
 
 		/// <summary>
 		/// Gets or sets the size of the time window
@@ -164,7 +161,6 @@ namespace WaterTankMonitor {
 			get => m_windowSize_Hours;
 			set {
 				m_windowSize_Hours = value;
-//				m_windowStartTime = m_windowEndTime - TimeSpan.FromHours( m_windowSize_Hours );
 				SetRegKey( "WindowSize_Hours", m_windowSize_Hours.ToString() );
 				UpdateGraph();
 			}
@@ -177,8 +173,9 @@ namespace WaterTankMonitor {
 			get => m_windowEndTime;
 			set {
 				m_windowEndTime = value;
-//				m_windowStartTime = m_windowEndTime - TimeSpan.FromHours( m_windowSize_Hours );
+				m_timeFromNow = value - DateTime.Now;
 				SetRegKey( "WindowEndTime", m_windowEndTime.ToFileTime().ToString( "X08" ) );
+				SetRegKey( "m_timeFromNow", m_timeFromNow.TotalHours.ToString() );
 				UpdateGraph();
 			}
 		}
@@ -197,7 +194,8 @@ namespace WaterTankMonitor {
 
 		public WaterTankMonitorForm() {
  			m_appKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\WaterTankMonitor" );
-			m_applicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
+//			m_applicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
+			m_applicationPath = Directory.GetCurrentDirectory();	// Makes more sense to use working directory!
 
 			InitializeComponent();
 
@@ -218,13 +216,12 @@ namespace WaterTankMonitor {
 				// Retrieve parameters
 				m_COMPortName = GetRegKey( "m_COMPortName", m_COMPortName );
 				m_windowSize_Hours = float.Parse( GetRegKey( "WindowSize_Hours", m_windowSize_Hours.ToString() ) );
-				m_windowEndTime = DateTime.FromFileTime( long.Parse( GetRegKey( "WindowEndTime", m_windowEndTime.ToFileTime().ToString( "X08" ) ), System.Globalization.NumberStyles.HexNumber ) ) ;
-				m_followRunTime = bool.Parse( GetRegKey( "m_followRunTime", "true" ) );
-				if ( m_followRunTime ) {
-					m_windowEndTime = DateTime.Now;
-				}
+				m_windowEndTime = DateTime.FromFileTime( long.Parse( GetRegKey( "WindowEndTime", m_windowEndTime.ToFileTime().ToString( "X08" ) ), System.Globalization.NumberStyles.HexNumber ) );
+				m_timeFromNow = TimeSpan.FromHours( double.Parse( GetRegKey( "m_timeFromNow", m_timeFromNow.TotalHours.ToString() ) ) );
+				if ( m_timeFromNow.TotalHours > 0 )
+					m_windowEndTime = DateTime.Now + m_timeFromNow;
 
-				m_timeReference = DateTime.FromFileTime( long.Parse( GetRegKey( "TimeReference", m_timeReference.ToFileTime().ToString( "X08" ) ), System.Globalization.NumberStyles.HexNumber ) ) ;
+				m_timeReference = DateTime.FromFileTime( long.Parse( GetRegKey( "TimeReference", m_timeReference.ToFileTime().ToString( "X08" ) ), System.Globalization.NumberStyles.HexNumber ) );
 				if ( !IsTimeReferenceValid ) {
 					m_timeReference = DateTime.Today + TimeSpan.FromDays( 10000 );	// Make sure it's always invalid!
 				}
@@ -677,8 +674,8 @@ if ( checkBox1.Checked ) {
 
 					// Update graph (on main thread only!)
 					this.BeginInvoke( (Action) (() => {
-						if ( m_followRunTime ) {
-							WindowEndTime = _newMeasurement.m_timeStamp;	// Update window's end time to match this measurement
+						if ( FollowRuntime ) {
+							WindowEndTime = _newMeasurement.m_timeStamp + m_timeFromNow;	// Update window's end time to match this measurement and also keep its delta time from now constant
 						} else {
 							UpdateGraph();
 						}
@@ -1043,8 +1040,6 @@ m_pipoMeasurement = false;
 				}
 				WindowEndTime = newEndTime;
 
-				FollowRuntime = false;	// Stop following runtime if we're moving the window
-
 			} else if ( m_mouseButtonsDown == MouseButtons.None ) {
 				UpdateGraph();	// Display value at mouse position
 			}
@@ -1067,8 +1062,6 @@ m_pipoMeasurement = false;
 		private void PanelOutput_MouseWheel( object sender, MouseEventArgs e ) {
 			float	factor = 1.1f;
 			WindowSize_Hours *= e.Delta < 0.0f ? factor : 1.0f / factor;
-
-			FollowRuntime = false;	// Stop following runtime if we're resizing the window
 		}
 
 //		SolidBrush	m_brushBackground = new SolidBrush( Color.FromArgb( 255, 255, 224 ) );	// Light yellow
@@ -1205,9 +1198,10 @@ m_pipoMeasurement = false;
 					float		X = TimeStamp2Client( current );
 					float		Y = previousY;
 
-					if ( current.IsOutOfRange || current.IsVolumeOutOfRange ) {
+					if ( current.IsOutOfRange ) {
 						G.FillEllipse( Brushes.Red, X-3, Y-3, 7, 7 );
-						current = null;
+					} else if ( current.IsVolumeOutOfRange ) {
+						G.FillEllipse( Brushes.DarkOrange, X-3, Y-3, 7, 7 );
 					} else {
 						Y = Level2Client( current );
 						if ( previous != null ) {
@@ -1225,12 +1219,20 @@ m_pipoMeasurement = false;
 						mouseEntryY = Y;
 					}
 
-					previous = current;
+					if ( current.IsOutOfRange || current.IsVolumeOutOfRange ) {
+						previous = null;	// Prevent drawing lines through invalid 
+					} else {
+						previous = current;
+					}
 					previousX = X;
 					previousY = Y;
 					if ( X < 0 )
 						break;	// We've escaped through left side, no need to paint any more measurements...
 				}
+			}
+
+			if ( closestMouseEntryDistance > 100 ) {
+				mouseEntry = null;	// Ignore entries that are too far away from the mouse...
 			}
 
 			// =====================================
@@ -1277,23 +1279,29 @@ m_pipoMeasurement = false;
 			G.DrawEllipse( Pens.Red, mouseEntryX-3, mouseEntryY-3, 7, 7 );
 
 			// Draw text rectangle
-			string	textEntry = mouseEntry.m_timeStamp.ToString( "dd MMMM HH:mm" ) + "\n"
-							  + "Volume = " + ((int) mouseEntry.Volume) + " L\n";
+			string	textEntry = null;
+			if ( !mouseEntry.IsOutOfRange ) {
+				textEntry = mouseEntry.m_timeStamp.ToString( "dd MMMM HH:mm" ) + "\n"
+						  + "Volume = " + ((int) mouseEntry.Volume) + " L (raw = " + mouseEntry.m_rawTime_microSeconds + ")\n";
 
-			if ( deltaTime > 1e-3f ) {
-				textEntry += "Consumption = " + (int) (deltaVolume / deltaTime) + " L/h\n";
-			} else {
-				textEntry += "(Consumption non computable)\n";
-			}
-
-			if ( IsTimeReferenceValid ) {
-				LogEntry	referenceEntry = FindEntry( m_timeReference );
-				float		totalVolume = mouseEntry.Volume - referenceEntry.Volume;
-				if ( referenceEntry != null ) {
-					textEntry += "\n"
-							  + (totalVolume < 0 ? "Consumed " : "♥ Collected +") + (int) totalVolume + " L since\n"
-							  + "reference time " + m_timeReference.ToString( "dd MMMM HH:mm" ) + "\n";
+				if ( deltaTime > 1e-3f ) {
+					textEntry += "Consumption = " + (int) (deltaVolume / deltaTime) + " L/h\n";
+				} else {
+					textEntry += "(Consumption non computable)\n";
 				}
+
+				if ( IsTimeReferenceValid ) {
+					LogEntry	referenceEntry = FindEntry( m_timeReference );
+					float		totalVolume = mouseEntry.Volume - referenceEntry.Volume;
+					if ( referenceEntry != null ) {
+						textEntry += "\n"
+								  + (totalVolume < 0 ? "Consumed " : "♥ Collected +") + (int) totalVolume + " L since\n"
+								  + "reference time " + m_timeReference.ToString( "dd MMMM HH:mm" ) + "\n";
+					}
+				}
+			} else {
+				textEntry = mouseEntry.m_timeStamp.ToString( "dd MMMM HH:mm" ) + "\n"
+						  + "► Out Of Range! ◄";
 			}
 
 			SizeF	textBoxSize = G.MeasureString( textEntry, Font );
@@ -1442,7 +1450,8 @@ m_pipoMeasurement = false;
 		}
 
 		private void buttonNow_Click( object sender, EventArgs e ) {
-			FollowRuntime = true;
+			m_timeFromNow = TimeSpan.Zero;
+			WindowEndTime = DateTime.Now;
 		}
 
 		#region Context Menu
@@ -1518,7 +1527,7 @@ m_pipoMeasurement = false;
 
 		private void notifyIcon_MouseClick( object sender, MouseEventArgs e ) {
 			if ( e.Button == MouseButtons.Left )
-				this.Visible = true;	// Show the form again!
+				this.Visible = !this.Visible;	// Toggle the form
 		}
 	}
 }

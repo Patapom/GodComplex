@@ -5,7 +5,7 @@
 //#define DEBUG
 
 // Define this to output end product commands/responses to the serial (e.g. client send/receive, server send/receive)
-//#define DEBUG_LIGHT
+#define DEBUG_LIGHT
 
 // Define this to be the transmitter module (i.e. CLIENT) and specify the transmitter address, undefine to be the receiver module (i.e. SERVER)
 //#define TRANSMITTER 1   // Transmitter address is 1
