@@ -51,6 +51,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PanelWarning.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PanelWarning.Designer.cs">
+      <DependentUpon>PanelWarning.cs</DependentUpon>
+    </Compile>
     <Compile Include="WaterTankForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -59,6 +65,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="PanelWarning.resx">
+      <DependentUpon>PanelWarning.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="WaterTankForm.resx">
       <DependentUpon>WaterTankForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -70,6 +79,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -83,6 +93,18 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="IconWarning.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="IconWarning.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

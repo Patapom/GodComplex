@@ -47,6 +47,8 @@
 			this.checkBox1 = new System.Windows.Forms.CheckBox();
 			this.button1 = new System.Windows.Forms.Button();
 			this.buttonHour = new System.Windows.Forms.Button();
+			this.panelWarning = new WaterTankMonitor.PanelWarning(this.components);
+			this.panelOutput.SuspendLayout();
 			this.contextMenuStripPanel.SuspendLayout();
 			this.contextMenuStripTray.SuspendLayout();
 			this.SuspendLayout();
@@ -68,6 +70,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.panelOutput.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.panelOutput.ContextMenuStrip = this.contextMenuStripPanel;
+			this.panelOutput.Controls.Add(this.panelWarning);
 			this.panelOutput.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.panelOutput.Location = new System.Drawing.Point(1, 32);
 			this.panelOutput.Name = "panelOutput";
@@ -160,7 +163,7 @@
 			// notifyIcon
 			// 
 			this.notifyIcon.ContextMenuStrip = this.contextMenuStripTray;
-			this.notifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon.Icon")));
+			this.notifyIcon.Icon = global::WaterTankMonitor.Properties.Resources.Icon;
 			this.notifyIcon.Text = "Water Level Monitor";
 			this.notifyIcon.Visible = true;
 			this.notifyIcon.MouseClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon_MouseClick);
@@ -243,6 +246,21 @@
 			this.buttonHour.UseVisualStyleBackColor = true;
 			this.buttonHour.Click += new System.EventHandler(this.buttonHour_Click);
 			// 
+			// panelWarning
+			// 
+			this.panelWarning.BackColor = System.Drawing.Color.Silver;
+			this.panelWarning.BackColorFlash = System.Drawing.Color.White;
+			this.panelWarning.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.panelWarning.FontWarning = new System.Drawing.Font("Microsoft Sans Serif", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.panelWarning.ForeColor = System.Drawing.Color.Red;
+			this.panelWarning.Location = new System.Drawing.Point(100, 73);
+			this.panelWarning.Message = "Achtung!";
+			this.panelWarning.Name = "panelWarning";
+			this.panelWarning.Size = new System.Drawing.Size(564, 265);
+			this.panelWarning.TabIndex = 0;
+			this.panelWarning.Visible = false;
+			this.panelWarning.VisibleChanged += new System.EventHandler(this.panelWarning_VisibleChanged);
+			// 
 			// WaterTankMonitorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -262,6 +280,7 @@
 			this.MinimumSize = new System.Drawing.Size(640, 400);
 			this.Name = "WaterTankMonitorForm";
 			this.Text = "Water Level Monitor";
+			this.panelOutput.ResumeLayout(false);
 			this.contextMenuStripPanel.ResumeLayout(false);
 			this.contextMenuStripTray.ResumeLayout(false);
 			this.ResumeLayout(false);
@@ -293,6 +312,7 @@
 		private System.Windows.Forms.ToolStripMenuItem clearTimeReferenceToolStripMenuItem;
 		private System.Windows.Forms.Button buttonHour;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
+		private PanelWarning panelWarning;
 	}
 }
 

@@ -30,6 +30,9 @@ namespace WaterTankMonitor {
 		public const float	DEBIT_SLOW_LITRE_PER_MINUTE = 0.1f;		// Debit is considered slow when at 0.1 litre / minute
 		public const float	DEBIT_FAST_LITRE_PER_MINUTE = 1.0f;		// Debit is considered fast when at 1.0 litre / minute
 
+		public const float	MEASUREMENT_FILTER_KERNEL_SIZE_MINUTES = 20.0f;	// Filter measures in a 20 minutes kernel
+		public const float	MEASUREMENT_FILTER_KERNEL_SIGMA = 0.466f;		// Gaussian filter is exp( -(delta_t / kernel half size)^2 / sigma^2 ) so we choose sigma so that we have a sensible small value for exp( -1 / sigma^2 ) = 0.01 => sigma = sqrt( -1 / log( 0.01 ) )
+
 		public const float	DEFAULT_SPEED_OF_SOUND = 343.4f;		// Default speed of sound at 1 bar and 20°C is 343.4 m/s
 
 		public const float	TANK_CAPACITY_LITRES = 4000;			// Tank capacity in litres
@@ -60,6 +63,8 @@ namespace WaterTankMonitor {
 
 			public DateTime	m_timeStamp;
 			public uint		m_rawTime_microSeconds;	// The raw sensor time of flight, in µs
+
+			public float	m_filteredVolume = -1;	// Filtered version of the volume
 
 			/// <summary>
 			/// Tells if the entry represents an out of range measure
@@ -231,6 +236,7 @@ namespace WaterTankMonitor {
 				m_fileNameLogEntries = new FileInfo( GetRegKey( "LogFileName", Path.Combine( m_applicationPath, "Tank3.log" ) ) );
 				if ( m_fileNameLogEntries.Exists ) {
 					ReadLogEntries( m_fileNameLogEntries );
+					FilterGraph( 0 );
 				}
 
 				// Create a new session log file
@@ -254,6 +260,10 @@ namespace WaterTankMonitor {
 		protected override void OnSizeChanged( EventArgs e ) {
 			base.OnSizeChanged( e );
 			SaveLocationAndSize( this );
+
+			// Always center the warning panel
+			Size	marginSize = panelOutput.Size - panelWarning.Size;
+			panelWarning.Location = new Point( marginSize.Width / 2, marginSize.Height / 2 );
 		}
 
 		protected override void OnLocationChanged( EventArgs e ) {
@@ -292,11 +302,12 @@ namespace WaterTankMonitor {
 			LogEntry	currentEntry = m_logEntries.Count > 0 ? m_logEntries[m_logEntries.Count-1] : null;
 			LogEntry	lastEntry = m_logEntries.Count > 1 ? m_logEntries[m_logEntries.Count-2] : currentEntry;
 
-				// Estimate the debit
+				// Estimate the flux
 			float		debitEstimate_LitresPerMinute = 0;	// Assume steady state
 			if ( currentEntry != null && lastEntry != null ) {
 				float	deltaTime = (float) (currentEntry.m_timeStamp - lastEntry.m_timeStamp).TotalMinutes;
-				float	deltaVolume = currentEntry.Volume - lastEntry.Volume;
+//				float	deltaVolume = currentEntry.Volume - lastEntry.Volume;
+				float	deltaVolume = currentEntry.m_filteredVolume - lastEntry.m_filteredVolume;
 				debitEstimate_LitresPerMinute = Math.Abs( deltaVolume / Math.Max( 1e-3f, deltaTime ) );
 			}
 
@@ -672,6 +683,10 @@ if ( checkBox1.Checked ) {
 					// Register new measurement
 					m_logEntries.Add( _newMeasurement );
 
+					// Filter the measurement
+					int	startMeasurementIndex = FindMeasurementIndex( _newMeasurement.m_timeStamp - TimeSpan.FromMinutes( 0.5f * MEASUREMENT_FILTER_KERNEL_SIZE_MINUTES ) );
+					FilterGraph( startMeasurementIndex );
+
 					// Update graph (on main thread only!)
 					this.BeginInvoke( (Action) (() => {
 						if ( FollowRuntime ) {
@@ -690,8 +705,6 @@ if ( checkBox1.Checked ) {
 			ExecuteCommand( m_pipoMeasurement ? "MEASUREPIPO" : "MEASURE", 10 * 1000,
 				( string _reply ) => {
 					// Handle reply!
-
-m_pipoMeasurement = false;
 
 					if ( _reply.StartsWith( "TIME=" ) ) {
 						// Prepare a new entry
@@ -726,6 +739,130 @@ m_pipoMeasurement = false;
 
 				( string _error ) => _onError?.Invoke( _error )
 			);
+
+m_pipoMeasurement = false;
+		}
+
+		/// <summary>
+		/// Finds the log entry closest to the specified time
+		/// </summary>
+		/// <param name="_time"></param>
+		int	FindMeasurementIndex( DateTime _time ) {
+			float	closestDelta = float.MaxValue;
+			int		closestEntryIndex = -1;
+
+			int		intervalStartIndex = 0;
+			int		intervalEndIndex = m_logEntries.Count;
+			int		index = m_logEntries.Count / 2;	// Start in the middle
+			int		stride = index;					// Stride half the interval at once
+			while ( stride > 0 ) {
+				// Examine new entry
+				LogEntry	entry = m_logEntries[index];
+				float		delta = (float) (_time - entry.m_timeStamp).TotalMinutes;
+				if ( Math.Abs( delta ) < closestDelta ) {
+					// Found a closer entry...
+					closestDelta = Math.Abs( delta );
+					closestEntryIndex = index;
+					if ( closestDelta < 1e-3f )
+						return closestEntryIndex;	// Found an "exact" value
+				}
+
+				if ( delta < 0 ) {
+					// Go left
+					index -= stride;
+					if ( index < intervalStartIndex ) {
+						// Reduce interval
+						intervalEndIndex = intervalStartIndex + stride;
+						stride /= 2;
+						index = intervalStartIndex + stride;
+					}
+				} else {
+					// Go right
+					index += stride;
+					if ( index >= intervalEndIndex ) {
+						// Reduce interval
+						intervalStartIndex = intervalEndIndex - stride;
+						stride /= 2;
+						index = intervalEndIndex - stride;
+					}
+				}
+			}
+
+			return closestEntryIndex;
+		}
+
+		[System.Diagnostics.DebuggerDisplay( "{m_entry} {FilteredVolume}" )]
+		class FilterItem {
+			public LogEntry	m_entry;
+			public double	m_sumValues = 0.0;
+			public double	m_sumWeights = 0.0;
+
+			public float	FilteredVolume => (float) (m_sumValues / m_sumWeights);
+
+			public FilterItem( LogEntry _entry ) {
+				m_entry = _entry;
+			}
+
+			/// <summary>
+			/// Adds the entry's contribution to the filtered volume
+			/// </summary>
+			/// <param name="_entry"></param>
+			/// <returns>True if the entry is inside the filtering window</returns>
+			public bool	AddContribution( LogEntry _entry ) {
+				TimeSpan	deltaTimeEntry = m_entry.m_timeStamp - _entry.m_timeStamp;
+				double		Dt = deltaTimeEntry.TotalMinutes / MEASUREMENT_FILTER_KERNEL_SIZE_MINUTES;	// Normalized time
+				if ( Math.Abs( Dt ) >= 1.0 )
+					return false;	// Outside of filter window!
+
+				double		weight = Math.Exp( -Dt * Dt / (MEASUREMENT_FILTER_KERNEL_SIGMA * MEASUREMENT_FILTER_KERNEL_SIGMA) );
+				m_sumValues += weight * _entry.Volume;
+				m_sumWeights += weight;
+
+				return true;
+			}
+
+			public void	CommitFilteredVolume() {
+				m_entry.m_filteredVolume = FilteredVolume;
+			}
+		}
+
+		/// <summary>
+		/// Filters the volume measurements of the graph using a gaussian filter kernel
+		/// </summary>
+		/// <param name="_startIndex"></param>
+		void	FilterGraph( int _startIndex ) {
+			if ( m_logEntries.Count == 0 )
+				return;
+
+			List<FilterItem>	filterItems = new List<FilterItem>();	
+			for ( int index=_startIndex; index < m_logEntries.Count; index++ ) {
+				// Enter a new item
+				LogEntry	entry = m_logEntries[index];
+				filterItems.Add( new FilterItem( entry ) );
+
+				// Add contribution of this new item to items in the list
+				int	removeIndex = 0;
+				for ( int itemIndex=0; itemIndex < filterItems.Count; itemIndex++ ) {
+					FilterItem	filterItem = filterItems[itemIndex];
+					if ( !filterItem.AddContribution( entry ) )
+						removeIndex = itemIndex;
+				}
+
+				// Remove values outside of the filtering window
+				while ( removeIndex > 0 ) {
+					FilterItem	filterItem = filterItems[0];
+					filterItem.CommitFilteredVolume();
+					filterItems.RemoveAt( 0 );
+					removeIndex--;
+				}
+			}
+
+			// Finalize remaining items
+			while ( filterItems.Count > 0 ) {
+				FilterItem	filterItem = filterItems[0];
+				filterItem.CommitFilteredVolume();
+				filterItems.RemoveAt( 0 );
+			}
 		}
 
 		/// <summary>
@@ -1061,7 +1198,10 @@ m_pipoMeasurement = false;
 
 		private void PanelOutput_MouseWheel( object sender, MouseEventArgs e ) {
 			float	factor = 1.1f;
+
+			DateTime	centerTime = Client2TimeStamp( Width / 2 );
 			WindowSize_Hours *= e.Delta < 0.0f ? factor : 1.0f / factor;
+			WindowEndTime = centerTime + TimeSpan.FromHours( 0.5f * WindowSize_Hours );
 		}
 
 //		SolidBrush	m_brushBackground = new SolidBrush( Color.FromArgb( 255, 255, 224 ) );	// Light yellow
@@ -1272,7 +1412,8 @@ m_pipoMeasurement = false;
 			LogEntry	prevMouseEntry = mouseEntyIndex > 0 ? m_logEntries[mouseEntyIndex-1] : mouseEntry;
 			LogEntry	nextMouseEntry = mouseEntyIndex < m_logEntries.Count-1 ? m_logEntries[mouseEntyIndex+1] : mouseEntry;
 			float		deltaTime = (float) (nextMouseEntry.m_timeStamp - prevMouseEntry.m_timeStamp).TotalHours;
-			float		deltaVolume = nextMouseEntry.Volume - prevMouseEntry.Volume;
+//			float		deltaVolume = nextMouseEntry.Volume - prevMouseEntry.Volume;
+			float		deltaVolume = nextMouseEntry.m_filteredVolume - prevMouseEntry.m_filteredVolume;
 
 			// Draw hovered log entry
 			G.DrawLine( Pens.Red, mouseEntryX, 0, mouseEntryX, Height );
@@ -1282,7 +1423,9 @@ m_pipoMeasurement = false;
 			string	textEntry = null;
 			if ( !mouseEntry.IsOutOfRange ) {
 				textEntry = mouseEntry.m_timeStamp.ToString( "dd MMMM HH:mm" ) + "\n"
-						  + "Volume = " + ((int) mouseEntry.Volume) + " L (raw = " + mouseEntry.m_rawTime_microSeconds + ")\n";
+						  + "Volume (filtered) = " + ((int) mouseEntry.m_filteredVolume) + " L\n"
+						  + "Volume (raw) = " + ((int) mouseEntry.Volume) + " L\n"
+						  + "(raw µs = " + mouseEntry.m_rawTime_microSeconds + ")\n";
 
 				if ( deltaTime > 1e-3f ) {
 					textEntry += "Consumption = " + (int) (deltaVolume / deltaTime) + " L/h\n";
@@ -1292,11 +1435,13 @@ m_pipoMeasurement = false;
 
 				if ( IsTimeReferenceValid ) {
 					LogEntry	referenceEntry = FindEntry( m_timeReference );
-					float		totalVolume = mouseEntry.Volume - referenceEntry.Volume;
+//					float		totalVolume = mouseEntry.Volume - referenceEntry.Volume;
+					float		totalVolume = mouseEntry.m_filteredVolume - referenceEntry.m_filteredVolume;
 					if ( referenceEntry != null ) {
 						textEntry += "\n"
 								  + (totalVolume < 0 ? "Consumed " : "♥ Collected +") + (int) totalVolume + " L since\n"
-								  + "reference time " + m_timeReference.ToString( "dd MMMM HH:mm" ) + "\n";
+								  + "reference time " + m_timeReference.ToString( "dd MMMM HH:mm" ) + "\n"
+								  + "Estimate: " + (int) (totalVolume / (mouseEntry.m_timeStamp - m_timeReference).TotalDays) + " L per day\n";
 					}
 				}
 			} else {
@@ -1341,7 +1486,7 @@ m_pipoMeasurement = false;
 
 		// Transforms a volume in litres into a Y coordinate
 		float	Level2Client( LogEntry _entry ) {
-			return Level2Client( _entry.Volume );
+			return Level2Client( _entry.m_filteredVolume );
 		}
 		float	Level2Client( float _volume_litres ) {
 			float	H = panelOutput.Height - 3 * m_margin;
@@ -1391,6 +1536,26 @@ m_pipoMeasurement = false;
 			}
 
 			return result;
+		}
+
+		#endregion
+
+		#region Warning Panel Handling
+
+		/// <summary>
+		/// Enters the warning state
+		/// </summary>
+		/// <param name="_warningMessage"></param>
+		void	EnterWarningState( string _warningMessage ) {
+			panelWarning.Message = _warningMessage;
+			panelWarning.Visible = true;
+
+			// Serious enough to warrant a balloon warning!
+ 			notifyIcon.ShowBalloonTip( 5000, "Water Tank Monitor", _warningMessage, ToolTipIcon.Error );
+		}
+
+		private void panelWarning_VisibleChanged( object sender, EventArgs e ) {
+			notifyIcon.Icon = panelWarning.Visible ? Properties.Resources.IconWarning : Properties.Resources.Icon; 
 		}
 
 		#endregion
@@ -1520,9 +1685,11 @@ m_pipoMeasurement = false;
 // 				System.Diagnostics.Debug.WriteLine( "Error: " + _error );
 // 			} );
 
-			// Simulate a dummy measurement
-			m_pipoMeasurement = true;
-			PerformMeasurement( null );
+// 			// Simulate a dummy measurement
+// 			m_pipoMeasurement = true;
+// 			PerformMeasurement( null );
+
+			EnterWarningState( "Oh god! A horrible thing happened!\r\nDO SOMETHING!!!!" );
 		}
 
 		private void notifyIcon_MouseClick( object sender, MouseEventArgs e ) {
