@@ -369,6 +369,8 @@ if ( checkBox1.Checked ) {
 		protected override void OnVisibleChanged( EventArgs e ) {
 			base.OnVisibleChanged( e );
 			UpdateGraph();
+			if ( Visible )
+				Focus();
 		}
 
 		void	UpdateGraph() {
@@ -705,7 +707,6 @@ if ( checkBox1.Checked ) {
 						// Should we trigger a warning?
 						if ( !_newMeasurement.IsVolumeOutOfRange && _newMeasurement.m_filteredVolume < m_lowWaterLevelWarningLimit_litres && (_newMeasurement.m_timeStamp - m_lastWarningTimeStamp).TotalMinutes > DELAY_BETWEEN_WARNINGS_MINUTES ) {
 							EnterWarningState( "Low water level in tank!" );
-							m_lastWarningTimeStamp = _newMeasurement.m_timeStamp;
 						}
 
 					}) );
@@ -1296,7 +1297,7 @@ m_pipoMeasurement = false;
 
 				string	markerText = "";
 				switch ( markerType ) {
-					case MARKER_TYPE.MONTH: markerText = m_monthNames[(((markerReferenceTime.Month + markerIndex)%12)+12)%12]; break;
+					case MARKER_TYPE.MONTH: markerText = m_monthNames[(((markerReferenceTime.Month - 1 + markerIndex)%12)+12)%12]; break;
 					case MARKER_TYPE.WEEK: break;
 					case MARKER_TYPE.DAY: markerText = (markerReferenceTime + TimeSpan.FromDays( markerIndex )).DayOfWeek.ToString(); break;
 					case MARKER_TYPE.HOUR: markerText = (markerReferenceTime + TimeSpan.FromHours( markerIndex )).Hour.ToString( "G02" ); break;
@@ -1572,6 +1573,8 @@ m_pipoMeasurement = false;
 
 			// Serious enough to warrant a balloon warning!
  			notifyIcon.ShowBalloonTip( 5000, "Water Tank Monitor", _warningMessage, ToolTipIcon.Error );
+
+			m_lastWarningTimeStamp = DateTime.Now;
 		}
 
 		private void panelWarning_VisibleChanged( object sender, EventArgs e ) {

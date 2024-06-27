@@ -279,6 +279,7 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
 			this.MinimumSize = new System.Drawing.Size(640, 400);
 			this.Name = "WaterTankMonitorForm";
+			this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
 			this.Text = "Water Level Monitor";
 			this.panelOutput.ResumeLayout(false);
 			this.contextMenuStripPanel.ResumeLayout(false);
