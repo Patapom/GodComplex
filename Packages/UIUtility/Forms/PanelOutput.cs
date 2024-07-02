@@ -29,17 +29,18 @@ namespace UIUtility
 
 		public event UpdateBitmapDelegate	BitmapUpdating;
 
-		public PanelOutput()
-		{
+		public PanelOutput() {
 			InitializeComponent();
+			SetStyle( ControlStyles.ResizeRedraw, true );
+			SetStyle( ControlStyles.Selectable, true );
 			UpdateBitmap();
 		}
 
-		public PanelOutput( IContainer container )
-		{
+		public PanelOutput( IContainer container ) {
 			container.Add( this );
-
 			InitializeComponent();
+			SetStyle( ControlStyles.ResizeRedraw, true );
+			SetStyle( ControlStyles.Selectable, true );
 			UpdateBitmap();
 		}
 
@@ -72,6 +73,7 @@ namespace UIUtility
 		private void InitializeComponent()
 		{
 			components = new System.ComponentModel.Container();
+			this.DoubleBuffered = true;
 		}
 
 		#endregion

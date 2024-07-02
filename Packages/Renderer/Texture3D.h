@@ -62,12 +62,12 @@ namespace Renderer {
 
 		PixelsBuffer^	MapRead( int _mipLevelIndex ) {
 			const D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->MapRead( _mipLevelIndex );
-			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, 0, true );
+			return gcnew PixelsBuffer( mappedResource, Depth, _mipLevelIndex, 0, true );
 		}
 
 		PixelsBuffer^	MapWrite( int _mipLevelIndex ) {
 			const D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->MapWrite( _mipLevelIndex );
-			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, 0, false );
+			return gcnew PixelsBuffer( mappedResource, Depth, _mipLevelIndex, 0, false );
 		}
 
 		void			UnMap( PixelsBuffer^ _mappedSubResource ) {

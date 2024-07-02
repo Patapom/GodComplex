@@ -120,10 +120,10 @@ namespace Renderer {
 					U32							pixelSize;
 					DXGIFormat2PixelFormat( m_texture->GetFormat(), componentFormat, pixelSize );
 					if ( m_texture->GetWidth() * pixelSize != mappedResource.RowPitch )
-					throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
+						throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
 				}
 			#endif
-			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, true );
+			return gcnew PixelsBuffer( mappedResource, 1, _mipLevelIndex, _arrayIndex, true );
 		}
 
 		PixelsBuffer^	MapWrite( UInt32 _mipLevelIndex, UInt32 _arrayIndex ) {
@@ -140,7 +140,7 @@ namespace Renderer {
 						throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
 				}
 			#endif
-			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, false );
+			return gcnew PixelsBuffer( mappedResource, 1, _mipLevelIndex, _arrayIndex, false );
 		}
 
 		void			UnMap( PixelsBuffer^ _mappedSubResource ) {

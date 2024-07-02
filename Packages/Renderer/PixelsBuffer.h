@@ -32,14 +32,20 @@ namespace Renderer {
 
 		// Makes the reader/writer jump to the proper scanline
 		void	JumpToScanline( System::IO::BinaryReader^ _reader, UInt32 _Y ) {
-			_reader->BaseStream->Position = _Y * m_rowPitch;
+			JumpToScanline( _reader, _Y, 0 );
+		}
+		void	JumpToScanline( System::IO::BinaryReader^ _reader, UInt32 _Y, UInt32 _D ) {
+			_reader->BaseStream->Position = _Y * m_rowPitch + _D * m_depthPitch;
 		}
 		void	JumpToScanline( System::IO::BinaryWriter^ _writer, UInt32 _Y ) {
-			_writer->BaseStream->Position = _Y * m_rowPitch;
+			JumpToScanline( _writer, _Y, 0 );
+		}
+		void	JumpToScanline( System::IO::BinaryWriter^ _writer, UInt32 _Y, UInt32 _D ) {
+			_writer->BaseStream->Position = _Y * m_rowPitch + _D * m_depthPitch;
 		}
 
 	internal:
-		PixelsBuffer( const D3D11_MAPPED_SUBRESOURCE& _subResource, UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _readOnly ) : ByteBuffer( _subResource.DepthPitch, 0 ) {
+		PixelsBuffer( const D3D11_MAPPED_SUBRESOURCE& _subResource, UInt32 _depth, UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _readOnly ) : ByteBuffer( _depth * _subResource.DepthPitch, 0 ) {
 			m_rowPitch = _subResource.RowPitch;
 			m_depthPitch = _subResource.DepthPitch;
 
@@ -50,13 +56,13 @@ namespace Renderer {
 
 			if ( m_readOnly ) {
 				// Copy mapped resource now
-				System::Runtime::InteropServices::Marshal::Copy( System::IntPtr( _subResource.pData ), m_Buffer, 0, m_depthPitch );
+				System::Runtime::InteropServices::Marshal::Copy( System::IntPtr( _subResource.pData ), m_Buffer, 0, m_Buffer->Length );
 			}
 		}
 
 		// Copies back buffer's content to mapped sub-resources
 		void	WriteToMappedSubResource() {
-			System::Runtime::InteropServices::Marshal::Copy( m_Buffer, 0, System::IntPtr( m_mappedSubResource->pData ), m_depthPitch );
+			System::Runtime::InteropServices::Marshal::Copy( m_Buffer, 0, System::IntPtr( m_mappedSubResource->pData ), m_Buffer->Length );
 		}
 
 // Enabling this helper requires to include MathStructs.h but doing so results in Device.h failing to compile!!! ô0

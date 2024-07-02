@@ -39,32 +39,48 @@ namespace WaterTankMonitor {
 		public const float	DEFAULT_SPEED_OF_SOUND = 343.4f;		// Default speed of sound at 1 bar and 20°C is 343.4 m/s
 
 		public const float	TANK_CAPACITY_LITRES = 4000;			// Tank capacity in litres
-		public const float	TANK_HEIGHT_FULL = 1.73f;				// Tank height when full (
+
+		//////////////////////////////////////////////////////////////////////////
+		/// Sensor Version 0
+		///
+		public const float	TANK_HEIGHT_FULL0 = 1.73f;				// Tank height when full (
 
 		// Reference tank measurements at time of installation
-// 		public const float	TANK_HEIGHT_REFERENCE = 1.395f;			// Tank height reference (measured for 3225L)
-// 		public const uint	MEASURED_TIME_REFERENCE = 3724;			// Raw time reference value (measured for 3225L) (=0.6394108 meters from sensor) (sensor is at 2.034 m)
+// 		public const float	TANK_HEIGHT_REFERENCE0 = 1.395f;		// Tank height reference (measured for 3225L)
+// 		public const uint	MEASURED_TIME_REFERENCE0 = 3724;		// Raw time reference value (measured for 3225L) (=0.6394108 meters from sensor) (sensor is at 2.034 m)
 // 
 // 			// Measured on June 21st at 18:00 (after replacement of faulty sensor by one that is inside a (hopefully) wataerproof container)
-// 		public const float	TANK_HEIGHT_REFERENCE = 1.25f;			// Tank height reference (measured for 2900L)
-// 		public const uint	MEASURED_TIME_REFERENCE = 4191;			// Raw time reference value (measured for 2900L) (=0.7195947 meters from sensor) (sensor is at 1.969 m)
+// 		public const float	TANK_HEIGHT_REFERENCE0 = 1.25f;			// Tank height reference (measured for 2900L)
+// 		public const uint	MEASURED_TIME_REFERENCE0 = 4191;		// Raw time reference value (measured for 2900L) (=0.7195947 meters from sensor) (sensor is at 1.969 m)
 
 			// Measured on June 23st at 9:30 (after another replacement of the container so it only covers a single exha)
-		public const float	TANK_HEIGHT_REFERENCE = 1.11585f;		// Tank height reference (measured for 2580L)
-		public const uint	MEASURED_TIME_REFERENCE = 5115;			// Raw time reference value (measured for 2580L) (=0.878 meters from sensor) (sensor is at 1.9941 m)
+		public const float	TANK_HEIGHT_REFERENCE0 = 1.11585f;		// Tank height reference (measured for 2580L)
+		public const uint	MEASURED_TIME_REFERENCE0 = 5115;		// Raw time reference value (measured for 2580L) (=0.878 meters from sensor) (sensor is at 1.9941 m)
+
+		//////////////////////////////////////////////////////////////////////////
+		/// Sensor Version 1
+		///
+			// Measured on July 2nd at 14:50 (sensor upgrade!)
+		public const float	TANK_HEIGHT_FULL1 = 1.733f;				// Tank height when full (
+		public const float	TANK_HEIGHT_REFERENCE1 = 1.472f;		// Tank height reference (measured for 3997L)
+		public const uint	MEASURED_TIME_REFERENCE1 = 3128;		// Raw time reference value (measured for 3997L) (=0.5370 meters from sensor) (sensor is at 2.009 m)
 
 		#endregion
 
 		#region TYPES
 
-		class CommandTimeOutException : Exception {
-
-		}
+		class CommandTimeOutException : Exception { }
 
 		[System.Diagnostics.DebuggerDisplay( "{Volume}L  ({m_timeStamp})" )]
 		class LogEntry {
 
+			enum SENSOR_VERSION {
+				VERSION0,	// First sensor, HR-SR04 from 
+				VERSION1,	// New sensor changed on July 2nd at 15h
+			}
+
 			public DateTime	m_timeStamp;
+			SENSOR_VERSION	m_sensorVersion;
 			public uint		m_rawTime_microSeconds;	// The raw sensor time of flight, in µs
 
 			public float	m_filteredVolume = -1;	// Filtered version of the volume
@@ -87,10 +103,18 @@ namespace WaterTankMonitor {
 			/// <summary>
 			/// Gets the tank volume in litres
 			/// </summary>
-			public float	Volume => Distance2Volume( RawTime2Distance( m_rawTime_microSeconds ) );
+			public float	Volume {
+				get {
+					float	distance = RawTime2Distance( m_rawTime_microSeconds );
+					return m_sensorVersion == SENSOR_VERSION.VERSION0 ? Distance2Volume0( distance ) : Distance2Volume1( distance );
+				}
+			}
+
+			static DateTime	S_SENSOR_CHANGE0_1 = new DateTime( 2024, 7, 2, 15, 0, 0 );	// Date of change from sensor version 0 to version 1
 
 			public LogEntry( uint _rawTime_microSeconds ) {
 				m_timeStamp = DateTime.Now;
+				m_sensorVersion = m_timeStamp <  S_SENSOR_CHANGE0_1 ? SENSOR_VERSION.VERSION0 : SENSOR_VERSION.VERSION1;
 				m_rawTime_microSeconds = _rawTime_microSeconds;
 			}
 
@@ -112,10 +136,17 @@ namespace WaterTankMonitor {
 			/// </summary>
 			/// <param name="_distance_meters"></param>
 			/// <returns></returns>
-			public static float	Distance2Volume( float _distance_meters ) {
-				float	distance_Ref = RawTime2Distance( MEASURED_TIME_REFERENCE );
-				float	distance_4000L = distance_Ref - (TANK_HEIGHT_FULL - TANK_HEIGHT_REFERENCE);	// Measured distance when the tank is full
-				float	distance_0L = distance_4000L + TANK_HEIGHT_FULL;							// Measure distance when the tank is empty
+			public static float	Distance2Volume0( float _distance_meters ) {
+				float	distance_Ref = RawTime2Distance( MEASURED_TIME_REFERENCE0 );
+				float	distance_4000L = distance_Ref - (TANK_HEIGHT_FULL0 - TANK_HEIGHT_REFERENCE0);	// Measured distance when the tank is full
+				float	distance_0L = distance_4000L + TANK_HEIGHT_FULL0;								// Measure distance when the tank is empty
+				return (_distance_meters - distance_0L) * TANK_CAPACITY_LITRES / (distance_4000L - distance_0L);
+			}
+
+			public static float	Distance2Volume1( float _distance_meters ) {
+				float	distance_Ref = RawTime2Distance( MEASURED_TIME_REFERENCE1 );
+				float	distance_4000L = distance_Ref - (TANK_HEIGHT_FULL1 - TANK_HEIGHT_REFERENCE1);	// Measured distance when the tank is full
+				float	distance_0L = distance_4000L + TANK_HEIGHT_FULL1;								// Measure distance when the tank is empty
 				return (_distance_meters - distance_0L) * TANK_CAPACITY_LITRES / (distance_4000L - distance_0L);
 			}
 

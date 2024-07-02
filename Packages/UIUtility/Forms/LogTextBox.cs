@@ -66,8 +66,14 @@ namespace UIUtility
 			m_Log.ToString() + @"\line }";
 
 			this.SuspendLayout();
+
+			bool	wasAutoScrolling = SelectionStart == Rtf.Length;	// Already auto scrolling?
+
 			this.Rtf = RTFText;
-			SelectionStart = this.Rtf.Length;
+
+			if ( wasAutoScrolling )
+				SelectionStart = this.Rtf.Length;	// Continue to auto scroll...
+
 			this.ScrollToCaret();
 			this.ResumeLayout();
 		}
