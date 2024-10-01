@@ -32,6 +32,7 @@
 			this.clearTimeReferenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
 			this.setLowLevelWarningLimitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.panelWarning = new WaterTankMonitor.PanelWarning(this.components);
 			this.buttonMonth = new System.Windows.Forms.Button();
 			this.comboBoxCOMPort = new System.Windows.Forms.ComboBox();
 			this.buttonWeek = new System.Windows.Forms.Button();
@@ -47,7 +48,8 @@
 			this.checkBox1 = new System.Windows.Forms.CheckBox();
 			this.button1 = new System.Windows.Forms.Button();
 			this.buttonHour = new System.Windows.Forms.Button();
-			this.panelWarning = new WaterTankMonitor.PanelWarning(this.components);
+			this.takeMeasurementToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
 			this.panelOutput.SuspendLayout();
 			this.contextMenuStripPanel.SuspendLayout();
 			this.contextMenuStripTray.SuspendLayout();
@@ -81,12 +83,14 @@
 			// contextMenuStripPanel
 			// 
 			this.contextMenuStripPanel.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.takeMeasurementToolStripMenuItem1,
+            this.toolStripMenuItem3,
             this.setTimeReferenceToolStripMenuItem,
             this.clearTimeReferenceToolStripMenuItem,
             this.toolStripMenuItem2,
             this.setLowLevelWarningLimitToolStripMenuItem});
 			this.contextMenuStripPanel.Name = "contextMenuStripPanel";
-			this.contextMenuStripPanel.Size = new System.Drawing.Size(224, 76);
+			this.contextMenuStripPanel.Size = new System.Drawing.Size(224, 126);
 			this.contextMenuStripPanel.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripPanel_Opening);
 			// 
 			// setTimeReferenceToolStripMenuItem
@@ -114,6 +118,21 @@
 			this.setLowLevelWarningLimitToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
 			this.setLowLevelWarningLimitToolStripMenuItem.Text = "Set Low Level Warning Limit";
 			this.setLowLevelWarningLimitToolStripMenuItem.Click += new System.EventHandler(this.setLowLevelWarningLimitToolStripMenuItem_Click);
+			// 
+			// panelWarning
+			// 
+			this.panelWarning.BackColor = System.Drawing.Color.Silver;
+			this.panelWarning.BackColorFlash = System.Drawing.Color.White;
+			this.panelWarning.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.panelWarning.FontWarning = new System.Drawing.Font("Microsoft Sans Serif", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.panelWarning.ForeColor = System.Drawing.Color.Red;
+			this.panelWarning.Location = new System.Drawing.Point(100, 73);
+			this.panelWarning.Message = "Achtung!";
+			this.panelWarning.Name = "panelWarning";
+			this.panelWarning.Size = new System.Drawing.Size(564, 265);
+			this.panelWarning.TabIndex = 0;
+			this.panelWarning.Visible = false;
+			this.panelWarning.VisibleChanged += new System.EventHandler(this.panelWarning_VisibleChanged);
 			// 
 			// buttonMonth
 			// 
@@ -246,20 +265,17 @@
 			this.buttonHour.UseVisualStyleBackColor = true;
 			this.buttonHour.Click += new System.EventHandler(this.buttonHour_Click);
 			// 
-			// panelWarning
+			// takeMeasurementToolStripMenuItem1
 			// 
-			this.panelWarning.BackColor = System.Drawing.Color.Silver;
-			this.panelWarning.BackColorFlash = System.Drawing.Color.White;
-			this.panelWarning.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.panelWarning.FontWarning = new System.Drawing.Font("Microsoft Sans Serif", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.panelWarning.ForeColor = System.Drawing.Color.Red;
-			this.panelWarning.Location = new System.Drawing.Point(100, 73);
-			this.panelWarning.Message = "Achtung!";
-			this.panelWarning.Name = "panelWarning";
-			this.panelWarning.Size = new System.Drawing.Size(564, 265);
-			this.panelWarning.TabIndex = 0;
-			this.panelWarning.Visible = false;
-			this.panelWarning.VisibleChanged += new System.EventHandler(this.panelWarning_VisibleChanged);
+			this.takeMeasurementToolStripMenuItem1.Name = "takeMeasurementToolStripMenuItem1";
+			this.takeMeasurementToolStripMenuItem1.Size = new System.Drawing.Size(223, 22);
+			this.takeMeasurementToolStripMenuItem1.Text = "Take Measurement Now";
+			this.takeMeasurementToolStripMenuItem1.Click += new System.EventHandler(this.takeMeasurementToolStripMenuItem_Click);
+			// 
+			// toolStripMenuItem3
+			// 
+			this.toolStripMenuItem3.Name = "toolStripMenuItem3";
+			this.toolStripMenuItem3.Size = new System.Drawing.Size(220, 6);
 			// 
 			// WaterTankMonitorForm
 			// 
@@ -314,6 +330,8 @@
 		private System.Windows.Forms.Button buttonHour;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
 		private PanelWarning panelWarning;
+		private System.Windows.Forms.ToolStripMenuItem takeMeasurementToolStripMenuItem1;
+		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
 	}
 }
 

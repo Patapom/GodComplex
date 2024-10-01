@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define USE_DUAL_MEASUREMENTS
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -12,7 +14,13 @@ using System.IO;
 using System.IO.Ports;
 
 
-// @TODO: filtrer/smoother le volume sur plein d'entries! C'est trop rough!
+// @TODO: Meilleur filtre!
+
+ajouter une bille rouge dans tray icon quand COM closed
+rajouter une option pour créer/modifier/effacer des events (pluie, grosse douche, lessives, etc.) + conso pendant/depuis l'event
+rajouter l'estimate pour la journée en comptant combien de litres on a bouffé depuis minuit
+Débugger ce putain de safe handle disposed quand on abort la thread de COM!
+Gérer niveau minimal autorisé => juste au-dessus du tuyau qui est à 13.5cm (312 L)
 
 namespace WaterTankMonitor {
 	public partial class WaterTankMonitorForm : Form {
@@ -58,12 +66,27 @@ namespace WaterTankMonitor {
 		public const uint	MEASURED_TIME_REFERENCE0 = 5115;		// Raw time reference value (measured for 2580L) (=0.878 meters from sensor) (sensor is at 1.9941 m)
 
 		//////////////////////////////////////////////////////////////////////////
-		/// Sensor Version 1
+		/// Sensor Version 1 (SR-04 module is separate from the actual speaker/microphone)
 		///
+		#if USE_DUAL_MEASUREMENTS
+			// Tank swap on July 22nd => We finally have a measurement for a low water level (~100L)
+			// Mesure du tank 4U au moment du changement : 3100 L / 1.335m => 3146µs => 0.6775282 m (sensor would be at 2.012 m)
+			//
+			public const float	MEASURED_TANK_VOLUME_HIGH = 3397.0f;	// Approximate tank volume when high
+			public const int	MEASURED_TIME_REFERENCE_HIGH = 3128;	// Raw time reference value (= 0.5370 meters from sensor)
+																		// Measured height = 1.472 m => sensor would be at 2.009 m
+
+
+			public const float	MEASURED_TANK_VOLUME_LOW = 100.0f;		// Approximate tank volume when low
+			public const int	MEASURED_TIME_REFERENCE_LOW = 10786;	// Raw time reference value (= 1.8519 meters from sensor)
+																		// Measured height = 0.18 m => sensor would be at 2.032 m (totally coherent!)
+		#else
 			// Measured on July 2nd at 14:50 (sensor upgrade!)
-		public const float	TANK_HEIGHT_FULL1 = 1.733f;				// Tank height when full (
-		public const float	TANK_HEIGHT_REFERENCE1 = 1.472f;		// Tank height reference (measured for 3997L)
-		public const uint	MEASURED_TIME_REFERENCE1 = 3128;		// Raw time reference value (measured for 3997L) (=0.5370 meters from sensor) (sensor is at 2.009 m)
+			public const float	TANK_HEIGHT_FULL1 = 1.733f;				// Tank height when full
+
+			public const float	TANK_HEIGHT_REFERENCE1 = 1.472f;		// Tank height reference (measured for 3397L)
+			public const uint	MEASURED_TIME_REFERENCE1 = 3128;		// Raw time reference value (measured for 3397L) (=0.5370 meters from sensor) (sensor is at 2.009 m)
+		#endif
 
 		#endregion
 
@@ -77,6 +100,7 @@ namespace WaterTankMonitor {
 			enum SENSOR_VERSION {
 				VERSION0,	// First sensor, HR-SR04 from 
 				VERSION1,	// New sensor changed on July 2nd at 15h
+				VERSION2,	// Switch to tank 4 July 22nd at 14h
 			}
 
 			public DateTime	m_timeStamp;
@@ -105,8 +129,7 @@ namespace WaterTankMonitor {
 			/// </summary>
 			public float	Volume {
 				get {
-					float	distance = RawTime2Distance( m_rawTime_microSeconds );
-					return m_sensorVersion == SENSOR_VERSION.VERSION0 ? Distance2Volume0( distance ) : Distance2Volume1( distance );
+					return m_sensorVersion == SENSOR_VERSION.VERSION0 ? RawTime2Volume0( m_rawTime_microSeconds ) : RawTime2Volume1( m_rawTime_microSeconds );
 				}
 			}
 
@@ -136,18 +159,27 @@ namespace WaterTankMonitor {
 			/// </summary>
 			/// <param name="_distance_meters"></param>
 			/// <returns></returns>
-			public static float	Distance2Volume0( float _distance_meters ) {
+			public static float	RawTime2Volume0( uint _rawTime_microSeconds ) {
+				float	distance_meters = RawTime2Distance( _rawTime_microSeconds );
 				float	distance_Ref = RawTime2Distance( MEASURED_TIME_REFERENCE0 );
 				float	distance_4000L = distance_Ref - (TANK_HEIGHT_FULL0 - TANK_HEIGHT_REFERENCE0);	// Measured distance when the tank is full
 				float	distance_0L = distance_4000L + TANK_HEIGHT_FULL0;								// Measure distance when the tank is empty
-				return (_distance_meters - distance_0L) * TANK_CAPACITY_LITRES / (distance_4000L - distance_0L);
+				return (distance_meters - distance_0L) * TANK_CAPACITY_LITRES / (distance_4000L - distance_0L);
 			}
 
-			public static float	Distance2Volume1( float _distance_meters ) {
-				float	distance_Ref = RawTime2Distance( MEASURED_TIME_REFERENCE1 );
-				float	distance_4000L = distance_Ref - (TANK_HEIGHT_FULL1 - TANK_HEIGHT_REFERENCE1);	// Measured distance when the tank is full
-				float	distance_0L = distance_4000L + TANK_HEIGHT_FULL1;								// Measure distance when the tank is empty
-				return (_distance_meters - distance_0L) * TANK_CAPACITY_LITRES / (distance_4000L - distance_0L);
+			public static float	RawTime2Volume1( uint _rawTime_microSeconds ) {
+				#if USE_DUAL_MEASUREMENTS	// Dual measurement (high + low)
+					float	t = (float) ((int) _rawTime_microSeconds - MEASURED_TIME_REFERENCE_LOW) / (MEASURED_TIME_REFERENCE_HIGH - MEASURED_TIME_REFERENCE_LOW);
+					float	volume = MEASURED_TANK_VOLUME_LOW + t * (MEASURED_TANK_VOLUME_HIGH - MEASURED_TANK_VOLUME_LOW);
+					return volume;
+				#else		// Single measurement
+					float	distance_meters = RawTime2Distance( _rawTime_microSeconds );
+
+					float	distance_Ref = RawTime2Distance( MEASURED_TIME_REFERENCE1 );
+					float	distance_4000L = distance_Ref - (TANK_HEIGHT_FULL1 - TANK_HEIGHT_REFERENCE1);	// Measured distance when the tank is full
+					float	distance_0L = distance_4000L + TANK_HEIGHT_FULL1;								// Measure distance when the tank is empty
+					return (distance_meters - distance_0L) * TANK_CAPACITY_LITRES / (distance_4000L - distance_0L);
+				#endif
 			}
 
 			/// <summary>
@@ -193,6 +225,31 @@ namespace WaterTankMonitor {
 		int				m_margin = 16;
 		float			m_arrowWidth = 8.0f;
 		float			m_arrowLength = 10.0f;
+
+		// Notify icon text
+		string			m_notifyIconTitle = "Water Level Monitor";
+		string			m_notifyIconWarning = null;
+		string			m_notifyIconText = null;
+
+		string	NotifyIconWarning {
+			get => m_notifyIconWarning;
+			set {
+				if ( value == m_notifyIconWarning )
+					return;
+				m_notifyIconWarning = value;
+				UpdateNotifyIconText();
+			}
+		}
+
+		string	NotifyIconText {
+			get => m_notifyIconText;
+			set {
+				if ( value == m_notifyIconText )
+					return;
+				m_notifyIconText = value;
+				UpdateNotifyIconText();
+			}
+		}
 
  		public bool		FollowRuntime => m_timeFromNow.TotalHours >= 0.0;
 
@@ -270,7 +327,9 @@ namespace WaterTankMonitor {
 				m_lowWaterLevelWarningLimit_litres = float.Parse( GetRegKey( "m_lowWaterLevelWarningLimit_litres", m_lowWaterLevelWarningLimit_litres.ToString() ) );
 
 				// Open log file
-				m_fileNameLogEntries = new FileInfo( GetRegKey( "LogFileName", Path.Combine( m_applicationPath, "Tank3.log" ) ) );
+				string	logFileName = GetRegKey( "LogFileName", "Tank3.log" );
+//				m_fileNameLogEntries = new FileInfo( GetRegKey( "LogFileName", Path.Combine( m_applicationPath, "Tank3.log" ) ) );
+				m_fileNameLogEntries = new FileInfo( GetRegKey( "LogFileName", Path.Combine( m_applicationPath, logFileName ) ) );
 				if ( m_fileNameLogEntries.Exists ) {
 					ReadLogEntries( m_fileNameLogEntries );
 					FilterGraph( 0 );
@@ -494,6 +553,8 @@ if ( checkBox1.Checked ) {
 				} catch ( Exception _e ) {
 					// Notify and exit thread...
 					that.BeginInvoke( (Action) (() => {
+						UpdateNotifyIconIcon();	// Update icon if port failed to open...
+
 						MessageBoxError( "Failed to open COM port!", _e );
 					}) );
 					return;
@@ -502,11 +563,14 @@ if ( checkBox1.Checked ) {
 				// Notify port is open
 				_onPortOpen?.Invoke();
 
+				// Update icon if port is now open...
+				UpdateNotifyIconIcon();
+
 				try {
 					// Listen for commands
 					while ( true ) {
 						COMCommand	command = null;
-						lock ( this ) {
+						lock ( that ) {
 							if ( !m_COMPort.IsOpen )
 								throw new InvalidOperationException( "Port closed while waiting for commands" );
 
@@ -577,6 +641,8 @@ if ( checkBox1.Checked ) {
 				} finally {
 					// Notify port closed
 					_onPortClosed?.Invoke();
+
+					UpdateNotifyIconIcon();	// Update icon...
 				}
 
 			} );
@@ -740,6 +806,9 @@ if ( checkBox1.Checked ) {
 							EnterWarningState( "Low water level in tank!" );
 						}
 
+						// Update notify icon text with current measurement
+						NotifyIconText = ((int) _newMeasurement.m_filteredVolume).ToString() + " L (" + _newMeasurement.m_timeStamp.ToString( "dd MMMM HH:mm" ) + ")";
+
 					}) );
 				},
 				_onError
@@ -795,7 +864,7 @@ m_pipoMeasurement = false;
 		/// <param name="_time"></param>
 		int	FindMeasurementIndex( DateTime _time ) {
 			float	closestDelta = float.MaxValue;
-			int		closestEntryIndex = -1;
+			int		closestEntryIndex = 0;
 
 			int		index = m_logEntries.Count / 2;	// Start in the middle
 			int		stride = index;					// Stride half the interval at once
@@ -1034,6 +1103,22 @@ m_pipoMeasurement = false;
 
 		DialogResult	MessageBox( string _message, MessageBoxIcon _icon, MessageBoxButtons _buttons=MessageBoxButtons.OK, MessageBoxDefaultButton _default=MessageBoxDefaultButton.Button1 ) {
 			return System.Windows.Forms.MessageBox.Show( this, _message, "Water Tank Monitor", _buttons, _icon, _default );
+		}
+
+		void	UpdateNotifyIconText() {
+			string	text = m_notifyIconTitle;
+			if ( m_notifyIconWarning != null )
+				text += "\r\n" + m_notifyIconWarning;
+			if ( m_notifyIconText != null )
+				text += "\r\n" + m_notifyIconText;
+			notifyIcon.Text = text;
+		}
+
+		void	UpdateNotifyIconIcon() {
+			bool	isInError = !m_COMPort.IsOpen		// Did COM port fail to open?
+							  | panelWarning.Visible;	// Did a warning occurred?
+
+			notifyIcon.Icon = isInError ? Properties.Resources.IconWarning : Properties.Resources.Icon; 
 		}
 
 		#endregion
@@ -1505,11 +1590,11 @@ m_pipoMeasurement = false;
 			float	textBoxMargin = 4;
 			float	rectW = textBoxMargin + textBoxSize.Width + textBoxMargin;
 			float	rectH = textBoxMargin + textBoxSize.Height + textBoxMargin;
-			float	rectX =  mouseEntryX + 5;
+			float	rectX =  mouseEntryX + 50;
 			float	rectY =  mouseEntryY - 0.5f * rectH;
 
 			if ( rectX + rectW > panelOutput.Width ) {
-				rectX = mouseEntryX - 5 - rectW;
+				rectX = mouseEntryX - 50 - rectW;
 			}
 			if ( rectY < 0 ) {
 				rectY = 0;
@@ -1609,7 +1694,8 @@ m_pipoMeasurement = false;
 		}
 
 		private void panelWarning_VisibleChanged( object sender, EventArgs e ) {
-			notifyIcon.Icon = panelWarning.Visible ? Properties.Resources.IconWarning : Properties.Resources.Icon; 
+			NotifyIconWarning = panelWarning.Visible ? panelWarning.Message : null;
+			UpdateNotifyIconIcon();
 		}
 
 		#endregion
@@ -1730,8 +1816,6 @@ m_pipoMeasurement = false;
 
 		#endregion
 
-		#endregion
-
 		private void button1_Click( object sender, EventArgs e ) {
 // 			ExecuteCommand( "GETBUFFERSIZE", 10 * 1000, ( string _reply ) => {
 // 				System.Diagnostics.Debug.WriteLine( _reply );
@@ -1750,5 +1834,7 @@ m_pipoMeasurement = false;
 			if ( e.Button == MouseButtons.Left )
 				this.Visible = !this.Visible;	// Toggle the form
 		}
+
+		#endregion
 	}
 }

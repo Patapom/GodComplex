@@ -31,6 +31,7 @@ namespace UIUtility
 
 		public PanelOutput() {
 			InitializeComponent();
+			this.DoubleBuffered = true;
 			SetStyle( ControlStyles.ResizeRedraw, true );
 			SetStyle( ControlStyles.Selectable, true );
 			UpdateBitmap();
@@ -39,6 +40,7 @@ namespace UIUtility
 		public PanelOutput( IContainer container ) {
 			container.Add( this );
 			InitializeComponent();
+			this.DoubleBuffered = true;
 			SetStyle( ControlStyles.ResizeRedraw, true );
 			SetStyle( ControlStyles.Selectable, true );
 			UpdateBitmap();
@@ -73,7 +75,6 @@ namespace UIUtility
 		private void InitializeComponent()
 		{
 			components = new System.ComponentModel.Container();
-			this.DoubleBuffered = true;
 		}
 
 		#endregion
