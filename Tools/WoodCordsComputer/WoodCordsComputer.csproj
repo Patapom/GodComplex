@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D40A6DFA-FC9D-424B-8BC3-E7EC4F10211C}</ProjectGuid>
+    <ProjectGuid>{E8C4E2D6-7C25-427E-AFAA-1D663E127D3C}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>WaterTankMonitor</RootNamespace>
-    <AssemblyName>WaterTankMonitor</AssemblyName>
+    <RootNamespace>WoodCordsComputer</RootNamespace>
+    <AssemblyName>WoodCordsComputer</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -35,7 +35,6 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MathSimple, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -47,40 +46,18 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="UIUtility, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\build\Debug\UIUtility.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FormInterval.cs">
+    <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FormInterval.Designer.cs">
-      <DependentUpon>FormInterval.cs</DependentUpon>
-    </Compile>
-    <Compile Include="PanelWarning.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="PanelWarning.Designer.cs">
-      <DependentUpon>PanelWarning.cs</DependentUpon>
-    </Compile>
-    <Compile Include="WaterTankForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="WaterTankForm.Designer.cs">
-      <DependentUpon>WaterTankForm.cs</DependentUpon>
+    <Compile Include="Form1.Designer.cs">
+      <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="FormInterval.resx">
-      <DependentUpon>FormInterval.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="PanelWarning.resx">
-      <DependentUpon>PanelWarning.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="WaterTankForm.resx">
-      <DependentUpon>WaterTankForm.cs</DependentUpon>
+    <EmbeddedResource Include="Form1.resx">
+      <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -90,7 +67,6 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -106,16 +82,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Icon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="IconWarning.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Icon.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="IconWarning.ico" />
+    <ProjectReference Include="..\..\Packages\UIUtility\UIUtility.csproj">
+      <Project>{9a67863f-d886-41a5-a8d1-04ba1379b097}</Project>
+      <Name>UIUtility</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

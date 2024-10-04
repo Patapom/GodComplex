@@ -28,10 +28,17 @@
 			this.buttonNow = new System.Windows.Forms.Button();
 			this.panelOutput = new UIUtility.PanelOutput(this.components);
 			this.contextMenuStripPanel = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.takeMeasurementToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
+			this.createIntervalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.renameIntervalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.deleteIntervalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
 			this.setTimeReferenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.clearTimeReferenceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
 			this.setLowLevelWarningLimitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.setIntervalStartTimeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.panelWarning = new WaterTankMonitor.PanelWarning(this.components);
 			this.buttonMonth = new System.Windows.Forms.Button();
 			this.comboBoxCOMPort = new System.Windows.Forms.ComboBox();
@@ -48,8 +55,7 @@
 			this.checkBox1 = new System.Windows.Forms.CheckBox();
 			this.button1 = new System.Windows.Forms.Button();
 			this.buttonHour = new System.Windows.Forms.Button();
-			this.takeMeasurementToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-			this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
+			this.setIntervalEndTimeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.panelOutput.SuspendLayout();
 			this.contextMenuStripPanel.SuspendLayout();
 			this.contextMenuStripTray.SuspendLayout();
@@ -85,13 +91,59 @@
 			this.contextMenuStripPanel.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.takeMeasurementToolStripMenuItem1,
             this.toolStripMenuItem3,
+            this.createIntervalToolStripMenuItem,
+            this.setIntervalStartTimeToolStripMenuItem,
+            this.setIntervalEndTimeToolStripMenuItem,
+            this.renameIntervalToolStripMenuItem,
+            this.deleteIntervalToolStripMenuItem,
+            this.toolStripMenuItem5,
             this.setTimeReferenceToolStripMenuItem,
             this.clearTimeReferenceToolStripMenuItem,
             this.toolStripMenuItem2,
             this.setLowLevelWarningLimitToolStripMenuItem});
 			this.contextMenuStripPanel.Name = "contextMenuStripPanel";
-			this.contextMenuStripPanel.Size = new System.Drawing.Size(224, 126);
+			this.contextMenuStripPanel.Size = new System.Drawing.Size(224, 242);
 			this.contextMenuStripPanel.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripPanel_Opening);
+			// 
+			// takeMeasurementToolStripMenuItem1
+			// 
+			this.takeMeasurementToolStripMenuItem1.Name = "takeMeasurementToolStripMenuItem1";
+			this.takeMeasurementToolStripMenuItem1.Size = new System.Drawing.Size(223, 22);
+			this.takeMeasurementToolStripMenuItem1.Text = "Take Measurement Now";
+			this.takeMeasurementToolStripMenuItem1.Click += new System.EventHandler(this.takeMeasurementToolStripMenuItem_Click);
+			// 
+			// toolStripMenuItem3
+			// 
+			this.toolStripMenuItem3.Name = "toolStripMenuItem3";
+			this.toolStripMenuItem3.Size = new System.Drawing.Size(220, 6);
+			// 
+			// createIntervalToolStripMenuItem
+			// 
+			this.createIntervalToolStripMenuItem.Name = "createIntervalToolStripMenuItem";
+			this.createIntervalToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
+			this.createIntervalToolStripMenuItem.Text = "Create &Interval";
+			this.createIntervalToolStripMenuItem.Click += new System.EventHandler(this.createIntervalToolStripMenuItem_Click);
+			// 
+			// renameIntervalToolStripMenuItem
+			// 
+			this.renameIntervalToolStripMenuItem.Enabled = false;
+			this.renameIntervalToolStripMenuItem.Name = "renameIntervalToolStripMenuItem";
+			this.renameIntervalToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
+			this.renameIntervalToolStripMenuItem.Text = "Rename Interval";
+			this.renameIntervalToolStripMenuItem.Click += new System.EventHandler(this.renameIntervalToolStripMenuItem_Click);
+			// 
+			// deleteIntervalToolStripMenuItem
+			// 
+			this.deleteIntervalToolStripMenuItem.Enabled = false;
+			this.deleteIntervalToolStripMenuItem.Name = "deleteIntervalToolStripMenuItem";
+			this.deleteIntervalToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
+			this.deleteIntervalToolStripMenuItem.Text = "Delete Interval";
+			this.deleteIntervalToolStripMenuItem.Click += new System.EventHandler(this.deleteIntervalToolStripMenuItem_Click);
+			// 
+			// toolStripMenuItem5
+			// 
+			this.toolStripMenuItem5.Name = "toolStripMenuItem5";
+			this.toolStripMenuItem5.Size = new System.Drawing.Size(220, 6);
 			// 
 			// setTimeReferenceToolStripMenuItem
 			// 
@@ -118,6 +170,14 @@
 			this.setLowLevelWarningLimitToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
 			this.setLowLevelWarningLimitToolStripMenuItem.Text = "Set Low Level Warning Limit";
 			this.setLowLevelWarningLimitToolStripMenuItem.Click += new System.EventHandler(this.setLowLevelWarningLimitToolStripMenuItem_Click);
+			// 
+			// setIntervalStartTimeToolStripMenuItem
+			// 
+			this.setIntervalStartTimeToolStripMenuItem.Enabled = false;
+			this.setIntervalStartTimeToolStripMenuItem.Name = "setIntervalStartTimeToolStripMenuItem";
+			this.setIntervalStartTimeToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
+			this.setIntervalStartTimeToolStripMenuItem.Text = "Set Interval Start Time";
+			this.setIntervalStartTimeToolStripMenuItem.Click += new System.EventHandler(this.setIntervalStartTimeToolStripMenuItem_Click);
 			// 
 			// panelWarning
 			// 
@@ -265,17 +325,13 @@
 			this.buttonHour.UseVisualStyleBackColor = true;
 			this.buttonHour.Click += new System.EventHandler(this.buttonHour_Click);
 			// 
-			// takeMeasurementToolStripMenuItem1
+			// setIntervalEndTimeToolStripMenuItem
 			// 
-			this.takeMeasurementToolStripMenuItem1.Name = "takeMeasurementToolStripMenuItem1";
-			this.takeMeasurementToolStripMenuItem1.Size = new System.Drawing.Size(223, 22);
-			this.takeMeasurementToolStripMenuItem1.Text = "Take Measurement Now";
-			this.takeMeasurementToolStripMenuItem1.Click += new System.EventHandler(this.takeMeasurementToolStripMenuItem_Click);
-			// 
-			// toolStripMenuItem3
-			// 
-			this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-			this.toolStripMenuItem3.Size = new System.Drawing.Size(220, 6);
+			this.setIntervalEndTimeToolStripMenuItem.Enabled = false;
+			this.setIntervalEndTimeToolStripMenuItem.Name = "setIntervalEndTimeToolStripMenuItem";
+			this.setIntervalEndTimeToolStripMenuItem.Size = new System.Drawing.Size(223, 22);
+			this.setIntervalEndTimeToolStripMenuItem.Text = "Set Interval End Time";
+			this.setIntervalEndTimeToolStripMenuItem.Click += new System.EventHandler(this.setIntervalEndTimeToolStripMenuItem_Click);
 			// 
 			// WaterTankMonitorForm
 			// 
@@ -332,6 +388,12 @@
 		private PanelWarning panelWarning;
 		private System.Windows.Forms.ToolStripMenuItem takeMeasurementToolStripMenuItem1;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
+		private System.Windows.Forms.ToolStripMenuItem createIntervalToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem renameIntervalToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem deleteIntervalToolStripMenuItem;
+		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
+		private System.Windows.Forms.ToolStripMenuItem setIntervalStartTimeToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem setIntervalEndTimeToolStripMenuItem;
 	}
 }
 

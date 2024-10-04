@@ -1,10 +1,11 @@
-﻿#define USE_DUAL_MEASUREMENTS
+﻿#define USE_DUAL_MEASUREMENTS	// Compute volume using both high & low measurements (slanted sensor assumption), as opposed as only a single measurement (vertical sensor assumption)
 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,13 +17,10 @@ using System.IO.Ports;
 
 // @TODO: Meilleur filtre!
 
-ajouter une bille rouge dans tray icon quand COM closed
-rajouter une option pour créer/modifier/effacer des events (pluie, grosse douche, lessives, etc.) + conso pendant/depuis l'event
-rajouter l'estimate pour la journée en comptant combien de litres on a bouffé depuis minuit
-Débugger ce putain de safe handle disposed quand on abort la thread de COM!
-Gérer niveau minimal autorisé => juste au-dessus du tuyau qui est à 13.5cm (312 L)
+// Débugger ce putain de safe handle disposed quand on abort la thread de COM!
 
 namespace WaterTankMonitor {
+
 	public partial class WaterTankMonitorForm : Form {
 
 		#region CONSTANTS
@@ -47,6 +45,8 @@ namespace WaterTankMonitor {
 		public const float	DEFAULT_SPEED_OF_SOUND = 343.4f;		// Default speed of sound at 1 bar and 20°C is 343.4 m/s
 
 		public const float	TANK_CAPACITY_LITRES = 4000;			// Tank capacity in litres
+		public const float	TANK_MINIMAL_CAPACITY_LITRES = 312;		// Tank minimal capacity in litres, where the water pipe is connected (13.5cm is the top of the pipe from the bottom of the tank)
+
 
 		//////////////////////////////////////////////////////////////////////////
 		/// Sensor Version 0
@@ -94,7 +94,7 @@ namespace WaterTankMonitor {
 
 		class CommandTimeOutException : Exception { }
 
-		[System.Diagnostics.DebuggerDisplay( "{Volume}L  ({m_timeStamp})" )]
+		[System.Diagnostics.DebuggerDisplay( "{Volume,d}L  ({m_timeStamp})" )]
 		class LogEntry {
 
 			enum SENSOR_VERSION {
@@ -193,6 +193,72 @@ namespace WaterTankMonitor {
 			}
 		}
 
+		[System.Diagnostics.DebuggerDisplay( "{m_label} - From {m_timeStart.ToString( \"MMMM dd HH:mm\" )} to {m_timeEnd.ToString( \"MMMM dd HH:mm\" )}" )]
+		class Interval {
+			public DateTime	m_timeStart;
+			public DateTime	m_timeEnd;
+			public string	m_label = "";
+
+			public Interval( DateTime _timeStart, DateTime _timeEnd, string _label ) {
+				m_timeStart = _timeStart;
+				m_timeEnd = _timeEnd;
+				m_label = _label;
+			}
+
+			public Interval( TextReader _R ) {
+				string		line = _R.ReadLine();
+				string[]	parts = line.Split( ';' );
+				m_timeStart = DateTime.FromFileTime( long.Parse( parts[0].Trim(), System.Globalization.NumberStyles.HexNumber ) );
+				m_timeEnd = DateTime.FromFileTime( long.Parse( parts[1].Trim(), System.Globalization.NumberStyles.HexNumber ) );
+				if ( (m_timeEnd - m_timeStart).TotalSeconds < 10 )
+					m_timeEnd = m_timeStart + TimeSpan.FromSeconds( 5*60 );	// Make the interval last at least 5 minutes!
+
+				m_label = parts[2].Trim();
+			}
+
+			public void	Write( StreamWriter _W ) {
+				_W.WriteLine( m_timeStart.ToFileTime().ToString( "X08" ) + "; " + m_timeEnd.ToFileTime().ToString( "X08" ) + "; " + m_label );
+			}
+		}
+
+		[System.Diagnostics.DebuggerDisplay( "{m_entry} {FilteredVolume}" )]
+		class FilterItem {
+			public LogEntry	m_entry;
+			public double	m_sumValues = 0.0;
+			public double	m_sumWeights = 0.0;
+
+			public float	FilteredVolume => (float) (m_sumValues / m_sumWeights);
+
+			public FilterItem( LogEntry _entry ) {
+				m_entry = _entry;
+			}
+
+			/// <summary>
+			/// Adds the entry's contribution to the filtered volume
+			/// </summary>
+			/// <param name="_entry"></param>
+			/// <returns>True if the entry is inside the filtering window</returns>
+			public bool	AddContribution( LogEntry _entry ) {
+				if ( _entry.IsOutOfRange || _entry.IsVolumeOutOfRange )
+					return true;	// Just ignore...
+
+				TimeSpan	deltaTimeEntry = m_entry.m_timeStamp - _entry.m_timeStamp;
+				double		Dt = deltaTimeEntry.TotalMinutes / MEASUREMENT_FILTER_KERNEL_SIZE_MINUTES;	// Normalized time
+				if ( Math.Abs( Dt ) >= 1.0 )
+					return false;	// Outside of filter window!
+
+				double		weight = Math.Exp( -Dt * Dt / (MEASUREMENT_FILTER_KERNEL_SIGMA * MEASUREMENT_FILTER_KERNEL_SIGMA) );
+				m_sumValues += weight * _entry.Volume;
+				m_sumWeights += weight;
+
+				return true;
+			}
+
+			public void	CommitFilteredVolume() {
+				m_entry.m_filteredVolume = FilteredVolume;
+			}
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -200,9 +266,11 @@ namespace WaterTankMonitor {
 		RegistryKey		m_appKey;
 		string			m_applicationPath;
 		FileInfo		m_fileNameLogEntries;
+		FileInfo		m_fileNameIntervals;
 		FileInfo		m_fileNameSessionLog;
 
 		List<LogEntry>	m_logEntries = new List<LogEntry>();
+		List<Interval>	m_intervals = new List<Interval>();
 		List<string>	m_sessionLog = new List<string>();
 
 		string			m_COMPortName = "COM11";		// Default COM port name
@@ -335,6 +403,12 @@ namespace WaterTankMonitor {
 					FilterGraph( 0 );
 				}
 
+				// Open interval file
+				m_fileNameIntervals = new FileInfo( GetRegKey( "IntervalsFileName", Path.Combine( m_applicationPath, "Intervals.log" ) ) );
+				if ( m_fileNameIntervals.Exists ) {
+					ReadIntervals( m_fileNameIntervals );
+				}
+
 				// Create a new session log file
 				m_fileNameSessionLog = new FileInfo( Path.Combine( m_applicationPath, DateTime.Today.ToString( "MMMM dd HH-mm" ) + ".log" ) );
 
@@ -439,6 +513,7 @@ if ( checkBox1.Checked ) {
 			// Save the log before exiting
 			try {
 				WriteLogEntries( m_fileNameLogEntries );
+				WriteIntervals( m_fileNameIntervals );
 				WriteSessionLog( m_fileNameSessionLog );
 			} catch ( Exception _e ) {
 				MessageBoxError( "Failed to save log file on exit!\r\nCan't close application...", _e );
@@ -504,7 +579,9 @@ if ( checkBox1.Checked ) {
 			}
 
 			public void	Send( SerialPort _COMPort ) {
-				_COMPort.WriteLine( m_ID.ToString() + "," + m_command );
+				string	command = m_ID.ToString() + "," + m_command;
+				_COMPort.WriteLine( command );
+//Console.WriteLine( "Sending command: " + command );
 			}
 
 		}
@@ -587,17 +664,30 @@ if ( checkBox1.Checked ) {
 						// Wait for a response or a timeout
 						COMReply	reply = null;
 						DateTime	sendTime = DateTime.Now;
+						string		newLine = "";
 						while ( reply == null && (DateTime.Now - sendTime).TotalMilliseconds < command.m_timeOut_ms ) {
 //while ( reply == null ) {
 							#if true	// This code simply waits for a new line
 								try {
-									string	newLine = m_COMPort.ReadLine();
+									if ( m_COMPort.BytesToRead == 0 ) {
+										System.Threading.Thread.Sleep( 10 );
+										continue;
+									}
+
+									string	replyBit = m_COMPort.ReadTo( "\n" );
+									newLine += replyBit;
+									if ( !newLine.EndsWith( "\r" ) )
+										continue;	// Line is not complete yet!
+
+//									string	newLine = m_COMPort.ReadLine();
+//Console.WriteLine( newLine );
 									reply = new COMReply( newLine );
+									newLine = "";
 								} catch ( TimeoutException ) {
 									continue;	// Nothing on the line for us yet...
 								}
 
-							#else	// This code uses the COM strings filled up by the even handler
+							#else	// This code uses the COM strings filled up by the event handler
 								System.Threading.Thread.Sleep( 10 );
 								lock ( this ) {
 									if ( m_COMReplies.Count > 0 )
@@ -623,8 +713,10 @@ if ( checkBox1.Checked ) {
 						if ( reply == null ) {
 							command.m_onError( "Timeout!" );
 						} else if ( reply.m_type == COMReply.TYPE.REPLY ) {
+							Log( "<Module Reply " + reply.m_type + "> " + reply.m_string );
 							command.m_onSuccess( reply.m_string );
 						} else if ( reply.m_type == COMReply.TYPE.ERROR ) {
+							Log( "<Module Reply " + reply.m_type + "> " + reply.m_string );
 							command.m_onError( reply.m_string );
 						}
 
@@ -697,7 +789,7 @@ if ( checkBox1.Checked ) {
 			}
 		}
 
-		Queue<COMReply>		m_COMReplies = new Queue<COMReply>();
+//		Queue<COMReply>		m_COMReplies = new Queue<COMReply>();
 
 // This code handle COM replies asynchronously but I eventually prefered to read new lines from the COM port continuously, it's easier and safer...
 //		Action<COMReply>	m_onNewCOMReplyReceived = null;
@@ -817,10 +909,10 @@ if ( checkBox1.Checked ) {
 
 		bool	m_pipoMeasurement = false;
 		void	PerformMeasurement( Action<LogEntry> _onMeasurement, Action<string> _onError ) {
-			ExecuteCommand( m_pipoMeasurement ? "MEASUREPIPO" : "MEASURE", 10 * 1000,
-				( string _reply ) => {
-					// Handle reply!
+			ExecuteCommand( m_pipoMeasurement ? "MEASUREPIPO" : "MEASURE", 60 * 1000,
 
+				// Handle reply
+				( string _reply ) => {
 					if ( _reply.StartsWith( "TIME=" ) ) {
 						// Prepare a new entry
 						int	rawTime_microSeconds;
@@ -852,82 +944,11 @@ if ( checkBox1.Checked ) {
 					}
 				},
 
+				// Handle error
 				( string _error ) => _onError?.Invoke( _error )
 			);
 
 m_pipoMeasurement = false;
-		}
-
-		/// <summary>
-		/// Finds the log entry closest to the specified time
-		/// </summary>
-		/// <param name="_time"></param>
-		int	FindMeasurementIndex( DateTime _time ) {
-			float	closestDelta = float.MaxValue;
-			int		closestEntryIndex = 0;
-
-			int		index = m_logEntries.Count / 2;	// Start in the middle
-			int		stride = index;					// Stride half the interval at once
-			while ( stride > 1 ) {
-				stride = (stride + 1) / 2;
-
-				// Examine new entry
-				LogEntry	entry = m_logEntries[index];
-				float		delta = (float) (_time - entry.m_timeStamp).TotalMinutes;
-				if ( Math.Abs( delta ) < closestDelta ) {
-					// Found a closer entry...
-					closestDelta = Math.Abs( delta );
-					closestEntryIndex = index;
-					if ( closestDelta < 1e-3f )
-						return closestEntryIndex;	// Found an "exact" value
-				}
-
-				if ( delta < 0 ) {
-					index = Math.Max( 0, index - stride );	// Go left
-				} else {
-					index = Math.Min( m_logEntries.Count-1, stride + index );	// Go right
-				}
-			}
-
-			return closestEntryIndex;
-		}
-
-		[System.Diagnostics.DebuggerDisplay( "{m_entry} {FilteredVolume}" )]
-		class FilterItem {
-			public LogEntry	m_entry;
-			public double	m_sumValues = 0.0;
-			public double	m_sumWeights = 0.0;
-
-			public float	FilteredVolume => (float) (m_sumValues / m_sumWeights);
-
-			public FilterItem( LogEntry _entry ) {
-				m_entry = _entry;
-			}
-
-			/// <summary>
-			/// Adds the entry's contribution to the filtered volume
-			/// </summary>
-			/// <param name="_entry"></param>
-			/// <returns>True if the entry is inside the filtering window</returns>
-			public bool	AddContribution( LogEntry _entry ) {
-				if ( _entry.IsOutOfRange || _entry.IsVolumeOutOfRange )
-					return true;	// Just ignore...
-
-				TimeSpan	deltaTimeEntry = m_entry.m_timeStamp - _entry.m_timeStamp;
-				double		Dt = deltaTimeEntry.TotalMinutes / MEASUREMENT_FILTER_KERNEL_SIZE_MINUTES;	// Normalized time
-				if ( Math.Abs( Dt ) >= 1.0 )
-					return false;	// Outside of filter window!
-
-				double		weight = Math.Exp( -Dt * Dt / (MEASUREMENT_FILTER_KERNEL_SIGMA * MEASUREMENT_FILTER_KERNEL_SIGMA) );
-				m_sumValues += weight * _entry.Volume;
-				m_sumWeights += weight;
-
-				return true;
-			}
-
-			public void	CommitFilteredVolume() {
-				m_entry.m_filteredVolume = FilteredVolume;
-			}
 		}
 
 		/// <summary>
@@ -1023,6 +1044,119 @@ m_pipoMeasurement = false;
 
 		#endregion
 
+		#region Search Entries/Intervals
+
+		/// <summary>
+		/// Finds the log entry closest to the specified time
+		/// </summary>
+		/// <param name="_time"></param>
+		int	FindMeasurementIndex( DateTime _time ) {
+			float	closestDelta = float.MaxValue;
+			int		closestEntryIndex = 0;
+
+			int		index = m_logEntries.Count / 2;	// Start in the middle
+			int		stride = index;					// Stride half the interval at once
+			while ( stride > 1 ) {
+				stride = (stride + 1) / 2;
+
+				// Examine new entry
+				LogEntry	entry = m_logEntries[index];
+				float		delta = (float) (_time - entry.m_timeStamp).TotalMinutes;
+				if ( Math.Abs( delta ) < closestDelta ) {
+					// Found a closer entry...
+					closestDelta = Math.Abs( delta );
+					closestEntryIndex = index;
+					if ( closestDelta < 1e-3f )
+						return closestEntryIndex;	// Found an "exact" value
+				}
+
+				if ( delta < 0 ) {
+					index = Math.Max( 0, index - stride );	// Go left
+				} else {
+					index = Math.Min( m_logEntries.Count-1, stride + index );	// Go right
+				}
+			}
+
+			return closestEntryIndex;
+		}
+
+		/// <summary>
+		/// Finds the entry closest to the specified time
+		/// </summary>
+		/// <param name="_time"></param>
+		/// <returns></returns>
+		LogEntry	FindEntry( DateTime _time ) {
+			LogEntry	result = null;
+			double		closestSecondsToEntry = float.MaxValue;
+			foreach ( LogEntry entry in m_logEntries ) {
+				double	secondsToEntry = Math.Abs( (entry.m_timeStamp - _time).TotalSeconds );
+				if ( secondsToEntry < closestSecondsToEntry ) {
+					result = entry;
+					closestSecondsToEntry = secondsToEntry;
+				}
+			}
+
+			return result;
+		}
+
+		/// <summary>
+		/// Finds the interval containing the client position
+		/// </summary>
+		/// <param name="_clientX"></param>
+		/// <returns></returns>
+		Interval	FindInterval( int _clientX ) {
+			return FindInterval( Client2TimeStamp( _clientX ) );
+		}
+
+		/// <summary>
+		/// Finds the interval containg the time stamp
+		/// </summary>
+		/// <param name="_timeStamp"></param>
+		/// <returns></returns>
+		Interval	FindInterval( DateTime _timeStamp ) {
+			foreach ( Interval I in m_intervals ) {
+				if ( _timeStamp >= I.m_timeStart && _timeStamp <= I.m_timeEnd )
+					return I;
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		/// Finds the volume at the specified time stamp
+		/// </summary>
+		/// <param name="_timeStamp"></param>
+		/// <returns></returns>
+		float	FindVolume( DateTime _timeStamp ) {
+			int	count = m_logEntries.Count;
+			if ( count == 0 )
+				return 0;
+
+			// Handle edge cases
+			if ( _timeStamp < m_logEntries[0].m_timeStamp )
+				return m_logEntries[0].Volume;
+			if ( _timeStamp >= m_logEntries[count-1].m_timeStamp )
+				return m_logEntries[count-1].Volume;
+
+			// Handle general case
+			LogEntry	entryStart = null;
+			LogEntry	entryEnd = m_logEntries[0];
+			for ( int entryIndex=0; entryIndex < count; entryIndex++ ) {
+				entryStart = entryEnd;
+				entryEnd = m_logEntries[entryIndex];
+				if ( entryEnd.m_timeStamp >= _timeStamp )
+					break;	// Found the interval!
+			}
+
+			// Compute interpolated volume
+			float	volumeStart = entryStart.Volume;
+			float	volumeEnd = entryEnd.Volume;
+			float	t = Math.Max( 0, Math.Min( 1, (float) ((_timeStamp - entryStart.m_timeStamp).TotalSeconds / Math.Max( 1, (entryEnd.m_timeStamp - entryStart.m_timeStamp).TotalSeconds )) ) );
+			return volumeStart + t * (volumeEnd - volumeStart);
+		}
+
+		#endregion
+
 		#region Log Files
 
 		void	ReadLogEntries( FileInfo _fileNameLog ) {
@@ -1056,6 +1190,36 @@ m_pipoMeasurement = false;
 			using ( StreamWriter W = _fileNameLog.CreateText() ) {
 				foreach ( LogEntry entry in m_logEntries ) {
 					entry.Write( W );
+				}
+			}
+		}
+
+		void	ReadIntervals( FileInfo _fileNameIntervals ) {
+			if ( !_fileNameIntervals.Exists )
+				return;
+
+			m_intervals.Clear();
+			using ( StreamReader R = _fileNameIntervals.OpenText() ) {
+				while ( !R.EndOfStream ) {
+					Interval	interval = new Interval( R );
+					m_intervals.Add( interval );
+				}
+			}
+		}
+
+		void	WriteIntervals( FileInfo _fileNameIntervals ) {
+			if ( _fileNameIntervals.Exists ) {
+				// Backup any existing file first...
+				string	backupFileName = _fileNameIntervals.FullName + ".bak";
+				if ( File.Exists( backupFileName ) ) {
+					File.Delete( backupFileName );
+				}
+				File.Copy( _fileNameIntervals.FullName, backupFileName );
+			}
+
+			using ( StreamWriter W = _fileNameIntervals.CreateText() ) {
+				foreach ( Interval interval in m_intervals ) {
+					interval.Write( W );
 				}
 			}
 		}
@@ -1115,6 +1279,9 @@ m_pipoMeasurement = false;
 		}
 
 		void	UpdateNotifyIconIcon() {
+			if ( this.IsDisposed )
+				return;
+
 			bool	isInError = !m_COMPort.IsOpen		// Did COM port fail to open?
 							  | panelWarning.Visible;	// Did a warning occurred?
 
@@ -1285,8 +1452,54 @@ m_pipoMeasurement = false;
 		Point			m_mouseDownLocation;
 		DateTime		m_mouseDown_WindowEndTime;
 		MouseButtons	m_mouseButtonsDown = MouseButtons.None;
+		
+		// Interval manipulation
+		Interval		m_mouseDownInterval = null;
+		DateTime		m_mouseDownIntervalStart;
+		DateTime		m_mouseDownIntervalEnd;
+		INTERVAL_MANIPULATION_TYPE	m_mouseDownIntervalManipulationType = INTERVAL_MANIPULATION_TYPE.NONE;
+
 		private void PanelOutput_MouseMove( object sender, MouseEventArgs e ) {
-			if ( m_mouseButtonsDown == MouseButtons.Left ) {
+			if ( m_mouseButtonsDown == MouseButtons.None ) {
+				UpdateGraph();	// Display value at mouse position
+				return;
+			}
+
+			if ( m_mouseButtonsDown != MouseButtons.Left )
+				return;
+
+			if ( m_mouseDownInterval != null && m_mouseDownIntervalManipulationType != INTERVAL_MANIPULATION_TYPE.NONE ) {
+				// Manipulate interval
+				DateTime	mouseDownTimeStamp = Client2TimeStamp( m_mouseDownLocation.X );
+				DateTime	currentTimeStamp = Client2TimeStamp( e.X );
+				TimeSpan	deltaTime = currentTimeStamp - mouseDownTimeStamp;
+
+				switch ( m_mouseDownIntervalManipulationType ) {
+					case INTERVAL_MANIPULATION_TYPE.BOTH:
+						m_mouseDownInterval.m_timeStart = m_mouseDownIntervalStart + deltaTime;
+						m_mouseDownInterval.m_timeEnd = m_mouseDownIntervalEnd + deltaTime;
+						break;
+
+					case INTERVAL_MANIPULATION_TYPE.LEFT: {
+						DateTime	newTime = m_mouseDownIntervalStart + deltaTime;
+						if ( (m_mouseDownInterval.m_timeEnd - newTime).TotalMinutes < 5 )
+							newTime = m_mouseDownInterval.m_timeEnd - TimeSpan.FromMinutes( 5 );	// Prevent empty interval!
+						m_mouseDownInterval.m_timeStart = newTime;
+						break;
+					}
+
+					case INTERVAL_MANIPULATION_TYPE.RIGHT: {
+						DateTime	newTime = m_mouseDownIntervalEnd + deltaTime;
+						if ( (newTime - m_mouseDownInterval.m_timeStart).TotalMinutes < 5 )
+							newTime = m_mouseDownInterval.m_timeStart + TimeSpan.FromMinutes( 5 );	// Prevent empty interval!
+						m_mouseDownInterval.m_timeEnd = newTime;
+						break;
+					}
+				}
+
+				UpdateGraph();
+
+			} else {
 				// Scroll window
 				float	windowSize_HoursPerPixel = WindowSize_Hours / (panelOutput.Width - 2 * m_margin);
 				float	hours = windowSize_HoursPerPixel * (m_mouseDownLocation.X - e.X);
@@ -1296,24 +1509,31 @@ m_pipoMeasurement = false;
 					newEndTime = DateTime.Now + TimeSpan.FromHours( WindowSize_Hours );	// Make sure window can't go into the future
 				}
 				WindowEndTime = newEndTime;
-
-			} else if ( m_mouseButtonsDown == MouseButtons.None ) {
-				UpdateGraph();	// Display value at mouse position
 			}
 		}
 
 		private void PanelOutput_MouseDown( object sender, MouseEventArgs e ) {
+			panelOutput.Capture = true;
+
 			m_mouseDownLocation = e.Location;
 			m_mouseButtonsDown |= e.Button;
 			m_mouseDown_WindowEndTime = WindowEndTime;
-			panelOutput.Capture = true;
+
+			// Validate hovered interval and manipulation type
+			m_mouseDownInterval = m_mouseHoverInterval;
+			if ( m_mouseHoverInterval != null ) {
+				m_mouseDownIntervalStart = m_mouseHoverInterval.m_timeStart;
+				m_mouseDownIntervalEnd = m_mouseHoverInterval.m_timeEnd;
+			}
+			m_mouseDownIntervalManipulationType = m_mouseHoverIntervalManipulationType;
 		}
 
 		private void PanelOutput_MouseUp( object sender, MouseEventArgs e ) {
 			m_mouseDownLocation = e.Location;
 			m_mouseButtonsDown &= ~e.Button;
 			m_mouseDown_WindowEndTime = WindowEndTime;
-			panelOutput.Capture = false;
+
+			panelOutput.Capture = m_mouseButtonsDown != MouseButtons.None;
 		}
 
 		private void PanelOutput_MouseWheel( object sender, MouseEventArgs e ) {
@@ -1338,6 +1558,12 @@ m_pipoMeasurement = false;
 		Pen			m_penReferenceTime = new Pen( Color.DarkGray, 2 );	// Dash style will be changed
 		Brush		m_brushReferenceTime = Brushes.DarkGray;
 
+		Brush		m_brushInterval = new System.Drawing.Drawing2D.HatchBrush( System.Drawing.Drawing2D.HatchStyle.Percent50, Color.Plum, Color.Transparent );
+		Pen			m_penInterval = new Pen( Color.Plum, 2 );
+//		SolidBrush	m_brushIntervalString = new SolidBrush( Color.Plum );	// Plum = 0xFFDDA0DD
+		SolidBrush	m_brushIntervalString = new SolidBrush( Color.FromArgb( unchecked( (int) 0xFF6E506E ) ) );	// Dark Plum
+//		SolidBrush	m_brushIntervalString = new SolidBrush( Color.FromArgb( unchecked( (int) 0xFF372837 ) ) );	// Dark Plum
+
 		enum MARKER_TYPE {
 			MONTH,
 			WEEK,
@@ -1347,6 +1573,15 @@ m_pipoMeasurement = false;
 		}
 
 		string[]	m_monthNames = new string[] { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+
+		enum INTERVAL_MANIPULATION_TYPE {
+			NONE,
+			LEFT,
+			RIGHT,
+			BOTH
+		}
+		Interval	m_mouseHoverInterval = null;
+		INTERVAL_MANIPULATION_TYPE	m_mouseHoverIntervalManipulationType = INTERVAL_MANIPULATION_TYPE.NONE;
 
 		private void PanelOutput_BitmapUpdating( int W, int H, Graphics G ) {
 
@@ -1365,6 +1600,8 @@ m_pipoMeasurement = false;
 				G.DrawString( text, this.Font, Brushes.Red, (W - textSize.Width) / 2.0f, H / 4.0f );
 				return;
 			}
+
+			float	mouseX = panelOutput.PointToClient( Control.MousePosition ).X;
 
 			// Render the graph
 			float	Width = W;
@@ -1429,6 +1666,7 @@ m_pipoMeasurement = false;
 			float	Y1 = Level2Client( 0.75f * TANK_CAPACITY_LITRES );	// 3000L line
 			float	Y2 = Level2Client( 0.50f * TANK_CAPACITY_LITRES );	// 2000L line
 			float	Y3 = Level2Client( 0.25f * TANK_CAPACITY_LITRES );	// 1000L line
+
 			Pen		penLevelLine = Pens.Orange;
 			Brush	brushLevelLine = Brushes.Orange;
 			G.DrawLine( penLevelLine, m_margin, Y0, W - m_margin, Y0 );
@@ -1440,17 +1678,64 @@ m_pipoMeasurement = false;
 			G.DrawString( "2000L", Font, brushLevelLine, W - m_margin - 30, Y2 + 0 );
 			G.DrawString( "1000L", Font, brushLevelLine, W - m_margin - 30, Y3 + 0 );
 
+				// Bare minimum line (right above where the water pipe is connected)
+			float	Ymin = Level2Client( TANK_MINIMAL_CAPACITY_LITRES );
+
+			Pen		penMinLevelLine = Pens.DarkSlateGray;
+			Brush	brushMinLevelLine = Brushes.DarkSlateGray;
+			G.DrawLine( penMinLevelLine, m_margin, Ymin, W - m_margin, Ymin );
+			G.DrawString( TANK_MINIMAL_CAPACITY_LITRES.ToString() + "L", Font, brushMinLevelLine, W - m_margin - 30, Ymin + 0 );
+
 			float	Y_warning = Level2Client( m_lowWaterLevelWarningLimit_litres );	// Low limit line
 			G.DrawLine( m_penLowLevelLimit, m_margin, Y_warning, W - m_margin, Y_warning );
 			G.DrawString( ((int) m_lowWaterLevelWarningLimit_litres).ToString(), Font, m_brushLowLevelLimit, W - m_margin - 30, Y_warning );
 
 			// =====================================
+			// Paint intervals
+			m_mouseHoverInterval = null;
+			m_mouseHoverIntervalManipulationType = INTERVAL_MANIPULATION_TYPE.NONE;
+
+			foreach ( Interval I in m_intervals ) {
+				float	startX = TimeStamp2Client( I.m_timeStart );
+				float	endX = TimeStamp2Client( I.m_timeEnd );
+				if ( startX > W || endX < 0 )
+					continue;	// Outside the window
+
+				if ( mouseX >= startX && mouseX < endX ) {
+					// Select this interval
+					m_mouseHoverInterval = I;
+					m_mouseHoverIntervalManipulationType = INTERVAL_MANIPULATION_TYPE.BOTH;
+					if ( mouseX < startX + 5 )
+						m_mouseHoverIntervalManipulationType = INTERVAL_MANIPULATION_TYPE.LEFT;
+					if ( mouseX > endX - 5 )
+						m_mouseHoverIntervalManipulationType = INTERVAL_MANIPULATION_TYPE.RIGHT;
+				}
+
+				G.FillRectangle( m_brushInterval, startX, 0, endX - startX, H );
+				G.DrawLine( m_penInterval, startX, 0, startX, H );
+				G.DrawLine( m_penInterval, endX, 0, endX, H );
+				if ( I.m_label.Length != 0 ) {
+					SizeF	labelSize = G.MeasureString( I.m_label, Font );
+					G.DrawString( I.m_label, Font, m_brushIntervalString, (startX + endX - labelSize.Width) / 2, 0 );
+				}
+			}
+
+			// Change mouse cursor
+			if ( m_mouseButtonsDown == MouseButtons.None ) {
+				switch ( m_mouseHoverIntervalManipulationType ) {
+					case INTERVAL_MANIPULATION_TYPE.NONE: Cursor = Cursors.Default; break;
+					case INTERVAL_MANIPULATION_TYPE.BOTH: Cursor = Cursors.Hand; break;
+					case INTERVAL_MANIPULATION_TYPE.LEFT: Cursor = Cursors.SizeWE; break;
+					case INTERVAL_MANIPULATION_TYPE.RIGHT: Cursor = Cursors.SizeWE; break;
+				}
+			}
+
+			// =====================================
 			// Paint measurements
 			LogEntry	mouseEntry = null;
-			int			mouseEntyIndex = -1;
+//			int			mouseEntyIndex = -1;
 			float		mouseEntryX = 0, mouseEntryY = 0;
 			float		closestMouseEntryDistance = float.MaxValue;
-			float		mouseX = panelOutput.PointToClient( Control.MousePosition ).X;
 
 			if ( m_logEntries.Count > 1 ) {
 				LogEntry	previous = null;
@@ -1476,7 +1761,7 @@ m_pipoMeasurement = false;
 					if ( mouseDistance < closestMouseEntryDistance ) {
 						// Update entry closest to mouse position
 						closestMouseEntryDistance = mouseDistance;
-						mouseEntyIndex = entryIndex;
+//						mouseEntyIndex = entryIndex;
 						mouseEntry = current;
 						mouseEntryX = X;
 						mouseEntryY = Y;
@@ -1560,27 +1845,67 @@ m_pipoMeasurement = false;
 			string	textEntry = null;
 			if ( !mouseEntry.IsOutOfRange ) {
 				textEntry = mouseEntry.m_timeStamp.ToString( "dd MMMM HH:mm" ) + "\n"
-						  + "Volume (filtered) = " + ((int) mouseEntry.m_filteredVolume) + " L\n"
-						  + "Volume (raw) = " + ((int) mouseEntry.Volume) + " L\n"
-						  + "(raw µs = " + mouseEntry.m_rawTime_microSeconds + ")\n";
+						  + "Volume = " + ((int) mouseEntry.m_filteredVolume) + " L\n";
 
-				if ( deltaTime_hours > 1e-3f ) {
-					textEntry += "Consumption = " + (int) (deltaVolume / deltaTime_hours) + " L/h\n";
+				// Daily consumption from midnight
+				float	midnightVolume = FindVolume( DateTime.Today );
+				if ( previousEntry != null ) {
+					float	todayConsumption = previousEntry.Volume - midnightVolume;
+					float	todayHours = (float) (previousEntry.m_timeStamp - DateTime.Today).TotalHours;
+					if ( todayHours > 1e-3f ) {
+						textEntry += "Today's consumption: " + ((int) todayConsumption).ToString() + " (" + ((int) (todayConsumption / todayHours)) + " L/h)\n";
+					} else {
+						textEntry += "(Daily consumption non computable)\n";
+					}
 				} else {
-					textEntry += "(Consumption non computable)\n";
+					textEntry += "(Daily consumption non computable)\n";
 				}
 
+				// Show consumption within the hovered interval
+				if ( m_mouseHoverInterval != null ) {
+					float	volumeStart = FindVolume( m_mouseHoverInterval.m_timeStart );
+					float	volumeEnd = FindVolume( m_mouseHoverInterval.m_timeEnd );
+					float	intervalVolume = volumeEnd - volumeStart;
+					TimeSpan	intervalDuration = m_mouseHoverInterval.m_timeEnd - m_mouseHoverInterval.m_timeStart;
+					float	intervalDuration_hours = (float) intervalDuration.TotalHours;
+
+					// Show sensible duration information
+					string	strIntervalDuration =  intervalDuration_hours > 24 ? Math.Floor( intervalDuration_hours / 24 ) + " days " : "";
+					intervalDuration_hours -= 24 * (float) Math.Floor( intervalDuration_hours / 24 );
+							strIntervalDuration += intervalDuration_hours > 1 ? Math.Floor( intervalDuration_hours ) + " hours " : "";
+					intervalDuration_hours -= (float) Math.Floor( intervalDuration_hours );
+							strIntervalDuration += 60.0f * intervalDuration_hours > 1 ? Math.Floor( 60.0f * intervalDuration_hours ) + " minutes " : "";
+//					intervalDuration_hours -= (float) Math.Floor( 60.0f * intervalDuration_hours ) / 60.0f;
+
+					textEntry += "\n"
+							   + "Interval " + m_mouseHoverInterval.m_label + ":\n"
+							   + "  • Start " + m_mouseHoverInterval.m_timeStart.ToString( "dd MMMM HH:mm" ) + "\n"
+							   + "  • Duration " + strIntervalDuration + "\n"
+							   + (intervalVolume >= 0 ? "  ♥ Collected +" : "  • Consumed ") + ((int) intervalVolume) + "L (" + ((int) (intervalVolume / Math.Max( 1e-3, intervalDuration.TotalHours ))) + " L/h)\n";
+				}
+
+				// Show consumption since time reference
 				if ( IsTimeReferenceValid ) {
-					LogEntry	referenceEntry = FindEntry( m_timeReference );
+					float		referenceVolume = FindVolume( m_timeReference );
 //					float		totalVolume = mouseEntry.Volume - referenceEntry.Volume;
-					float		totalVolume = mouseEntry.m_filteredVolume - referenceEntry.m_filteredVolume;
-					if ( referenceEntry != null ) {
+					float		totalVolume = mouseEntry.m_filteredVolume - referenceVolume;
+					if ( referenceVolume > 0 ) {
 						textEntry += "\n"
-								  + (totalVolume < 0 ? "Consumed " : "♥ Collected +") + (int) totalVolume + " L since\n"
+								  + (totalVolume < 0 ? "Consumed " : "♥ Collected +") + (int) totalVolume + " L since "//\n"
 								  + "reference time " + m_timeReference.ToString( "dd MMMM HH:mm" ) + "\n"
 								  + "Estimate: " + (int) (totalVolume / (mouseEntry.m_timeStamp - m_timeReference).TotalDays) + " L per day\n";
 					}
 				}
+
+				// Advanced info (raw volume & immediate consumption)
+				textEntry += "\n"
+						   + "Raw volume = " + ((int) mouseEntry.Volume) + " L (" + mouseEntry.m_rawTime_microSeconds + " µs)\n";
+				if ( deltaTime_hours > 1e-3f ) {
+					textEntry += "Consumption = " + (int) (deltaVolume / deltaTime_hours) + " L/h\n";
+				} else {
+					textEntry += "(Immediate consumption non computable)\n";
+				}
+
 			} else {
 				textEntry = mouseEntry.m_timeStamp.ToString( "dd MMMM HH:mm" ) + "\n"
 						  + "► Out Of Range! ◄";
@@ -1654,25 +1979,6 @@ m_pipoMeasurement = false;
 			m_arrowPoints[2].Y = P2.Y;
 
 			_G.FillPolygon( _brush, m_arrowPoints,System.Drawing.Drawing2D.FillMode.Winding );
-		}
-
-		/// <summary>
-		/// Finds the entry closest to the specified time
-		/// </summary>
-		/// <param name="_time"></param>
-		/// <returns></returns>
-		LogEntry	FindEntry( DateTime _time ) {
-			LogEntry	result = null;
-			double		closestSecondsToEntry = float.MaxValue;
-			foreach ( LogEntry entry in m_logEntries ) {
-				double	secondsToEntry = Math.Abs( (entry.m_timeStamp - _time).TotalSeconds );
-				if ( secondsToEntry < closestSecondsToEntry ) {
-					result = entry;
-					closestSecondsToEntry = secondsToEntry;
-				}
-			}
-
-			return result;
 		}
 
 		#endregion
@@ -1761,8 +2067,67 @@ m_pipoMeasurement = false;
 
 		#region Context Menu
 
+		void	UpdateIntervals() {
+			WriteIntervals( m_fileNameIntervals );
+			UpdateGraph();
+		}
+
+		Interval	m_contextMenuInterval = null;
 		private void contextMenuStripPanel_Opening( object sender, CancelEventArgs e ) {
 			m_mouseDownLocation = panelOutput.PointToClient( Control.MousePosition );
+			m_contextMenuInterval = FindInterval( m_mouseDownLocation.X );
+
+			// Enable interval items only if we're hovering an actual interval
+			setIntervalStartTimeToolStripMenuItem.Enabled = m_contextMenuInterval != null;
+			setIntervalEndTimeToolStripMenuItem.Enabled = m_contextMenuInterval != null;
+			renameIntervalToolStripMenuItem.Enabled = m_contextMenuInterval != null;
+			deleteIntervalToolStripMenuItem.Enabled = m_contextMenuInterval != null;
+		}
+
+		private void takeMeasurementToolStripMenuItem_Click( object sender, EventArgs e ) {
+			PerformMeasurement( null );
+			m_lastMeasurementTime = DateTime.Now;
+		}
+
+		private void createIntervalToolStripMenuItem_Click( object sender, EventArgs e ) {
+			FormInterval	F = new FormInterval();
+			if ( F.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			DateTime	startTime = Client2TimeStamp( m_mouseDownLocation.X );
+			TimeSpan	defaultInterval = TimeSpan.FromHours( WindowSize_Hours / 20.0f );
+
+			Interval	I = new Interval( startTime, startTime + defaultInterval, F.Label );
+			m_intervals.Add( I );
+			UpdateIntervals();
+		}
+
+		private void setIntervalStartTimeToolStripMenuItem_Click( object sender, EventArgs e ) {
+			m_contextMenuInterval.m_timeStart = Client2TimeStamp( m_mouseDownLocation.X );
+			UpdateIntervals();
+		}
+
+		private void setIntervalEndTimeToolStripMenuItem_Click( object sender, EventArgs e ) {
+			m_contextMenuInterval.m_timeEnd = Client2TimeStamp( m_mouseDownLocation.X );
+			UpdateIntervals();
+		}
+
+		private void renameIntervalToolStripMenuItem_Click( object sender, EventArgs e ) {
+			FormInterval	F = new FormInterval();
+			F.Label = m_contextMenuInterval.m_label;
+			if ( F.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			m_contextMenuInterval.m_label = F.Label;
+			UpdateIntervals();
+		}
+
+		private void deleteIntervalToolStripMenuItem_Click( object sender, EventArgs e ) {
+			if ( MessageBox( "Are you sure you want to delete the interval \"" + m_contextMenuInterval.m_label + "\"?", MessageBoxIcon.Question, MessageBoxButtons.YesNo ) != DialogResult.Yes )
+				return;
+
+			m_intervals.Remove( m_contextMenuInterval );
+			UpdateIntervals();
 		}
 
 		private void setLowLevelWarningLimitToolStripMenuItem_Click( object sender, EventArgs e ) {
@@ -1789,15 +2154,17 @@ m_pipoMeasurement = false;
 			UpdateGraph();
 		}
 
-		private void takeMeasurementToolStripMenuItem_Click( object sender, EventArgs e ) {
-			PerformMeasurement( null );
-		}
-
 		private void saveLogFileNowToolStripMenuItem_Click( object sender, EventArgs e ) {
 			try {
 				WriteLogEntries( m_fileNameLogEntries );
 			} catch ( Exception _e ) {
 				LogError( "Failed to save log!", _e );
+			}
+
+			try {
+				WriteIntervals( m_fileNameIntervals );
+			} catch ( Exception _e ) {
+				LogError( "Failed to save intervals!", _e );
 			}
 
 			try {
