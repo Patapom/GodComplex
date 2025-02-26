@@ -19,7 +19,7 @@ using System.IO.Ports;
 
 // Débugger ce putain de safe handle disposed quand on abort la thread de COM!
 
-namespace WaterTankMonitor {
+namespace WaterTankMonitorPassive {
 
 	public partial class WaterTankMonitorForm : Form {
 
@@ -29,12 +29,6 @@ namespace WaterTankMonitor {
 
 		public const int	SAVE_LOG_INTERVAL_MINUTES = 15;			// Save log every 15 minutes
 		public const int	SAVE_LOG_AFTER_UNSAVED_ENTRIES_COUNT = 10;	// Save log if we have more than 10 unsaved entries
-
-		public const float	MEASURE_INTERVAL_MINUTES_MAX = 5.0f;	// When debit is slow, measure level every 5 minutes
-		public const float	MEASURE_INTERVAL_MINUTES_MIN = 0.5f;	// When debit is fast, measure level every 30 seconds
-
-		public const float	DEBIT_SLOW_LITRE_PER_MINUTE = 0.1f;		// Debit is considered slow when at 0.1 litre / minute
-		public const float	DEBIT_FAST_LITRE_PER_MINUTE = 1.0f;		// Debit is considered fast when at 1.0 litre / minute
 
 		public const float	MEASUREMENT_FILTER_KERNEL_SIZE_MINUTES = 30.0f;	// Filter measures in a 30 minutes kernel
 //		public const float	MEASUREMENT_FILTER_KERNEL_SIGMA = 0.466f;		// Gaussian filter is exp( -(delta_t / kernel half size)^2 / sigma^2 ) so we choose sigma so that we have a sensible small value for exp( -1 / sigma^2 ) = 0.01 => sigma = sqrt( -1 / log( 0.01 ) )
@@ -137,8 +131,11 @@ namespace WaterTankMonitor {
 
 			static DateTime	S_SENSOR_CHANGE0_1 = new DateTime( 2024, 7, 2, 15, 0, 0 );	// Date of change from sensor version 0 to version 1
 
-			public LogEntry( uint _rawTime_microSeconds ) {
-				m_timeStamp = DateTime.Now;
+			public LogEntry( uint _rawTime_microSeconds ) : this( _rawTime_microSeconds, DateTime.Now ) {
+			}
+
+			public LogEntry( uint _rawTime_microSeconds, DateTime _timeStamp ) {
+				m_timeStamp = _timeStamp;
 				m_sensorVersion = m_timeStamp <  S_SENSOR_CHANGE0_1 ? SENSOR_VERSION.VERSION0 : SENSOR_VERSION.VERSION1;
 				m_rawTime_microSeconds = _rawTime_microSeconds;
 			}
@@ -363,7 +360,6 @@ namespace WaterTankMonitor {
 
 		public WaterTankMonitorForm() {
  			m_appKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\WaterTankMonitor" );
-//			m_applicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
 			m_applicationPath = Directory.GetCurrentDirectory();	// Makes more sense to use working directory!
 
 			InitializeComponent();
@@ -398,7 +394,11 @@ namespace WaterTankMonitor {
 
 				// Open log file
 				string	logFileName = GetRegKey( "LogFileName", "Tank3.log" );
-//				m_fileNameLogEntries = new FileInfo( GetRegKey( "LogFileName", Path.Combine( m_applicationPath, "Tank3.log" ) ) );
+
+
+logFileName = "dummyTank.log";
+
+
 				m_fileNameLogEntries = new FileInfo( GetRegKey( "LogFileName", Path.Combine( m_applicationPath, logFileName ) ) );
 				if ( m_fileNameLogEntries.Exists ) {
 					ReadLogEntries( m_fileNameLogEntries );
@@ -446,7 +446,6 @@ namespace WaterTankMonitor {
 		DateTime	m_startTime;
 		DateTime	m_lastLogSaveTime = DateTime.Now;
 		int			m_entriesCountOnLastLogSave = 0;
-		DateTime	m_lastMeasurementTime = DateTime.FromFileTime( 0 );	// A long time ago!
 
 		private void Application_Idle( object sender, EventArgs e ) {
 			DateTime	now = DateTime.Now;
@@ -471,37 +470,9 @@ namespace WaterTankMonitor {
 			}
 
 			// Check if we should perform a new measurement
-			LogEntry	currentEntry = m_logEntries.Count > 0 ? m_logEntries[m_logEntries.Count-1] : null;
-			LogEntry	lastEntry = m_logEntries.Count > 1 ? m_logEntries[m_logEntries.Count-2] : currentEntry;
 
-				// Estimate the flux
-			float		debitEstimate_LitresPerMinute = 0;	// Assume steady state
-			if ( currentEntry != null && lastEntry != null ) {
-				float	deltaTime = (float) (currentEntry.m_timeStamp - lastEntry.m_timeStamp).TotalMinutes;
-//				float	deltaVolume = currentEntry.Volume - lastEntry.Volume;
-				float	deltaVolume = currentEntry.m_filteredVolume - lastEntry.m_filteredVolume;
-				debitEstimate_LitresPerMinute = Math.Abs( deltaVolume / Math.Max( 1e-3f, deltaTime ) );
-			}
 
-				// Estimate the measurement interval based on the debit
-			float	debitFactor = (debitEstimate_LitresPerMinute - DEBIT_SLOW_LITRE_PER_MINUTE) / (DEBIT_FAST_LITRE_PER_MINUTE - DEBIT_SLOW_LITRE_PER_MINUTE);
-			float	measurementInterval_minutes = MEASURE_INTERVAL_MINUTES_MIN + (1.0f - debitFactor) * (MEASURE_INTERVAL_MINUTES_MAX - MEASURE_INTERVAL_MINUTES_MIN);
-					measurementInterval_minutes = Math.Max( MEASURE_INTERVAL_MINUTES_MIN, Math.Min( MEASURE_INTERVAL_MINUTES_MAX, measurementInterval_minutes ) );
 
-if ( checkBox1.Checked ) {
-	measurementInterval_minutes = 5 / 60.0f;	// Every 5 seconds
-}
-
-			if ( (now - m_lastMeasurementTime).TotalMinutes > measurementInterval_minutes ) {
-				PerformMeasurement(
-					( string _error ) => {
-						LogError( "An error occurred while sending a measurement command!\r\n" + _error );
-						m_lastMeasurementTime = now - TimeSpan.FromMinutes( 2 * MEASURE_INTERVAL_MINUTES_MAX );	// Make sure we take a new measurement next time...
-					}
-				);
-
-				m_lastMeasurementTime = now;
-			}
 		}
 
 		bool	m_exitApplication = false;
@@ -560,35 +531,6 @@ if ( checkBox1.Checked ) {
 
 		System.Threading.Thread	m_COMThread = null;
 
-		[System.Diagnostics.DebuggerDisplay( "[{m_ID,d}] {m_command}" )]
-		class COMCommand {
-			public ushort			m_ID = 0;	// Invalid ID
-			public string			m_command;
-			public uint				m_timeOut_ms;
-			public Action<string>	m_onSuccess;
-			public Action<string>	m_onError;
-
-			static ushort	ms_commandIDCounter = 0;
-
-			public COMCommand( string _command, uint _timeOut_ms, Action<string> _onSuccess, Action<string> _onError ) {
-				while( m_ID == 0 ) {
-					m_ID = ++ms_commandIDCounter;
-				}
-				m_command = _command;
-				m_timeOut_ms = _timeOut_ms;
-				m_onSuccess = _onSuccess;
-				m_onError = _onError;
-			}
-
-			public void	Send( SerialPort _COMPort ) {
-				string	command = m_ID.ToString() + "," + m_command;
-				_COMPort.WriteLine( command );
-//Console.WriteLine( "Sending command: " + command );
-			}
-
-		}
-		Queue<COMCommand>		m_COMCommands = new Queue<COMCommand>();
-
 		void	OpenCOMPort( string _COMPortName, Action _onPortOpen, Action _onPortClosed ) {
 
 			// Abort any existing thread
@@ -624,9 +566,6 @@ if ( checkBox1.Checked ) {
 
 						// Wait for the port to be ready before issuing some commands...
 						System.Threading.Thread.Sleep( 2000 );
-
-						// Reset last measurement time so a new measurement is issued immediately...
-						m_lastMeasurementTime = DateTime.FromFileTime( 0 );
 					}
 
 				} catch ( Exception _e ) {
@@ -648,81 +587,47 @@ if ( checkBox1.Checked ) {
 				try {
 					// Listen for commands
 					while ( true ) {
-						COMCommand	command = null;
-						lock ( that ) {
-							if ( !m_COMPort.IsOpen )
-								throw new InvalidOperationException( "Port closed while waiting for commands" );
+						COMReply	reply = null;
+						try {
+							string	newLine = "";
+							lock ( that ) {
+								if ( !m_COMPort.IsOpen )
+									throw new InvalidOperationException( "Port closed while waiting for commands" );
 
-							if ( m_COMCommands.Count == 0 ) {
-								System.Threading.Thread.Sleep( 10 );
-								continue;
+								if ( m_COMPort.BytesToRead == 0 ) {
+									System.Threading.Thread.Sleep( 10 );
+									continue;
+								}
+
+								// Read a little bit of the message
+								string	messageBit = m_COMPort.ReadTo( "\n" );
+								newLine += messageBit;
 							}
-							command = m_COMCommands.Dequeue();
+
+							if ( !newLine.EndsWith( "\r" ) )
+								continue;	// Line is not complete yet!
+
+							// Register a new reply
+							reply = new COMReply( newLine );
+							newLine = "";
+
+						} catch ( TimeoutException ) {
+							continue;	// Nothing on the line for us yet...
 						}
 
-						// Execute command and wait for reply
-						command.Send( m_COMPort );
+						if ( reply == null )
+							continue;	// Invalid reply... Can we even reach there?
 
-						// Wait for a response or a timeout
-						COMReply	reply = null;
-						DateTime	sendTime = DateTime.Now;
-						string		newLine = "";
-						while ( reply == null && (DateTime.Now - sendTime).TotalMilliseconds < command.m_timeOut_ms ) {
-//while ( reply == null ) {
-							#if true	// This code simply waits for a new line
-								try {
-									if ( m_COMPort.BytesToRead == 0 ) {
-										System.Threading.Thread.Sleep( 10 );
-										continue;
-									}
-
-									string	replyBit = m_COMPort.ReadTo( "\n" );
-									newLine += replyBit;
-									if ( !newLine.EndsWith( "\r" ) )
-										continue;	// Line is not complete yet!
-
-//									string	newLine = m_COMPort.ReadLine();
-//Console.WriteLine( newLine );
-									reply = new COMReply( newLine );
-									newLine = "";
-								} catch ( TimeoutException ) {
-									continue;	// Nothing on the line for us yet...
-								}
-
-							#else	// This code uses the COM strings filled up by the event handler
-								System.Threading.Thread.Sleep( 10 );
-								lock ( this ) {
-									if ( m_COMReplies.Count > 0 )
-										reply = m_COMReplies.Dequeue();
-								}
-							#endif
-
-							if ( reply == null )
-								continue;	// Still no reply
-
-							if ( reply.m_type == COMReply.TYPE.LOG || reply.m_type == COMReply.TYPE.DEBUG ) {
-								// Just log regular strings, don't count as actual replies to the command...
-								Log( "<Module Reply " + reply.m_type + "> " + reply.m_string );
-								reply = null;
-							} else if ( reply.m_commandID != command.m_ID ) {
-								// Ignore replies to other commands
-								Log( "<Module Reply from other command " + reply.m_type + "> " + reply.m_string );
-								reply = null;
-							}
-
-						}	// While no reply and no time out
-
-						if ( reply == null ) {
-							command.m_onError( "Timeout!" );
+						if ( reply.m_type == COMReply.TYPE.LOG || reply.m_type == COMReply.TYPE.DEBUG ) {
+							// Just log regular strings, don't count as actual replies to the command...
+							Log( "<Module Log " + reply.m_type + "> " + reply.m_string );
 						} else if ( reply.m_type == COMReply.TYPE.REPLY ) {
 							Log( "<Module Reply " + reply.m_type + "> " + reply.m_string );
-							command.m_onSuccess( reply.m_string );
+							RegisterNewMeasurements( reply );
 						} else if ( reply.m_type == COMReply.TYPE.ERROR ) {
-							Log( "<Module Reply " + reply.m_type + "> " + reply.m_string );
-							command.m_onError( reply.m_string );
+							Log( "<Module Error " + reply.m_type + "> " + reply.m_string );
 						}
-
-					}	// While ( true )
+					}
 
 				} catch ( InvalidOperationException _e ) {
 					if ( !m_COMPort.IsOpen ) {
@@ -791,88 +696,134 @@ if ( checkBox1.Checked ) {
 			}
 		}
 
-//		Queue<COMReply>		m_COMReplies = new Queue<COMReply>();
-
-// This code handle COM replies asynchronously but I eventually prefered to read new lines from the COM port continuously, it's easier and safer...
-//		Action<COMReply>	m_onNewCOMReplyReceived = null;
-//
-// 		byte[]	m_tempCOMBuffer = new byte[4096];
-// 		int		m_tempCOMBufferOffset = 0;
-// 		private void COMPort_DataReceived( object sender, SerialDataReceivedEventArgs e ) {
-// 			// Read new data
-// 			int	bytesCount = m_COMPort.BytesToRead;
-// 			m_COMPort.Read( m_tempCOMBuffer, m_tempCOMBufferOffset, bytesCount );
-// 			int	oldTempCOMBufferOffset = m_tempCOMBufferOffset;
-// 			m_tempCOMBufferOffset += bytesCount;
-// 
-// 			// Check if there's any new-line character in the temp buffer
-// 			for ( int i=oldTempCOMBufferOffset; i < m_tempCOMBufferOffset; i++ ) {
-// 				if ( m_tempCOMBuffer[i] == '\n' ) {
-// 					// Okay, log a new line!
-// 					COMReply	str = null;
-// 					lock ( this ) {
-// 						str = new COMReply( m_tempCOMBuffer, i+1 );
-// 						m_COMReplies.Enqueue( str );
-// 					}
-// 
-// 					// Copy what's left of the bytes after the '\n' so it's the begining of a new line
-// 					Array.Copy( m_tempCOMBuffer, i+1, m_tempCOMBuffer, 0, m_tempCOMBufferOffset - i - 1 );
-// 					m_tempCOMBufferOffset = 0;
-// 
-// 					// Notify of a new line
-// 					m_onNewCOMReplyReceived?.Invoke( str );
-// 					return;
-// 				}
-// 			}
-// 		}
-
 		/// <summary>
-		/// Executes a new command
+		/// Registers new measurements from the device
 		/// </summary>
-		void	ExecuteCommand( string _command, uint _timeOut_ms, Action<string> _onSuccess, Action<string> _onError ) {
-			ExecuteCommand( new COMCommand( _command, _timeOut_ms, _onSuccess, _onError ) );
-		}
-		void	ExecuteCommand( COMCommand _command ) {
-			lock ( this ) {
-				m_COMCommands.Enqueue( _command );
+		/// <param name="_measurementsReply"></param>
+		void	RegisterNewMeasurements( COMReply _measurementsReply ) {
+
+			// Parse reply
+			// The reply string should be of the form "#<measurements count> = <relative time #0>,<measurement #0>, <relative time #1>,<measurement #1>, (...)
+			int			measurementsCount = 0;
+			string[]	measurementParts = null;
+			try {
+				if ( _measurementsReply.m_string.Length == 0 )
+					throw new Exception( "String is empty!" );
+				if ( _measurementsReply.m_string[0] != '#' )
+					throw new Exception( "String doesn't start with a '#'!" );
+
+				int	indexOfEqual = _measurementsReply.m_string.IndexOf( "=" );
+				if ( indexOfEqual == -1 )
+					throw new Exception( "String doesn't contain a '=' separator!" );
+
+				if ( !int.TryParse( _measurementsReply.m_string.Substring( 1, indexOfEqual-1 ), out measurementsCount ) )
+					throw new Exception( "Failed to parse the amount of measurements in the string!" );
+
+				measurementParts = _measurementsReply.m_string.Substring( indexOfEqual+1 ).Trim().Split( ',' );
+
+			} catch ( Exception _e ) {
+				LogError( "Failed to parse the reply string!", _e );
+				return;
 			}
-		}
-/*
-		/// <summary>
-		/// Sends a command and waits for a response
-		/// A command should consist of <COMMAND_NAME>,[<PAYLOAD>] with <COMMAND_NAME> being a 4 letter command name.
-		/// </summary>
-		/// <param name="_command"></param>
-		/// <param name="_timeOut_ms"></param>
-		/// <returns>The response to the command</returns>
-		/// <exception cref="">Command time out</exception>
-//		byte[]	m_serialBuffer = new byte[256];
-		string	SendCommand( string _command, uint _timeOut_ms ) {
-			SendString( _command );
 
-			// Wait for a response or a timeout
-			DateTime	sendTime = DateTime.Now;
-			while ( (DateTime.Now - sendTime).TotalMilliseconds < _timeOut_ms ) {
-				System.Threading.Thread.Sleep( 10 );
+			// Check how many measurements we were given
+			if ( measurementParts.Length != 2 * measurementsCount ) {
+				// Measurements count mismatch! Adjust...
+				LogError( "The amount of measurements received (" + (measurementParts.Length / 2) + ") doesn't match the advertised amount by the reply! (" + measurementsCount + ")" );
+				measurementsCount = measurementParts.Length >> 1;	// Can't read more than what's provided...
+			}
 
-				int	bytesToRead = m_COMPort.BytesToRead;
-				if ( bytesToRead > 0 ) {
-// 					if ( bytesToRead > m_serialBuffer.Length )
-// 						m_serialBuffer = new byte[2*bytesToRead];
-//					m_COMPort.Read( m_serialBuffer, 0, bytesToRead );
-					string	reply = m_COMPort.ReadLine();
-					if ( reply.StartsWith( "<DEBUG>" ) ) {
-						System.Diagnostics.Debug.WriteLine( reply );	// Ignore, not the reply we're waiting for!
-					} else {
-						return reply;
+			if ( measurementsCount == 0 ) {
+				// Received nothing!
+				LogError( "Received a reply without any measurement..." );
+				return;
+			}
+
+			// Register as many new measurements as possible
+			// The idea here is that the device always returns its last 16 measurements (ideally), it's up to us to know if we've already received them or not
+			//	• By definition, the first measurement it sends is a *new measurement* so we should always accept it
+			//	• But other measurements may have already been received if the monitor is actively... monitoring
+			//		=> Sometimes though, after the monitor wakes up (e.g. turning the PC on in the morning), we'll have missed all the measurements issued during the night
+			//			so receiving a bunch of them is actually useful to go back in time and have up to 2 hours and 40 minutes (if flow is 0) of vision of what happened to the tanks...
+			//
+			try {
+				DateTime	now = DateTime.Now;
+				LogEntry	earliestMeasurement = null;
+				for ( int measurementIndex=0; measurementIndex < measurementsCount; measurementIndex++ ) {
+					// Create the measurement
+					uint	relativeTime_s = uint.Parse( measurementParts[2*measurementIndex+0] );
+					uint	rawTime_microseconds = uint.Parse( measurementParts[2*measurementIndex+1] );
+
+					DateTime	measurementTime = now - TimeSpan.FromSeconds( relativeTime_s );	// Next measurements are in the past
+
+					// Check if we already have registered this time
+					LogEntry	existingEntry = null;
+					int	entriesCount = Math.Min( m_logEntries.Count, measurementsCount );
+					for ( int entryIndex=0; entryIndex < entriesCount; entryIndex++ ) {
+						existingEntry = m_logEntries[m_logEntries.Count-1-entryIndex];	// Start from the end...
+
+						// Compare measurement time and allow a 1 minute clearance
+						float	totalSeconds = (float) (existingEntry.m_timeStamp - measurementTime).TotalSeconds;
+						if ( Math.Abs( totalSeconds ) < 30 )
+							break;	// Found an existing measurement!
+
+						// Doesn't match...
+						existingEntry = null;
 					}
+
+					if ( existingEntry != null )
+						continue;	// This measurement was already registered...
+
+					// Register a new measurement
+					LogEntry	measurement = new LogEntry( rawTime_microseconds, measurementTime );
+					LogEntry	insertionEntry = FindEntry( measurementTime );
+					if ( insertionEntry == null ) {
+						// Just add it...
+						m_logEntries.Add( measurement );
+					} else {
+						// Insert into the list
+						int	insertionIndex = m_logEntries.IndexOf( insertionEntry );
+						if ( insertionEntry.m_timeStamp < measurementTime ) {
+							insertionIndex++;	// Insert after
+						}
+
+						m_logEntries.Insert( insertionIndex, measurement );
+					}
+
+					// Any additionnal measurement takes us back further into the past...
+					earliestMeasurement = measurement;
 				}
+
+				// Filter the new measurements
+				int	startMeasurementIndex = FindMeasurementIndex( earliestMeasurement.m_timeStamp - TimeSpan.FromMinutes( 0.5f * MEASUREMENT_FILTER_KERNEL_SIZE_MINUTES ) );
+				FilterGraph( startMeasurementIndex );
+
+				// Update graph (on main thread only!)
+				this.BeginInvoke( (Action) (() => {
+					LogEntry	lastMeasurement = m_logEntries[m_logEntries.Count-1];
+
+					if ( FollowRuntime ) {
+						WindowEndTime = lastMeasurement.m_timeStamp + m_timeFromNow;	// Update window's end time to match this measurement and also keep its delta time from now constant
+					} else {
+						UpdateGraph();
+					}
+
+					// Should we trigger a warning?
+					if ( !lastMeasurement.IsVolumeOutOfRange && lastMeasurement.m_filteredVolume < m_lowWaterLevelWarningLimit_litres && (lastMeasurement.m_timeStamp - m_lastWarningTimeStamp).TotalMinutes > DELAY_BETWEEN_WARNINGS_MINUTES ) {
+						EnterWarningState( "Low water level in tank!" );
+					}
+
+					// Update notify icon text with current measurement
+					NotifyIconText = ((int) lastMeasurement.m_filteredVolume).ToString() + " L (" + lastMeasurement.m_timeStamp.ToString( "dd MMMM HH:mm" ) + ")";
+
+				}) );
+
+			} catch ( Exception _e ) {
+				LogError( "An error occurred while parsing the measurements!", _e );
 			}
-
-			throw new CommandTimeOutException();
 		}
-*/
 
+/*
 		/// <summary>
 		/// Asks the module to perform a new volume measurement
 		/// </summary>
@@ -952,6 +903,7 @@ if ( checkBox1.Checked ) {
 
 m_pipoMeasurement = false;
 		}
+*/
 
 		/// <summary>
 		/// Filters the volume measurements of the graph using a gaussian filter kernel
@@ -992,58 +944,6 @@ m_pipoMeasurement = false;
 			}
 		}
 
-		/// <summary>
-		/// Sets the module's reference time use for creating time stamps
-		/// </summary>
-		/// <param name="_referenceTime"></param>
-		void	SetReferenceTime( DateTime _referenceTime ) {
-			DateTime	baseTime = new DateTime( 2024, 06, 12, 0, 0, 0 );	// This is the day this application was born
-			int			referenceTime_seconds = (int) (_referenceTime - baseTime).TotalSeconds;
-
-			ExecuteCommand( "SETTIME=" + referenceTime_seconds, 10 * 1000,
-				( string _reply ) => {
-					Log( "Successfully set reference time!" );
-				},
-
-				( string _error ) => {
-					LogError( "An error occurred while setting type reference!" );
-					LogError( _error );
-				}
-			);
-		}
-
-// 		/// <summary>
-// 		/// Retrieve any unread measurements stored in the buffer
-// 		/// </summary>
-// 		void	RetrieveUnreadMeasurements() {
-// 			try {
-// 				string	reply = SendCommand( "GETBUFFERSIZE", 10 * 1000 );
-// 
-// 				// Handle reply!
-// 				if ( !reply.StartsWith( "<OK>" ) ) {
-// 					throw new Exception( "Unexpected reply: " + reply );
-// 				}
-// 
-// 				int	bufferSize = int.Parse( reply.Substring( 4 ) );
-// 				if ( bufferSize == 0 )
-// 					return;	// Buffer is empty...
-// 
-// 				reply = SendCommand( "READBUFFER", 10 * 1000 );
-// 				if ( !reply.StartsWith( "<OK>" ) ) {
-// 					throw new Exception( "Unexpected reply: " + reply );
-// 				}
-// 
-// throw new Exception( "@TODO!" );
-// // 				read lines
-// // 				read checksum
-// 
-// 			} catch ( CommandTimeOutException ) {
-// 				ShowError( "Timeout while retrieving unread measurements!" );
-// 			} catch ( Exception _e ) {
-// 				ShowError( "An error occurred while retrieving unread measurements!\r\n" + _e.Message );
-// 			}
-// 		}
-
 		#endregion
 
 		#region Search Entries/Intervals
@@ -1053,30 +953,45 @@ m_pipoMeasurement = false;
 		/// </summary>
 		/// <param name="_time"></param>
 		int	FindMeasurementIndex( DateTime _time ) {
+
+			// Build the current interval covering the entire set of entries
+			int		intervalStart = 0;
+			int		intervalSize = m_logEntries.Count;
+			int		pivotIndex = m_logEntries.Count / 2;	// Pivot starts right in the middle
+
 			float	closestDelta = float.MaxValue;
 			int		closestEntryIndex = 0;
-
-			int		index = m_logEntries.Count / 2;	// Start in the middle
-			int		stride = index;					// Stride half the interval at once
-			while ( stride > 1 ) {
-				stride = (stride + 1) / 2;
+			while ( intervalSize > 0 ) {
 
 				// Examine new entry
-				LogEntry	entry = m_logEntries[index];
+				LogEntry	entry = m_logEntries[pivotIndex];
 				float		delta = (float) (_time - entry.m_timeStamp).TotalMinutes;
 				if ( Math.Abs( delta ) < closestDelta ) {
 					// Found a closer entry...
 					closestDelta = Math.Abs( delta );
-					closestEntryIndex = index;
 					if ( closestDelta < 1e-3f )
-						return closestEntryIndex;	// Found an "exact" value
+						return pivotIndex;	// Found an "exact" value
+					closestEntryIndex = pivotIndex;
 				}
 
+				// Construct left & right intervals
+				int		intervalStart_Left = intervalStart;
+				int		intervalSize_Left = pivotIndex - intervalStart;
+				int		intervalStart_Right = pivotIndex + 1;
+				int		intervalSize_Right = intervalStart + intervalSize - pivotIndex - 1;
+
 				if ( delta < 0 ) {
-					index = Math.Max( 0, index - stride );	// Go left
+					// Go left
+					intervalStart = intervalStart_Left;
+					intervalSize = intervalSize_Left;
 				} else {
-					index = Math.Min( m_logEntries.Count-1, stride + index );	// Go right
+					// Go right
+					intervalStart = intervalStart_Right;
+					intervalSize = intervalSize_Right;
 				}
+
+				// Update pivot
+				pivotIndex = intervalStart + intervalSize / 2;
 			}
 
 			return closestEntryIndex;
@@ -1287,7 +1202,7 @@ m_pipoMeasurement = false;
 			bool	isInError = !m_COMPort.IsOpen		// Did COM port fail to open?
 							  | panelWarning.Visible;	// Did a warning occurred?
 
-			notifyIcon.Icon = isInError ? Properties.Resources.IconWarning : Properties.Resources.Icon; 
+			notifyIcon.Icon = isInError ? WaterTankMonitor.Properties.Resources.IconWarning : WaterTankMonitor.Properties.Resources.Icon; 
 		}
 
 		#endregion
@@ -2027,13 +1942,7 @@ m_pipoMeasurement = false;
 						buttonRefreshCOMPorts.BackColor = Color.ForestGreen;
 					}) );
 
-					// Set the reference time
-					SetReferenceTime( DateTime.Now );
-
-					// Ask if there are some unread values in the buffer
-//					RetrieveUnreadMeasurements();
-
-					this.BeginInvoke( (Action) (() => { 
+					BeginInvoke( (Action) (() => { 
 						UpdateGraph();
 					}) );
 				},
@@ -2087,13 +1996,8 @@ m_pipoMeasurement = false;
 			deleteIntervalToolStripMenuItem.Enabled = m_contextMenuInterval != null;
 		}
 
-		private void takeMeasurementToolStripMenuItem_Click( object sender, EventArgs e ) {
-			PerformMeasurement( null );
-			m_lastMeasurementTime = DateTime.Now;
-		}
-
 		private void createIntervalToolStripMenuItem_Click( object sender, EventArgs e ) {
-			FormInterval	F = new FormInterval();
+			WaterTankMonitor.FormInterval	F = new WaterTankMonitor.FormInterval();
 			if ( F.ShowDialog( this ) != DialogResult.OK )
 				return;
 
@@ -2116,7 +2020,7 @@ m_pipoMeasurement = false;
 		}
 
 		private void renameIntervalToolStripMenuItem_Click( object sender, EventArgs e ) {
-			FormInterval	F = new FormInterval();
+			WaterTankMonitor.FormInterval	F = new WaterTankMonitor.FormInterval();
 			F.Label = m_contextMenuInterval.m_label;
 			if ( F.ShowDialog( this ) != DialogResult.OK )
 				return;
@@ -2178,7 +2082,8 @@ m_pipoMeasurement = false;
 		}
 
 		private void exitToolStripMenuItem_Click( object sender, EventArgs e ) {
-			if ( MessageBox( "Are you sure you want to exit the application?", MessageBoxIcon.Question, MessageBoxButtons.YesNo, MessageBoxDefaultButton.Button2 ) == DialogResult.Yes ) {
+			if ( (DateTime.Now - m_startTime).TotalMinutes < 5	// Don't piss user about closing if we just opened!
+				|| MessageBox( "Are you sure you want to exit the application?", MessageBoxIcon.Question, MessageBoxButtons.YesNo, MessageBoxDefaultButton.Button2 ) == DialogResult.Yes ) {
 				m_exitApplication = true;
 				Close();
 			}
@@ -2203,8 +2108,6 @@ m_pipoMeasurement = false;
 		private void notifyIcon_MouseClick( object sender, MouseEventArgs e ) {
 			if ( e.Button != MouseButtons.Left )
 				return;
-
-//			this.Visible = !this.Visible;	// Toggle the form
 
 			if ( Visible ) {
 				Hide();

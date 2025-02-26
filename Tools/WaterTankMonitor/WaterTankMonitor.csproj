@@ -65,6 +65,12 @@
     <Compile Include="PanelWarning.Designer.cs">
       <DependentUpon>PanelWarning.cs</DependentUpon>
     </Compile>
+    <Compile Include="WaterTankFormPassive.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="WaterTankFormPassive.Designer.cs">
+      <DependentUpon>WaterTankFormPassive.cs</DependentUpon>
+    </Compile>
     <Compile Include="WaterTankForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -78,6 +84,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="PanelWarning.resx">
       <DependentUpon>PanelWarning.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="WaterTankFormPassive.resx">
+      <DependentUpon>WaterTankFormPassive.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="WaterTankForm.resx">
       <DependentUpon>WaterTankForm.cs</DependentUpon>

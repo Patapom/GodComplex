@@ -12,7 +12,11 @@ namespace WaterTankMonitor {
 	public partial class FormInterval : Form {
 
 		public string	Label {
-			get => textBoxLabel.Text.Trim();
+			get {
+				string	label = textBoxLabel.Text.Trim();
+						label = label.Replace( "\\n", "\n" );	// Expand '\n'
+				return label;
+			}
 			set => textBoxLabel.Text = value;
 		}
 
