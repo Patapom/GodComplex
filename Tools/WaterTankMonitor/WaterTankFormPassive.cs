@@ -303,8 +303,9 @@ namespace WaterTankMonitorPassive {
 			set {
 				if ( value == m_notifyIconWarning )
 					return;
+
 				m_notifyIconWarning = value;
-				UpdateNotifyIconText();
+				UpdateNotifyIcon();
 			}
 		}
 
@@ -313,8 +314,9 @@ namespace WaterTankMonitorPassive {
 			set {
 				if ( value == m_notifyIconText )
 					return;
+
 				m_notifyIconText = value;
-				UpdateNotifyIconText();
+				UpdateNotifyIcon();
 			}
 		}
 
@@ -396,7 +398,7 @@ namespace WaterTankMonitorPassive {
 				string	logFileName = GetRegKey( "LogFileName", "Tank3.log" );
 
 
-logFileName = "dummyTank.log";
+//logFileName = "dummyTank.log";
 
 
 				m_fileNameLogEntries = new FileInfo( GetRegKey( "LogFileName", Path.Combine( m_applicationPath, logFileName ) ) );
@@ -571,8 +573,7 @@ logFileName = "dummyTank.log";
 				} catch ( Exception _e ) {
 					// Notify and exit thread...
 					that.BeginInvoke( (Action) (() => {
-						UpdateNotifyIconIcon();	// Update icon if port failed to open...
-
+						that.NotifyIconWarning = _e.Message.Length > 0 ? _e.Message : "Failed to open COM port!";	// Update icon if port failed to open...
 						MessageBoxError( "Failed to open COM port!", _e );
 					}) );
 					return;
@@ -582,7 +583,7 @@ logFileName = "dummyTank.log";
 				_onPortOpen?.Invoke();
 
 				// Update icon if port is now open...
-				UpdateNotifyIconIcon();
+				that.NotifyIconWarning = null;
 
 				try {
 					// Listen for commands
@@ -641,7 +642,7 @@ logFileName = "dummyTank.log";
 					// Notify port closed
 					_onPortClosed?.Invoke();
 
-					UpdateNotifyIconIcon();	// Update icon...
+					that.NotifyIconWarning = "COM port closed!";	// Update icon if port closed...
 				}
 
 			} );
@@ -771,7 +772,7 @@ logFileName = "dummyTank.log";
 						existingEntry = null;
 					}
 
-					if ( existingEntry != null )
+					if ( measurementIndex > 0 && existingEntry != null )	// Always accept at least the first, new measurement!
 						continue;	// This measurement was already registered...
 
 					// Register a new measurement
@@ -1186,21 +1187,30 @@ m_pipoMeasurement = false;
 			return System.Windows.Forms.MessageBox.Show( this, _message, "Water Tank Monitor", _buttons, _icon, _default );
 		}
 
-		void	UpdateNotifyIconText() {
-			string	text = m_notifyIconTitle;
-			if ( m_notifyIconWarning != null )
-				text += "\r\n" + m_notifyIconWarning;
-			if ( m_notifyIconText != null )
-				text += "\r\n" + m_notifyIconText;
-			notifyIcon.Text = text;
-		}
-
-		void	UpdateNotifyIconIcon() {
+		/// <summary>
+		/// Updates the notify icon text and icon
+		/// </summary>
+		void	UpdateNotifyIcon() {
 			if ( this.IsDisposed )
 				return;
 
-			bool	isInError = !m_COMPort.IsOpen		// Did COM port fail to open?
-							  | panelWarning.Visible;	// Did a warning occurred?
+			string	text = m_notifyIconTitle;
+			bool	isInWarningOrErrorState = false;
+			if ( m_notifyIconWarning != null ) {
+				text += "\r\n" + m_notifyIconWarning;
+				isInWarningOrErrorState  = true;
+			}
+			if ( m_notifyIconText != null ) {
+				text += "\r\n" + m_notifyIconText;
+			}
+
+			if ( text.Length > 63 )
+				text = text.Substring( 0, 63 );
+
+			notifyIcon.Text = text;
+
+			bool	isInError = isInWarningOrErrorState	// Did an error occurred?
+							  | panelWarning.Visible;	// Did a critical warning occurred?
 
 			notifyIcon.Icon = isInError ? WaterTankMonitor.Properties.Resources.IconWarning : WaterTankMonitor.Properties.Resources.Icon; 
 		}
@@ -1919,7 +1929,6 @@ m_pipoMeasurement = false;
 
 		private void panelWarning_VisibleChanged( object sender, EventArgs e ) {
 			NotifyIconWarning = panelWarning.Visible ? panelWarning.Message : null;
-			UpdateNotifyIconIcon();
 		}
 
 		#endregion

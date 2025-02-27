@@ -749,3 +749,7 @@ obj
 /Data/Images/In/LDR2HDR
 *.sdf
 /Packages/UIUtility/bin
+/Tools/WaterTankMonitor/Deploy/*.log
+/Tools/WaterTankMonitor/*.bak
+/Tools/WaterTankMonitor/Deploy/*.bak
+/Tools/WaterTankMonitor/*.log
