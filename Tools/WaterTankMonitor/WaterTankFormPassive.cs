@@ -2157,6 +2157,10 @@ m_pipoMeasurement = false;
 				Show();
 				WindowState = FormWindowState.Normal;
 				Activate();
+
+				if ( m_COMPort.IsOpen ) {
+					m_COMPort.WriteLine( "READ" );	// Ask for measurements now
+				}
 			}
 		}
 
