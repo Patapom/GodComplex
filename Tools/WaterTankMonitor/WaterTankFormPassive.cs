@@ -115,6 +115,9 @@ namespace WaterTankMonitorPassive {
 			/// </summary>
 			public bool		IsVolumeOutOfRange {
 				get {
+					if ( m_rawTime_microSeconds == 0xFFFF )
+						return true;	// Pretty obvious invalid value...
+
 					float	volume = Volume;
 					return volume < 0 || volume > TANK_MAX_CAPACITY_LITRES;
 				}
@@ -123,11 +126,7 @@ namespace WaterTankMonitorPassive {
 			/// <summary>
 			/// Gets the tank volume in litres
 			/// </summary>
-			public float	Volume {
-				get {
-					return m_sensorVersion == SENSOR_VERSION.VERSION0 ? RawTime2Volume0( m_rawTime_microSeconds ) : RawTime2Volume1( m_rawTime_microSeconds );
-				}
-			}
+			public float	Volume => m_sensorVersion == SENSOR_VERSION.VERSION0 ? RawTime2Volume0( m_rawTime_microSeconds ) : RawTime2Volume1( m_rawTime_microSeconds );
 
 			static DateTime	S_SENSOR_CHANGE0_1 = new DateTime( 2024, 7, 2, 15, 0, 0 );	// Date of change from sensor version 0 to version 1
 
@@ -414,7 +413,7 @@ namespace WaterTankMonitorPassive {
 				}
 
 				// Create a new session log file
-				m_fileNameSessionLog = new FileInfo( Path.Combine( m_applicationPath, DateTime.Today.ToString( "MMMM dd HH-mm" ) + ".log" ) );
+				m_fileNameSessionLog = new FileInfo( Path.Combine( m_applicationPath, DateTime.Now.ToString( "yyyy MM dd HH-mm" ) + ".log" ) );
 
 				// List available COM ports
 				ListCOMPorts();
@@ -518,6 +517,19 @@ namespace WaterTankMonitorPassive {
 				panelOutput.UpdateBitmap();
 		}
 
+		/// <summary>
+		/// Sends the current clock time to the listener device
+		/// The clock format is "YYYY-ddd|HH:mm:ss:fff" where "ddd" is the day of the year in [0,365] and "fff" are milliseconds
+		/// </summary>
+		void	SendClock() {
+			DateTime	now = DateTime.Now;
+			string		strDate = "CLK=" + now.Year.ToString( "G04" ) + "-" + now.DayOfYear.ToString( "G03" ) + "|" + now.ToString( "HH:mm:ss:fff" );
+			m_COMPort.WriteLine( strDate );
+
+			Log( "<CLK?> request: " + strDate );
+		}
+
+
 		#region COM Ports / Serial Interface
 
 		void	ListCOMPorts() {
@@ -586,7 +598,17 @@ namespace WaterTankMonitorPassive {
 				that.NotifyIconWarning = null;
 
 				try {
+					//////////////////////////////////////////////////////////////////////////
+					// Send initial commands
+					//
+
+					// Ask for measurements
+					m_COMPort.WriteLine( "READ" );
+
+
+					//////////////////////////////////////////////////////////////////////////
 					// Listen for commands
+					//
 					while ( true ) {
 						COMReply	reply = null;
 						try {
@@ -621,12 +643,16 @@ namespace WaterTankMonitorPassive {
 
 						if ( reply.m_type == COMReply.TYPE.LOG || reply.m_type == COMReply.TYPE.DEBUG ) {
 							// Just log regular strings, don't count as actual replies to the command...
-							Log( "<Module Log " + reply.m_type + "> " + reply.m_string );
+							Log( "<Module " + reply.m_type + "> " + reply.m_string );
 						} else if ( reply.m_type == COMReply.TYPE.REPLY ) {
-							Log( "<Module Reply " + reply.m_type + "> " + reply.m_string );
-							RegisterNewMeasurements( reply );
+							Log( "<Module " + reply.m_type + "> " + reply.m_string );
 						} else if ( reply.m_type == COMReply.TYPE.ERROR ) {
-							Log( "<Module Error " + reply.m_type + "> " + reply.m_string );
+							Log( "<Module " + reply.m_type + "> " + reply.m_string );
+						} else if ( reply.m_type == COMReply.TYPE.MEASUREMENTS ) {
+							Log( "<Module " + reply.m_type + "> " + reply.m_string );
+							RegisterNewMeasurements( reply );
+						} else {
+							Log( "<Unknown reply type> " + reply.m_string );
 						}
 					}
 
@@ -655,8 +681,9 @@ namespace WaterTankMonitorPassive {
 			public enum TYPE {
 				UNKNOWN = -1,
 				LOG = 0,
-				REPLY,
-				ERROR,
+				REPLY,			// Reply to a command
+				ERROR,			// An error
+				MEASUREMENTS,	// A list of measurements
 				DEBUG,
 			}
 			public ushort	m_commandID = 0;	// Invalid ID!
@@ -667,6 +694,7 @@ namespace WaterTankMonitorPassive {
 				"<LOG> ",
 				"<OK> ",
 				"<ERROR> ",
+				"<MEASURES> ",
 				"<DEBUG> "
 			};
 
@@ -687,7 +715,7 @@ namespace WaterTankMonitorPassive {
 				}
 
 				// Check for reply type
-				for ( int stringTypeIndex=0; stringTypeIndex < 4; stringTypeIndex++ ) {
+				for ( int stringTypeIndex=0; stringTypeIndex < ms_stringTypes.Length; stringTypeIndex++ ) {
 					if ( m_string.StartsWith( ms_stringTypes[stringTypeIndex] ) ) {
 						m_string = m_string.Substring( ms_stringTypes[stringTypeIndex].Length );
 						m_type = (TYPE) stringTypeIndex;
@@ -728,7 +756,7 @@ namespace WaterTankMonitorPassive {
 			}
 
 			// Check how many measurements we were given
-			if ( measurementParts.Length != 2 * measurementsCount ) {
+			if ( measurementParts.Length != 2 * measurementsCount + 1 ) {
 				// Measurements count mismatch! Adjust...
 				LogError( "The amount of measurements received (" + (measurementParts.Length / 2) + ") doesn't match the advertised amount by the reply! (" + measurementsCount + ")" );
 				measurementsCount = measurementParts.Length >> 1;	// Can't read more than what's provided...
@@ -741,21 +769,22 @@ namespace WaterTankMonitorPassive {
 			}
 
 			// Register as many new measurements as possible
-			// The idea here is that the device always returns its last 16 measurements (ideally), it's up to us to know if we've already received them or not
 			//	• By definition, the first measurement it sends is a *new measurement* so we should always accept it
-			//	• But other measurements may have already been received if the monitor is actively... monitoring
+			//	• But other measurements may have already been received if the monitor is actively monitoring
 			//		=> Sometimes though, after the monitor wakes up (e.g. turning the PC on in the morning), we'll have missed all the measurements issued during the night
-			//			so receiving a bunch of them is actually useful to go back in time and have up to 2 hours and 40 minutes (if flow is 0) of vision of what happened to the tanks...
+			//			so receiving a bunch of them is actually useful to go back in time to have some vision of what happened to the tanks when we were asleep...
 			//
 			try {
-				DateTime	now = DateTime.Now;
+				DateTime	measurementTime = DateTime.Now;
 				LogEntry	earliestMeasurement = null;
+				int			newIndicesCount = 0;
+
 				for ( int measurementIndex=0; measurementIndex < measurementsCount; measurementIndex++ ) {
 					// Create the measurement
-					uint	relativeTime_s = uint.Parse( measurementParts[2*measurementIndex+0] );
-					uint	rawTime_microseconds = uint.Parse( measurementParts[2*measurementIndex+1] );
+					uint		relativeTime_s = uint.Parse( measurementParts[2*measurementIndex+0] );
+					uint		rawTime_microseconds = uint.Parse( measurementParts[2*measurementIndex+1] );
 
-					DateTime	measurementTime = now - TimeSpan.FromSeconds( relativeTime_s );	// Next measurements are in the past
+					measurementTime -= TimeSpan.FromSeconds( relativeTime_s );	// Measurements are in the past
 
 					// Check if we already have registered this time
 					LogEntry	existingEntry = null;
@@ -763,7 +792,7 @@ namespace WaterTankMonitorPassive {
 					for ( int entryIndex=0; entryIndex < entriesCount; entryIndex++ ) {
 						existingEntry = m_logEntries[m_logEntries.Count-1-entryIndex];	// Start from the end...
 
-						// Compare measurement time and allow a 1 minute clearance
+						// Compare measurement time and allow a 30 seconds clearance
 						float	totalSeconds = (float) (existingEntry.m_timeStamp - measurementTime).TotalSeconds;
 						if ( Math.Abs( totalSeconds ) < 30 )
 							break;	// Found an existing measurement!
@@ -793,7 +822,10 @@ namespace WaterTankMonitorPassive {
 
 					// Any additionnal measurement takes us back further into the past...
 					earliestMeasurement = measurement;
+					newIndicesCount++;
 				}
+
+				Log( "Registered " + newIndicesCount + " new measurements out of " + measurementsCount );
 
 				// Filter the new measurements
 				int	startMeasurementIndex = FindMeasurementIndex( earliestMeasurement.m_timeStamp - TimeSpan.FromMinutes( 0.5f * MEASUREMENT_FILTER_KERNEL_SIZE_MINUTES ) );
