@@ -116,7 +116,19 @@ namespace WoodCordsComputer {
 		}
 
 		public Form1() {
-			ms_appKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"Software\JollyFiche\WoodCordsComputer" );
+			// 2024 - Mild winter (2 weeks of snow + freeze / drain)
+// 			ms_appKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"Software\JollyFiche\WoodCordsComputer" );	//		  1.830 m³ (polygon area = 6.423 m²)
+// 																														//		+ 1.436 m³ (polygon area = 5.037 m²)
+// 																														//		+ 2.734 m³ (polygon area = 9.114 m²)
+// 																														//		+ 2.938 m³ (polygon area = 9.794 m²)
+// 																														// Total = 8.94 m³ (2.47 cords)
+
+			// 2025 - 
+			//	1 gros douglas fir ~= 22% de notre consommation de 2024
+			//	==> 4.42 douglas firs pour couvrir nos besoins!
+			//
+			ms_appKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"Software\JollyFiche\WoodCordsComputer_2025" );	//		
+																															//
 
 			// Restore line info
 			for ( int lineIndex=0; lineIndex < 4; lineIndex++ ) {
@@ -141,7 +153,7 @@ namespace WoodCordsComputer {
 				LogLine	line = m_logLines[lineIndex];
 				float	area;
 				float	volume = line.ComputeVolume( unitX, unitY, coverage, out area );
-				string	lineText = volume > 0 ? volume.ToString( "G4" ) + " m³		(polygon area = " + area.ToString( "G4" ) + " m² )" : line.ParsingError;
+				string	lineText = volume > 0 ? volume.ToString( "G4" ) + " m³		(polygon area = " + area.ToString( "G4" ) + " m²)" : line.ParsingError;
 				text += "line #" + (1+lineIndex) + " = " + lineText + "\r\n";
 				totalVolume += volume;
 			}
